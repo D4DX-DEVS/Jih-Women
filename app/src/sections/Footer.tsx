@@ -105,7 +105,7 @@ export default function Footer() {
                 className="group flex items-center justify-center gap-3 text-sm text-white/58 transition-colors hover:text-primary md:justify-start"
               >
                 <Mail size={16} className="group-hover:scale-110 transition-transform" />
-                wwesjih@gmail.com
+                womensummit2026@gmail.com
               </a>
               <a
                 href="tel:+9198XXXXXXXX"
