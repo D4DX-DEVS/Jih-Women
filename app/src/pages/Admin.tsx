@@ -39,6 +39,7 @@ type Registration = {
   industry?: string;
   businessStage?: string;
   businessScale?: string;
+  registrationType?: string;
   createdAt?: string;
 };
 
@@ -65,6 +66,7 @@ type StatsResponse = {
   byIndustry: { _id: string; count: number }[];
   byStage: { _id: string; count: number }[];
   byScale: { _id: string; count: number }[];
+  byType: { _id: string; count: number }[];
 };
 
 type OptionsResponse = {
@@ -79,6 +81,7 @@ type Filters = {
   businessStage: string;
   businessScale: string;
   district: string;
+  registrationType: string;
 };
 
 type Toast = { id: number; message: string; kind: 'success' | 'error' };
@@ -137,6 +140,7 @@ const DEFAULT_FILTERS: Filters = {
   businessStage: '',
   businessScale: '',
   district: '',
+  registrationType: '',
 };
 
 const SORT_FIELDS: { value: string; label: string }[] = [
@@ -544,6 +548,7 @@ function Dashboard({
         'Submitted At': r.createdAt ? new Date(r.createdAt).toLocaleString() : '',
         'Full Name': r.fullName || '',
         'Age': r.age ?? '',
+        'Registration Type': r.registrationType || 'Women',
         'WhatsApp': r.whatsappNumber || '',
         'Email': r.email || '',
         'District': r.district || '',
@@ -701,28 +706,41 @@ function Dashboard({
 /* ----------------- STATS ----------------- */
 
 function StatsGrid({ stats }: { stats: StatsResponse | null }) {
+  const typeOrder = ['Women', 'Child (5-12)', 'Child (0-5)'];
+  const typeMap = Object.fromEntries((stats?.byType ?? []).map((t) => [t._id, t.count]));
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div className="glass p-5">
-        <div className="text-xs uppercase tracking-wider text-foreground/50">Total</div>
-        <div className="admin-display text-3xl font-bold mt-2">{stats?.total ?? '—'}</div>
-      </div>
-      <div className="glass p-5">
-        <div className="text-xs uppercase tracking-wider text-foreground/50">Top Industry</div>
-        <div className="admin-display text-lg font-semibold mt-2">
-          {stats?.byIndustry?.[0]?._id || '—'}
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="glass p-5">
+          <div className="text-xs uppercase tracking-wider text-foreground/50">Total</div>
+          <div className="admin-display text-3xl font-bold mt-2">{stats?.total ?? '—'}</div>
         </div>
+        {typeOrder.map((type) => (
+          <div key={type} className="glass p-5">
+            <div className="text-xs uppercase tracking-wider text-foreground/50">{type}</div>
+            <div className="admin-display text-3xl font-bold mt-2">{typeMap[type] ?? 0}</div>
+          </div>
+        ))}
       </div>
-      <div className="glass p-5">
-        <div className="text-xs uppercase tracking-wider text-foreground/50">Top Stage</div>
-        <div className="admin-display text-lg font-semibold mt-2">
-          {stats?.byStage?.[0]?._id || '—'}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="glass p-5">
+          <div className="text-xs uppercase tracking-wider text-foreground/50">Top Industry</div>
+          <div className="admin-display text-lg font-semibold mt-2">
+            {stats?.byIndustry?.[0]?._id || '—'}
+          </div>
         </div>
-      </div>
-      <div className="glass p-5">
-        <div className="text-xs uppercase tracking-wider text-foreground/50">Top Scale</div>
-        <div className="admin-display text-lg font-semibold mt-2">
-          {stats?.byScale?.[0]?._id || '—'}
+        <div className="glass p-5">
+          <div className="text-xs uppercase tracking-wider text-foreground/50">Top Stage</div>
+          <div className="admin-display text-lg font-semibold mt-2">
+            {stats?.byStage?.[0]?._id || '—'}
+          </div>
+        </div>
+        <div className="glass p-5">
+          <div className="text-xs uppercase tracking-wider text-foreground/50">Top Scale</div>
+          <div className="admin-display text-lg font-semibold mt-2">
+            {stats?.byScale?.[0]?._id || '—'}
+          </div>
         </div>
       </div>
     </div>
@@ -774,7 +792,8 @@ function FiltersBar({
     !!filters.industry ||
     !!filters.businessStage ||
     !!filters.businessScale ||
-    !!filters.district;
+    !!filters.district ||
+    !!filters.registrationType;
 
   return (
     <div className="glass p-5">
@@ -791,7 +810,7 @@ function FiltersBar({
           Filters
           {isActive && (
             <span className="rounded-full bg-[#e61980] text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center leading-none">
-              {[filters.search, filters.industry, filters.businessStage, filters.businessScale, filters.district].filter(Boolean).length}
+              {[filters.search, filters.industry, filters.businessStage, filters.businessScale, filters.district, filters.registrationType].filter(Boolean).length}
             </span>
           )}
         </button>
@@ -878,6 +897,21 @@ function FiltersBar({
             {KERALA_DISTRICTS.map((d) => (
               <option key={d} value={d}>{d}</option>
             ))}
+          </select>
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-xs font-medium uppercase tracking-wider text-foreground/60 mb-1.5">
+            Type
+          </label>
+          <select
+            className="input"
+            value={filters.registrationType}
+            onChange={(e) => onFilterChange('registrationType', e.target.value)}
+          >
+            <option value="">All Types</option>
+            <option value="Women">Women</option>
+            <option value="Child (5-12)">Child (5–12)</option>
+            <option value="Child (0-5)">Child (0–5)</option>
           </select>
         </div>
         <div className="md:col-span-3">
@@ -970,6 +1004,7 @@ function DataTable({
       { sort: 'age', label: 'Age' },
       { label: 'Contact' },
       { sort: 'district', label: 'District' },
+      { label: 'Type' },
       { label: 'Payment' },
       { label: 'Status' },
       { label: 'Venture' },
@@ -1008,19 +1043,19 @@ function DataTable({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={10} className="text-center py-10 text-foreground/50">
+                <td colSpan={11} className="text-center py-10 text-foreground/50">
                   <span className="spinner" />
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={10} className="text-center py-10 text-red-300">
+                <td colSpan={11} className="text-center py-10 text-red-300">
                   {error}
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={10} className="text-center py-10 text-foreground/50">
+                <td colSpan={11} className="text-center py-10 text-foreground/50">
                   No registrations match these filters.
                 </td>
               </tr>
@@ -1037,6 +1072,15 @@ function DataTable({
                   </td>
                   <td>
                     <div className="admin-cell-compact">{it.district || '—'}</div>
+                  </td>
+                  <td>
+                    {it.registrationType === 'Child (0-5)' ? (
+                      <span className="badge bg-sky-500/20 text-sky-300 border-sky-500/30">Child 0–5</span>
+                    ) : it.registrationType === 'Child (5-12)' ? (
+                      <span className="badge bg-violet-500/20 text-violet-300 border-violet-500/30">Child 5–12</span>
+                    ) : (
+                      <span className="badge bg-pink-500/20 text-pink-300 border-pink-500/30">Women</span>
+                    )}
                   </td>
                   <td>
                     {it.paymentScreenshot ? (
@@ -1155,6 +1199,7 @@ function DetailModal({
 
   const fields: [string, unknown][] = detail
     ? [
+        ['Registration Type', detail.registrationType || 'Women'],
         ['Age', detail.age],
         ['WhatsApp', detail.whatsappNumber],
         ['Email', detail.email],

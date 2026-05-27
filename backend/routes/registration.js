@@ -6,6 +6,7 @@ const {
   INDUSTRY_OPTIONS,
   BUSINESS_STAGE_OPTIONS,
   BUSINESS_SCALE_OPTIONS,
+  REGISTRATION_TYPE_OPTIONS,
 } = require('../models/Registration');
 const { paymentScreenshotUpload, getCdnUrl } = require('../config/spaces');
 const { sendWhatsAppText } = require('../config/dxing');
@@ -59,7 +60,12 @@ router.post('/', submitLimiter, (req, res) => {
       return res.status(400).json({ error: msg });
     }
 
-    if (!req.file) {
+    const resolvedType = REGISTRATION_TYPE_OPTIONS.includes(req.body?.registrationType)
+      ? req.body.registrationType
+      : 'Women';
+    const isFreeEntry = resolvedType === 'Child (0-5)';
+
+    if (!isFreeEntry && !req.file) {
       return res.status(400).json({ error: 'Payment screenshot is required' });
     }
 
@@ -77,7 +83,7 @@ router.post('/', submitLimiter, (req, res) => {
       } = req.body || {};
 
       const ageNum = Number(age);
-      const screenshotUrl = getCdnUrl(req.file.key);
+      const screenshotUrl = req.file ? getCdnUrl(req.file.key) : null;
 
       const doc = await Registration.create({
         fullName: typeof fullName === 'string' ? fullName.trim() : fullName,
@@ -85,7 +91,7 @@ router.post('/', submitLimiter, (req, res) => {
         whatsappNumber: typeof whatsappNumber === 'string' ? whatsappNumber.trim() : whatsappNumber,
         email: typeof email === 'string' ? email.trim().toLowerCase() : email,
         district: typeof district === 'string' ? district.trim() : district,
-        paymentScreenshot: screenshotUrl,
+        ...(screenshotUrl ? { paymentScreenshot: screenshotUrl } : {}),
         ventureName:
           typeof ventureName === 'string' && ventureName.trim().length > 0
             ? ventureName.trim()
@@ -93,6 +99,7 @@ router.post('/', submitLimiter, (req, res) => {
         industry,
         businessStage,
         businessScale,
+        registrationType: resolvedType,
       });
 
       // Fire-and-forget: send confirmation WhatsApp message

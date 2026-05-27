@@ -10,6 +10,7 @@ const quickLinks = [
   { label: 'Themes', id: 'highlights' },
   { label: 'Program', id: 'schedule' },
   { label: 'Venue', id: 'venue' },
+  { label: 'Showcase', id: 'showcase' },
   { label: 'Register', id: 'register' },
 ];
 

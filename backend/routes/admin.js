@@ -38,6 +38,7 @@ router.get('/registrations', async (req, res) => {
       businessStage,
       businessScale,
       district,
+      registrationType,
       sortBy = 'createdAt',
       sortDir = 'desc',
       page = 1,
@@ -61,6 +62,14 @@ router.get('/registrations', async (req, res) => {
     if (businessStage) query.businessStage = businessStage;
     if (businessScale) query.businessScale = businessScale;
     if (district) query.district = new RegExp('^' + escapeRegex(String(district)) + '$', 'i');
+    if (registrationType) {
+      if (registrationType === 'Women') {
+        // Old records without the field should also be treated as Women
+        query.registrationType = { $in: [null, 'Women'] };
+      } else {
+        query.registrationType = registrationType;
+      }
+    }
 
     const sortField = SORTABLE_FIELDS.has(String(sortBy)) ? String(sortBy) : 'createdAt';
     const sortDirection = String(sortDir).toLowerCase() === 'asc' ? 1 : -1;
@@ -93,7 +102,7 @@ router.get('/registrations', async (req, res) => {
 
 router.get('/registrations/stats', async (_req, res) => {
   try {
-    const [total, byIndustry, byStage, byScale] = await Promise.all([
+    const [total, byIndustry, byStage, byScale, byType] = await Promise.all([
       Registration.countDocuments({}),
       Registration.aggregate([
         { $group: { _id: '$industry', count: { $sum: 1 } } },
@@ -107,8 +116,12 @@ router.get('/registrations/stats', async (_req, res) => {
         { $group: { _id: '$businessScale', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
       ]),
+      Registration.aggregate([
+        { $group: { _id: '$registrationType', count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
     ]);
-    res.json({ total, byIndustry, byStage, byScale });
+    res.json({ total, byIndustry, byStage, byScale, byType });
   } catch (err) {
     console.error('[admin] stats error:', err);
     res.status(500).json({ error: 'Failed to load stats' });
@@ -130,6 +143,7 @@ router.get('/registrations/export', async (req, res) => {
       ['industry',           'Industry / Sector'],
       ['businessStage',      'Business Stage'],
       ['businessScale',      'Business Scale'],
+      ['registrationType',   'Registration Type'],
       ['paymentVerified',    'Payment Verified'],
       ['entryPassGenerated', 'Entry Pass Generated'],
       ['entryPassId',        'Entry Pass ID'],

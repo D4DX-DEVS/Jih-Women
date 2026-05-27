@@ -10,6 +10,7 @@ import About from '../sections/About';
 import Highlights from '../sections/Highlights';
 import Schedule from '../sections/Schedule';
 import Venue from '../sections/Venue';
+import ShowcaseOpportunity from '../sections/ShowcaseOpportunity';
 import RegistrationCTA from '../sections/RegistrationCTA';
 import Footer from '../sections/Footer';
 import RegistrationForm from '../components/RegistrationForm';
@@ -61,6 +62,7 @@ export default function Home() {
         <Highlights />
         <Schedule />
         <Venue />
+        <ShowcaseOpportunity />
         <RegistrationCTA />
       </main>
       <Footer />
