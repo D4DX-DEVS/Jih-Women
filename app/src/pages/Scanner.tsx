@@ -13,6 +13,8 @@ type ScanResult = {
   district?: string;
   checkedInAt?: string;
   checkedInBy?: string;
+  accompanyingInfants?: number;
+  accompanyingChildren?: number;
   message: string;
 };
 
@@ -242,6 +244,8 @@ function ScannerDashboard({ token, onLogout }: { token: string; onLogout: () => 
           ventureName: data.ventureName,
           district: data.district,
           checkedInAt: data.checkedInAt,
+          accompanyingInfants: data.accompanyingInfants ?? 0,
+          accompanyingChildren: data.accompanyingChildren ?? 0,
           message: `Welcome, ${data.fullName}!`,
         });
         // Vibrate on success
@@ -432,6 +436,20 @@ function ScannerDashboard({ token, onLogout }: { token: string; onLogout: () => 
                   )}
                   {scanResult.status === 'success' && scanResult.district && (
                     <div className="text-sm text-foreground/60">{scanResult.district}</div>
+                  )}
+                  {scanResult.status === 'success' && ((scanResult.accompanyingInfants ?? 0) > 0 || (scanResult.accompanyingChildren ?? 0) > 0) && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {(scanResult.accompanyingInfants ?? 0) > 0 && (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
+                          🍼 Infants: {scanResult.accompanyingInfants}
+                        </span>
+                      )}
+                      {(scanResult.accompanyingChildren ?? 0) > 0 && (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 border border-purple-200">
+                          🧒 Children: {scanResult.accompanyingChildren}
+                        </span>
+                      )}
+                    </div>
                   )}
                   {scanResult.status === 'duplicate' && scanResult.fullName && (
                     <div className="text-sm text-foreground/60 mt-1">

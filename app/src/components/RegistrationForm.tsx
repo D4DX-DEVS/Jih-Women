@@ -2,14 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-
-const REGISTRATION_TYPE_OPTIONS = [
-  { value: 'Women', label: 'Women (12+)', description: 'Female attendees, age 12 and above', ageNote: 'Age 12+' },
-  { value: 'Child (5-12)', label: 'Child (5–12 yrs)', description: 'Children between 5 and 12 years old — 50% fee', ageNote: 'Age 5–12' },
-  { value: 'Child (0-5)', label: 'Child (0–5 yrs)', description: 'Children below 5 years old — free entry', ageNote: 'Age 0–5' },
-] as const;
-
-type RegistrationType = 'Women' | 'Child (5-12)' | 'Child (0-5)';import { ArrowRight, CheckCircle2, X, Copy, Upload, FileText, Check } from 'lucide-react';
+import { ArrowRight, CheckCircle2, X, Copy, Upload, FileText, Check, Minus, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -65,12 +58,11 @@ const COUNTRY_CODES = [
 ] as const;
 
 const schema = z.object({
-  registrationType: z.enum(['Women', 'Child (5-12)', 'Child (0-5)'] as [RegistrationType, ...RegistrationType[]]),
   fullName: z.string().min(2, 'Please enter your full name').max(120),
   age: z
     .number({ message: 'Please enter a valid age' })
     .int('Age must be a whole number')
-    .min(0, 'Age must be 0 or more')
+    .min(12, 'Age must be at least 12')
     .max(120, 'Age must be 120 or less'),
   whatsappNumber: z
     .string()
@@ -83,14 +75,6 @@ const schema = z.object({
   industry: z.enum(INDUSTRY_OPTIONS, { message: 'Select an industry' }),
   businessStage: z.enum(BUSINESS_STAGE_OPTIONS, { message: 'Select a stage' }),
   businessScale: z.enum(BUSINESS_SCALE_OPTIONS, { message: 'Select a scale' }),
-}).superRefine((data, ctx) => {
-  if (data.registrationType === 'Women' && data.age < 12) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Women category requires age 12 or above', path: ['age'] });
-  } else if (data.registrationType === 'Child (5-12)' && (data.age < 5 || data.age > 12)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Child (5–12) category requires age between 5 and 12', path: ['age'] });
-  } else if (data.registrationType === 'Child (0-5)' && data.age > 5) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Child (0–5) category requires age 5 or below', path: ['age'] });
-  }
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -125,23 +109,24 @@ export default function RegistrationForm({ trigger }: Props) {
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [screenshotError, setScreenshotError] = useState<string | null>(null);
+  const [accompanyingInfants, setAccompanyingInfants] = useState(0);
+  const [accompanyingChildren, setAccompanyingChildren] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      registrationType: 'Women',
       ventureName: 'N/A',
     },
   });
 
-  const watchedType = watch('registrationType') as RegistrationType;
+  const childFee = activeQR ? Math.round(activeQR.amount / 2) : 0;
+  const totalAmount = (activeQR?.amount ?? 0) + accompanyingChildren * childFee;
 
   // Fetch active QR on mount
   useEffect(() => {
@@ -214,7 +199,7 @@ export default function RegistrationForm({ trigger }: Props) {
   const onSubmit = async (values: FormValues) => {
     setServerError(null);
 
-    if (!screenshotFile && values.registrationType !== 'Child (0-5)') {
+    if (!screenshotFile) {
       setScreenshotError('Please upload your payment screenshot');
       return;
     }
@@ -226,7 +211,6 @@ export default function RegistrationForm({ trigger }: Props) {
 
     try {
       const formData = new FormData();
-      formData.append('registrationType', values.registrationType);
       formData.append('fullName', values.fullName);
       formData.append('age', String(values.age));
       formData.append('whatsappNumber', countryCode + values.whatsappNumber);
@@ -236,9 +220,9 @@ export default function RegistrationForm({ trigger }: Props) {
       formData.append('industry', values.industry);
       formData.append('businessStage', values.businessStage);
       formData.append('businessScale', values.businessScale);
-      if (screenshotFile) {
-        formData.append('paymentScreenshot', screenshotFile);
-      }
+      formData.append('accompanyingInfants', String(accompanyingInfants));
+      formData.append('accompanyingChildren', String(accompanyingChildren));
+      formData.append('paymentScreenshot', screenshotFile);
 
       const res = await fetch(`${API_URL}/api/registrations`, {
         method: 'POST',
@@ -265,7 +249,9 @@ export default function RegistrationForm({ trigger }: Props) {
         setScreenshotError(null);
         setCopied(false);
         setCountryCode('+91');
-        reset({ registrationType: 'Women', ventureName: 'N/A' });
+        setAccompanyingInfants(0);
+        setAccompanyingChildren(0);
+        reset({ ventureName: 'N/A' });
       }, 250);
     }
   };
@@ -330,31 +316,6 @@ export default function RegistrationForm({ trigger }: Props) {
                 className="space-y-5 px-5 py-5 sm:px-9 sm:py-7"
                 noValidate
               >
-                {/* Registration Type */}
-                <div>
-                  <label className={labelClass}>Registration Type *</label>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    {REGISTRATION_TYPE_OPTIONS.map((opt) => (
-                      <label
-                        key={opt.value}
-                        className="flex cursor-pointer flex-col gap-1 rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 transition hover:bg-black/[0.04] has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white"
-                      >
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="radio"
-                            value={opt.value}
-                            className="accent-primary"
-                            {...register('registrationType')}
-                          />
-                          <span className="text-sm font-semibold">{opt.label}</span>
-                        </div>
-                        <span className="pl-6 text-xs opacity-70">{opt.description}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {errors.registrationType && <p className={errorClass}>{errors.registrationType.message}</p>}
-                </div>
-
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
                   <div className="sm:col-span-2">
                     <label className={labelClass}>Full Name *</label>
@@ -372,10 +333,10 @@ export default function RegistrationForm({ trigger }: Props) {
                     <label className={labelClass}>Age *</label>
                     <input
                       type="number"
-                      min={0}
+                      min={12}
                       max={120}
                       className={inputClass}
-                      placeholder={watchedType === 'Women' ? '28' : watchedType === 'Child (5-12)' ? '8' : '3'}
+                      placeholder="28"
                       {...register('age', { valueAsNumber: true })}
                     />
                     {errors.age && <p className={errorClass}>{errors.age.message}</p>}
@@ -454,68 +415,114 @@ export default function RegistrationForm({ trigger }: Props) {
                         </div>
                       ) : (
                         <>
-                          {/* Amount */}
+                          {/* Children Accompanying */}
+                          <div className="rounded-xl border border-black/10 bg-white/60 p-4 space-y-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-foreground/60">
+                              Children Accompanying <span className="normal-case font-normal text-foreground/40">(optional)</span>
+                            </p>
+
+                            {/* Infants 0-5 */}
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">Infants (0–5 yrs)</p>
+                                <p className="text-xs text-emerald-600 font-medium">Free entry</p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setAccompanyingInfants((n) => Math.max(0, n - 1))}
+                                  disabled={accompanyingInfants === 0}
+                                  className="w-8 h-8 rounded-full border border-black/15 bg-white flex items-center justify-center text-foreground/70 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                                >
+                                  <Minus size={14} />
+                                </button>
+                                <span className="w-6 text-center text-sm font-semibold tabular-nums">{accompanyingInfants}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setAccompanyingInfants((n) => n + 1)}
+                                  className="w-8 h-8 rounded-full border border-black/15 bg-white flex items-center justify-center text-foreground/70 hover:bg-black/5 transition"
+                                >
+                                  <Plus size={14} />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Children 5-12 */}
+                            <div className="flex items-center justify-between border-t border-black/8 pt-3">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">Children (5–12 yrs)</p>
+                                <p className="text-xs text-foreground/50">
+                                  ₹{childFee.toLocaleString('en-IN')} each <span className="text-foreground/40">(50%)</span>
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setAccompanyingChildren((n) => Math.max(0, n - 1))}
+                                  disabled={accompanyingChildren === 0}
+                                  className="w-8 h-8 rounded-full border border-black/15 bg-white flex items-center justify-center text-foreground/70 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                                >
+                                  <Minus size={14} />
+                                </button>
+                                <span className="w-6 text-center text-sm font-semibold tabular-nums">{accompanyingChildren}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setAccompanyingChildren((n) => n + 1)}
+                                  className="w-8 h-8 rounded-full border border-black/15 bg-white flex items-center justify-center text-foreground/70 hover:bg-black/5 transition"
+                                >
+                                  <Plus size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Total Amount */}
                           <div className="text-center">
-                            {watchedType === 'Child (0-5)' ? (
-                              <>
-                                <span className="text-2xl font-bold text-emerald-600">Free</span>
-                                <p className="text-xs text-foreground/50 mt-1">No registration fee for children under 5</p>
-                              </>
-                            ) : watchedType === 'Child (5-12)' ? (
-                              <>
-                                <span className="text-2xl font-bold text-foreground">
-                                  ₹{Math.round((activeQR.amount ?? 0) / 2).toLocaleString('en-IN')}
-                                </span>
-                                <p className="text-xs text-foreground/50 mt-1">50% of registration fee</p>
-                              </>
+                            <span className="text-2xl font-bold text-foreground">
+                              ₹{totalAmount.toLocaleString('en-IN')}
+                            </span>
+                            {accompanyingChildren > 0 ? (
+                              <p className="text-xs text-foreground/50 mt-1">
+                                ₹{activeQR.amount.toLocaleString('en-IN')} + {accompanyingChildren} × ₹{childFee.toLocaleString('en-IN')}
+                              </p>
                             ) : (
-                              <>
-                                <span className="text-2xl font-bold text-foreground">
-                                  ₹{activeQR.amount.toLocaleString('en-IN')}
-                                </span>
-                                <p className="text-xs text-foreground/50 mt-1">Registration Fee</p>
-                              </>
+                              <p className="text-xs text-foreground/50 mt-1">Total Payable</p>
                             )}
                           </div>
 
-                          {/* QR Code Image — hidden for free entry */}
-                          {watchedType !== 'Child (0-5)' && (
-                            <>
-                              <div className="flex justify-center">
-                                <div className="bg-white rounded-xl p-3 shadow-sm border border-black/5 inline-block">
-                                  <img
-                                    src={activeQR.qrImage}
-                                    alt="Payment QR Code"
-                                    className="w-48 h-48 sm:w-56 sm:h-56 object-contain"
-                                  />
-                                </div>
-                              </div>
+                          {/* QR Code Image */}
+                          <div className="flex justify-center">
+                            <div className="bg-white rounded-xl p-3 shadow-sm border border-black/5 inline-block">
+                              <img
+                                src={activeQR.qrImage}
+                                alt="Payment QR Code"
+                                className="w-48 h-48 sm:w-56 sm:h-56 object-contain"
+                              />
+                            </div>
+                          </div>
 
-                              {/* UPI ID with copy */}
-                              <div className="flex items-center justify-center gap-2">
-                                <span className="text-sm text-foreground/70 font-mono bg-black/[0.04] px-3 py-1.5 rounded-lg border border-black/10">
-                                  {activeQR.upiId}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={handleCopyUPI}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition"
-                                >
-                                  {copied ? <Check size={14} /> : <Copy size={14} />}
-                                  {copied ? 'Copied!' : 'Copy UPI'}
-                                </button>
-                              </div>
+                          {/* UPI ID with copy */}
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-sm text-foreground/70 font-mono bg-black/[0.04] px-3 py-1.5 rounded-lg border border-black/10">
+                              {activeQR.upiId}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={handleCopyUPI}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition"
+                            >
+                              {copied ? <Check size={14} /> : <Copy size={14} />}
+                              {copied ? 'Copied!' : 'Copy UPI'}
+                            </button>
+                          </div>
 
-                              <p className="text-xs text-foreground/50 text-center">
-                                Scan the QR code or copy the UPI ID to make your payment
-                              </p>
-                            </>
-                          )}
+                          <p className="text-xs text-foreground/50 text-center">
+                            Scan the QR code or pay ₹{totalAmount.toLocaleString('en-IN')} via UPI
+                          </p>
                         </>
                       )}
 
-                      {/* Screenshot Upload — not required for free (Child 0-5) registrations */}
-                      {watchedType !== 'Child (0-5)' ? (
+                      {/* Screenshot Upload */}
                       <div>
                         <label className={labelClass}>Payment Screenshot *</label>
                         <p className="text-xs text-foreground/50 mb-2">
@@ -573,11 +580,6 @@ export default function RegistrationForm({ trigger }: Props) {
                         )}
                         {screenshotError && <p className={errorClass}>{screenshotError}</p>}
                       </div>
-                      ) : (
-                      <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-4 text-sm text-emerald-700 text-center">
-                        Free entry — no payment required for children under 5 years old.
-                      </div>
-                      )}
                     </div>
                   </div>
 

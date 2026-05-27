@@ -39,7 +39,8 @@ type Registration = {
   industry?: string;
   businessStage?: string;
   businessScale?: string;
-  registrationType?: string;
+  accompanyingInfants?: number;
+  accompanyingChildren?: number;
   createdAt?: string;
 };
 
@@ -66,7 +67,8 @@ type StatsResponse = {
   byIndustry: { _id: string; count: number }[];
   byStage: { _id: string; count: number }[];
   byScale: { _id: string; count: number }[];
-  byType: { _id: string; count: number }[];
+  totalInfants: number;
+  totalChildren: number;
 };
 
 type OptionsResponse = {
@@ -81,7 +83,6 @@ type Filters = {
   businessStage: string;
   businessScale: string;
   district: string;
-  registrationType: string;
 };
 
 type Toast = { id: number; message: string; kind: 'success' | 'error' };
@@ -140,7 +141,6 @@ const DEFAULT_FILTERS: Filters = {
   businessStage: '',
   businessScale: '',
   district: '',
-  registrationType: '',
 };
 
 const SORT_FIELDS: { value: string; label: string }[] = [
@@ -548,10 +548,11 @@ function Dashboard({
         'Submitted At': r.createdAt ? new Date(r.createdAt).toLocaleString() : '',
         'Full Name': r.fullName || '',
         'Age': r.age ?? '',
-        'Registration Type': r.registrationType || 'Women',
         'WhatsApp': r.whatsappNumber || '',
         'Email': r.email || '',
         'District': r.district || '',
+        'Accompanying Infants (0-5)': r.accompanyingInfants ?? 0,
+        'Accompanying Children (5-12)': r.accompanyingChildren ?? 0,
         'Venture / Business': r.ventureName || '',
         'Industry': r.industry || '',
         'Business Stage': r.businessStage || '',
@@ -706,42 +707,32 @@ function Dashboard({
 /* ----------------- STATS ----------------- */
 
 function StatsGrid({ stats }: { stats: StatsResponse | null }) {
-  const typeOrder = ['Women', 'Child (5-12)', 'Child (0-5)'];
-  const typeMap = Object.fromEntries((stats?.byType ?? []).map((t) => [t._id, t.count]));
+  const entrepreneurs = stats?.total ?? 0;
+  const infants = stats?.totalInfants ?? 0;
+  const children = stats?.totalChildren ?? 0;
+  const totalAttendees = entrepreneurs + infants + children;
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="glass p-5">
-          <div className="text-xs uppercase tracking-wider text-foreground/50">Total</div>
-          <div className="admin-display text-3xl font-bold mt-2">{stats?.total ?? '—'}</div>
-        </div>
-        {typeOrder.map((type) => (
-          <div key={type} className="glass p-5">
-            <div className="text-xs uppercase tracking-wider text-foreground/50">{type}</div>
-            <div className="admin-display text-3xl font-bold mt-2">{typeMap[type] ?? 0}</div>
-          </div>
-        ))}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="glass p-5">
+        <div className="text-xs uppercase tracking-wider text-foreground/50">Total Attendees</div>
+        <div className="admin-display text-3xl font-bold mt-2">{stats ? totalAttendees : '—'}</div>
+        <div className="text-xs text-foreground/40 mt-1">Incl. accompanying</div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <div className="glass p-5">
-          <div className="text-xs uppercase tracking-wider text-foreground/50">Top Industry</div>
-          <div className="admin-display text-lg font-semibold mt-2">
-            {stats?.byIndustry?.[0]?._id || '—'}
-          </div>
-        </div>
-        <div className="glass p-5">
-          <div className="text-xs uppercase tracking-wider text-foreground/50">Top Stage</div>
-          <div className="admin-display text-lg font-semibold mt-2">
-            {stats?.byStage?.[0]?._id || '—'}
-          </div>
-        </div>
-        <div className="glass p-5">
-          <div className="text-xs uppercase tracking-wider text-foreground/50">Top Scale</div>
-          <div className="admin-display text-lg font-semibold mt-2">
-            {stats?.byScale?.[0]?._id || '—'}
-          </div>
-        </div>
+      <div className="glass p-5">
+        <div className="text-xs uppercase tracking-wider text-foreground/50">Entrepreneurs</div>
+        <div className="admin-display text-3xl font-bold mt-2">{stats ? entrepreneurs : '—'}</div>
+        <div className="text-xs text-foreground/40 mt-1">Registered women</div>
+      </div>
+      <div className="glass p-5">
+        <div className="text-xs uppercase tracking-wider text-foreground/50">Children (5–12)</div>
+        <div className="admin-display text-3xl font-bold mt-2">{stats ? children : '—'}</div>
+        <div className="text-xs text-foreground/40 mt-1">Accompanying</div>
+      </div>
+      <div className="glass p-5">
+        <div className="text-xs uppercase tracking-wider text-foreground/50">Infants (0–5)</div>
+        <div className="admin-display text-3xl font-bold mt-2">{stats ? infants : '—'}</div>
+        <div className="text-xs text-foreground/40 mt-1">Accompanying</div>
       </div>
     </div>
   );
@@ -792,8 +783,7 @@ function FiltersBar({
     !!filters.industry ||
     !!filters.businessStage ||
     !!filters.businessScale ||
-    !!filters.district ||
-    !!filters.registrationType;
+    !!filters.district;
 
   return (
     <div className="glass p-5">
@@ -810,7 +800,7 @@ function FiltersBar({
           Filters
           {isActive && (
             <span className="rounded-full bg-[#e61980] text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center leading-none">
-              {[filters.search, filters.industry, filters.businessStage, filters.businessScale, filters.district, filters.registrationType].filter(Boolean).length}
+              {[filters.search, filters.industry, filters.businessStage, filters.businessScale, filters.district].filter(Boolean).length}
             </span>
           )}
         </button>
@@ -897,21 +887,6 @@ function FiltersBar({
             {KERALA_DISTRICTS.map((d) => (
               <option key={d} value={d}>{d}</option>
             ))}
-          </select>
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-xs font-medium uppercase tracking-wider text-foreground/60 mb-1.5">
-            Type
-          </label>
-          <select
-            className="input"
-            value={filters.registrationType}
-            onChange={(e) => onFilterChange('registrationType', e.target.value)}
-          >
-            <option value="">All Types</option>
-            <option value="Women">Women</option>
-            <option value="Child (5-12)">Child (5–12)</option>
-            <option value="Child (0-5)">Child (0–5)</option>
           </select>
         </div>
         <div className="md:col-span-3">
@@ -1004,7 +979,7 @@ function DataTable({
       { sort: 'age', label: 'Age' },
       { label: 'Contact' },
       { sort: 'district', label: 'District' },
-      { label: 'Type' },
+      { label: 'Children' },
       { label: 'Payment' },
       { label: 'Status' },
       { label: 'Venture' },
@@ -1074,12 +1049,25 @@ function DataTable({
                     <div className="admin-cell-compact">{it.district || '—'}</div>
                   </td>
                   <td>
-                    {it.registrationType === 'Child (0-5)' ? (
-                      <span className="badge bg-sky-500/20 text-sky-300 border-sky-500/30">Child 0–5</span>
-                    ) : it.registrationType === 'Child (5-12)' ? (
-                      <span className="badge bg-violet-500/20 text-violet-300 border-violet-500/30">Child 5–12</span>
+                    {(it.accompanyingInfants ?? 0) > 0 || (it.accompanyingChildren ?? 0) > 0 ? (
+                      <div className="flex flex-col gap-1">
+                        {(it.accompanyingInfants ?? 0) > 0 && (
+                          <div className="flex items-center gap-1.5 text-xs text-sky-400 whitespace-nowrap">
+                            <span className="w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0" />
+                            <span className="font-medium">{it.accompanyingInfants}</span>
+                            <span className="text-foreground/40">0–5</span>
+                          </div>
+                        )}
+                        {(it.accompanyingChildren ?? 0) > 0 && (
+                          <div className="flex items-center gap-1.5 text-xs text-violet-400 whitespace-nowrap">
+                            <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
+                            <span className="font-medium">{it.accompanyingChildren}</span>
+                            <span className="text-foreground/40">5–12</span>
+                          </div>
+                        )}
+                      </div>
                     ) : (
-                      <span className="badge bg-pink-500/20 text-pink-300 border-pink-500/30">Women</span>
+                      <span className="text-foreground/30 text-xs">—</span>
                     )}
                   </td>
                   <td>
@@ -1199,11 +1187,12 @@ function DetailModal({
 
   const fields: [string, unknown][] = detail
     ? [
-        ['Registration Type', detail.registrationType || 'Women'],
         ['Age', detail.age],
         ['WhatsApp', detail.whatsappNumber],
         ['Email', detail.email],
         ['District', detail.district],
+        ['Accompanying Infants (0–5)', detail.accompanyingInfants ?? 0],
+        ['Accompanying Children (5–12)', detail.accompanyingChildren ?? 0],
         ['Venture / Business', detail.ventureName],
         ['Industry / Sector', detail.industry],
         ['Business Stage', detail.businessStage],

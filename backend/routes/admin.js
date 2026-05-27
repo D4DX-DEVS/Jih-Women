@@ -38,7 +38,6 @@ router.get('/registrations', async (req, res) => {
       businessStage,
       businessScale,
       district,
-      registrationType,
       sortBy = 'createdAt',
       sortDir = 'desc',
       page = 1,
@@ -62,14 +61,6 @@ router.get('/registrations', async (req, res) => {
     if (businessStage) query.businessStage = businessStage;
     if (businessScale) query.businessScale = businessScale;
     if (district) query.district = new RegExp('^' + escapeRegex(String(district)) + '$', 'i');
-    if (registrationType) {
-      if (registrationType === 'Women') {
-        // Old records without the field should also be treated as Women
-        query.registrationType = { $in: [null, 'Women'] };
-      } else {
-        query.registrationType = registrationType;
-      }
-    }
 
     const sortField = SORTABLE_FIELDS.has(String(sortBy)) ? String(sortBy) : 'createdAt';
     const sortDirection = String(sortDir).toLowerCase() === 'asc' ? 1 : -1;
@@ -102,7 +93,7 @@ router.get('/registrations', async (req, res) => {
 
 router.get('/registrations/stats', async (_req, res) => {
   try {
-    const [total, byIndustry, byStage, byScale, byType] = await Promise.all([
+    const [total, byIndustry, byStage, byScale, infantStats, childrenStats] = await Promise.all([
       Registration.countDocuments({}),
       Registration.aggregate([
         { $group: { _id: '$industry', count: { $sum: 1 } } },
@@ -116,12 +107,17 @@ router.get('/registrations/stats', async (_req, res) => {
         { $group: { _id: '$businessScale', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
       ]),
-      Registration.aggregate([
-        { $group: { _id: '$registrationType', count: { $sum: 1 } } },
-        { $sort: { _id: 1 } },
-      ]),
+      Registration.aggregate([{ $group: { _id: null, total: { $sum: '$accompanyingInfants' } } }]),
+      Registration.aggregate([{ $group: { _id: null, total: { $sum: '$accompanyingChildren' } } }]),
     ]);
-    res.json({ total, byIndustry, byStage, byScale, byType });
+    res.json({
+      total,
+      byIndustry,
+      byStage,
+      byScale,
+      totalInfants: infantStats[0]?.total ?? 0,
+      totalChildren: childrenStats[0]?.total ?? 0,
+    });
   } catch (err) {
     console.error('[admin] stats error:', err);
     res.status(500).json({ error: 'Failed to load stats' });
@@ -143,7 +139,8 @@ router.get('/registrations/export', async (req, res) => {
       ['industry',           'Industry / Sector'],
       ['businessStage',      'Business Stage'],
       ['businessScale',      'Business Scale'],
-      ['registrationType',   'Registration Type'],
+      ['accompanyingInfants',  'Accompanying Infants (0-5, Free)'],
+      ['accompanyingChildren', 'Accompanying Children (5-12, 50%)'],
       ['paymentVerified',    'Payment Verified'],
       ['entryPassGenerated', 'Entry Pass Generated'],
       ['entryPassId',        'Entry Pass ID'],
@@ -497,6 +494,8 @@ router.post('/check-in/:passId', async (req, res) => {
       ventureName: doc.ventureName,
       district: doc.district,
       checkedInAt: doc.checkedInAt,
+      accompanyingInfants: doc.accompanyingInfants || 0,
+      accompanyingChildren: doc.accompanyingChildren || 0,
     });
   } catch (err) {
     console.error('[admin] check-in error:', err);

@@ -21,8 +21,6 @@ const BUSINESS_STAGE_OPTIONS = [
 
 const BUSINESS_SCALE_OPTIONS = ['Home based', 'Small scale', 'Large scale'];
 
-const REGISTRATION_TYPE_OPTIONS = ['Women', 'Child (5-12)', 'Child (0-5)'];
-
 const registrationSchema = new mongoose.Schema(
   {
     fullName: {
@@ -103,10 +101,15 @@ const registrationSchema = new mongoose.Schema(
       required: [true, 'Business Scale is required'],
       enum: BUSINESS_SCALE_OPTIONS,
     },
-    registrationType: {
-      type: String,
-      enum: REGISTRATION_TYPE_OPTIONS,
-      default: 'Women',
+    accompanyingInfants: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    accompanyingChildren: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
     checkedIn: {
       type: Boolean,
@@ -137,4 +140,3 @@ module.exports = Registration;
 module.exports.INDUSTRY_OPTIONS = INDUSTRY_OPTIONS;
 module.exports.BUSINESS_STAGE_OPTIONS = BUSINESS_STAGE_OPTIONS;
 module.exports.BUSINESS_SCALE_OPTIONS = BUSINESS_SCALE_OPTIONS;
-module.exports.REGISTRATION_TYPE_OPTIONS = REGISTRATION_TYPE_OPTIONS;
