@@ -111,6 +111,11 @@ const registrationSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    accompanyingCompanions: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     checkedIn: {
       type: Boolean,
       default: false,

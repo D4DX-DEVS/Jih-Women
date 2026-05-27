@@ -111,6 +111,7 @@ export default function RegistrationForm({ trigger }: Props) {
   const [screenshotError, setScreenshotError] = useState<string | null>(null);
   const [accompanyingInfants, setAccompanyingInfants] = useState(0);
   const [accompanyingChildren, setAccompanyingChildren] = useState(0);
+  const [accompanyingCompanions, setAccompanyingCompanions] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -126,7 +127,8 @@ export default function RegistrationForm({ trigger }: Props) {
   });
 
   const childFee = activeQR ? Math.round(activeQR.amount / 2) : 0;
-  const totalAmount = (activeQR?.amount ?? 0) + accompanyingChildren * childFee;
+  const companionFee = activeQR?.amount ?? 0;
+  const totalAmount = (activeQR?.amount ?? 0) + accompanyingChildren * childFee + accompanyingCompanions * companionFee;
 
   // Fetch active QR on mount
   useEffect(() => {
@@ -222,6 +224,7 @@ export default function RegistrationForm({ trigger }: Props) {
       formData.append('businessScale', values.businessScale);
       formData.append('accompanyingInfants', String(accompanyingInfants));
       formData.append('accompanyingChildren', String(accompanyingChildren));
+      formData.append('accompanyingCompanions', String(accompanyingCompanions));
       formData.append('paymentScreenshot', screenshotFile);
 
       const res = await fetch(`${API_URL}/api/registrations`, {
@@ -250,6 +253,7 @@ export default function RegistrationForm({ trigger }: Props) {
         setCopied(false);
         setCountryCode('+91');
         setAccompanyingInfants(0);
+        setAccompanyingCompanions(0);
         setAccompanyingChildren(0);
         reset({ ventureName: 'N/A' });
       }, 250);
@@ -474,6 +478,34 @@ export default function RegistrationForm({ trigger }: Props) {
                                 </button>
                               </div>
                             </div>
+
+                            {/* Companions 12+ */}
+                            <div className="flex items-center justify-between border-t border-black/8 pt-3">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">Companions (12+ yrs)</p>
+                                <p className="text-xs text-foreground/50">
+                                  ₹{companionFee.toLocaleString('en-IN')} each <span className="text-foreground/40">(full fee)</span>
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setAccompanyingCompanions((n) => Math.max(0, n - 1))}
+                                  disabled={accompanyingCompanions === 0}
+                                  className="w-8 h-8 rounded-full border border-black/15 bg-white flex items-center justify-center text-foreground/70 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                                >
+                                  <Minus size={14} />
+                                </button>
+                                <span className="w-6 text-center text-sm font-semibold tabular-nums">{accompanyingCompanions}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setAccompanyingCompanions((n) => n + 1)}
+                                  className="w-8 h-8 rounded-full border border-black/15 bg-white flex items-center justify-center text-foreground/70 hover:bg-black/5 transition"
+                                >
+                                  <Plus size={14} />
+                                </button>
+                              </div>
+                            </div>
                           </div>
 
                           {/* Total Amount */}
@@ -481,9 +513,11 @@ export default function RegistrationForm({ trigger }: Props) {
                             <span className="text-2xl font-bold text-foreground">
                               ₹{totalAmount.toLocaleString('en-IN')}
                             </span>
-                            {accompanyingChildren > 0 ? (
+                            {(accompanyingChildren > 0 || accompanyingCompanions > 0) ? (
                               <p className="text-xs text-foreground/50 mt-1">
-                                ₹{activeQR.amount.toLocaleString('en-IN')} + {accompanyingChildren} × ₹{childFee.toLocaleString('en-IN')}
+                                ₹{activeQR.amount.toLocaleString('en-IN')}
+                                {accompanyingCompanions > 0 && ` + ${accompanyingCompanions} × ₹${companionFee.toLocaleString('en-IN')}`}
+                                {accompanyingChildren > 0 && ` + ${accompanyingChildren} × ₹${childFee.toLocaleString('en-IN')}`}
                               </p>
                             ) : (
                               <p className="text-xs text-foreground/50 mt-1">Total Payable</p>

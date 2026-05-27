@@ -93,7 +93,7 @@ router.get('/registrations', async (req, res) => {
 
 router.get('/registrations/stats', async (_req, res) => {
   try {
-    const [total, byIndustry, byStage, byScale, infantStats, childrenStats] = await Promise.all([
+    const [total, byIndustry, byStage, byScale, infantStats, childrenStats, companionStats] = await Promise.all([
       Registration.countDocuments({}),
       Registration.aggregate([
         { $group: { _id: '$industry', count: { $sum: 1 } } },
@@ -109,6 +109,7 @@ router.get('/registrations/stats', async (_req, res) => {
       ]),
       Registration.aggregate([{ $group: { _id: null, total: { $sum: '$accompanyingInfants' } } }]),
       Registration.aggregate([{ $group: { _id: null, total: { $sum: '$accompanyingChildren' } } }]),
+      Registration.aggregate([{ $group: { _id: null, total: { $sum: '$accompanyingCompanions' } } }]),
     ]);
     res.json({
       total,
@@ -117,6 +118,7 @@ router.get('/registrations/stats', async (_req, res) => {
       byScale,
       totalInfants: infantStats[0]?.total ?? 0,
       totalChildren: childrenStats[0]?.total ?? 0,
+      totalCompanions: companionStats[0]?.total ?? 0,
     });
   } catch (err) {
     console.error('[admin] stats error:', err);
@@ -139,8 +141,9 @@ router.get('/registrations/export', async (req, res) => {
       ['industry',           'Industry / Sector'],
       ['businessStage',      'Business Stage'],
       ['businessScale',      'Business Scale'],
-      ['accompanyingInfants',  'Accompanying Infants (0-5, Free)'],
-      ['accompanyingChildren', 'Accompanying Children (5-12, 50%)'],
+      ['accompanyingInfants',    'Accompanying Infants (0-5, Free)'],
+      ['accompanyingChildren',   'Accompanying Children (5-12, 50%)'],
+      ['accompanyingCompanions', 'Accompanying Companions (12+, Full fee)'],
       ['paymentVerified',    'Payment Verified'],
       ['entryPassGenerated', 'Entry Pass Generated'],
       ['entryPassId',        'Entry Pass ID'],
@@ -494,8 +497,9 @@ router.post('/check-in/:passId', async (req, res) => {
       ventureName: doc.ventureName,
       district: doc.district,
       checkedInAt: doc.checkedInAt,
-      accompanyingInfants: doc.accompanyingInfants || 0,
-      accompanyingChildren: doc.accompanyingChildren || 0,
+      accompanyingInfants: doc.accompanyingInfants ?? 0,
+      accompanyingChildren: doc.accompanyingChildren ?? 0,
+      accompanyingCompanions: doc.accompanyingCompanions ?? 0,
     });
   } catch (err) {
     console.error('[admin] check-in error:', err);

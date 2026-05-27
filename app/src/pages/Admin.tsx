@@ -41,6 +41,7 @@ type Registration = {
   businessScale?: string;
   accompanyingInfants?: number;
   accompanyingChildren?: number;
+  accompanyingCompanions?: number;
   createdAt?: string;
 };
 
@@ -69,6 +70,7 @@ type StatsResponse = {
   byScale: { _id: string; count: number }[];
   totalInfants: number;
   totalChildren: number;
+  totalCompanions: number;
 };
 
 type OptionsResponse = {
@@ -553,6 +555,7 @@ function Dashboard({
         'District': r.district || '',
         'Accompanying Infants (0-5)': r.accompanyingInfants ?? 0,
         'Accompanying Children (5-12)': r.accompanyingChildren ?? 0,
+        'Accompanying Companions (12+)': r.accompanyingCompanions ?? 0,
         'Venture / Business': r.ventureName || '',
         'Industry': r.industry || '',
         'Business Stage': r.businessStage || '',
@@ -710,10 +713,11 @@ function StatsGrid({ stats }: { stats: StatsResponse | null }) {
   const entrepreneurs = stats?.total ?? 0;
   const infants = stats?.totalInfants ?? 0;
   const children = stats?.totalChildren ?? 0;
-  const totalAttendees = entrepreneurs + infants + children;
+  const companions = stats?.totalCompanions ?? 0;
+  const totalAttendees = entrepreneurs + infants + children + companions;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
       <div className="glass p-5">
         <div className="text-xs uppercase tracking-wider text-foreground/50">Total Attendees</div>
         <div className="admin-display text-3xl font-bold mt-2">{stats ? totalAttendees : '—'}</div>
@@ -723,6 +727,11 @@ function StatsGrid({ stats }: { stats: StatsResponse | null }) {
         <div className="text-xs uppercase tracking-wider text-foreground/50">Entrepreneurs</div>
         <div className="admin-display text-3xl font-bold mt-2">{stats ? entrepreneurs : '—'}</div>
         <div className="text-xs text-foreground/40 mt-1">Registered women</div>
+      </div>
+      <div className="glass p-5">
+        <div className="text-xs uppercase tracking-wider text-foreground/50">Companions (12+)</div>
+        <div className="admin-display text-3xl font-bold mt-2">{stats ? companions : '—'}</div>
+        <div className="text-xs text-foreground/40 mt-1">Accompanying</div>
       </div>
       <div className="glass p-5">
         <div className="text-xs uppercase tracking-wider text-foreground/50">Children (5–12)</div>
@@ -1049,7 +1058,7 @@ function DataTable({
                     <div className="admin-cell-compact">{it.district || '—'}</div>
                   </td>
                   <td>
-                    {(it.accompanyingInfants ?? 0) > 0 || (it.accompanyingChildren ?? 0) > 0 ? (
+                    {(it.accompanyingInfants ?? 0) > 0 || (it.accompanyingChildren ?? 0) > 0 || (it.accompanyingCompanions ?? 0) > 0 ? (
                       <div className="flex flex-col gap-1">
                         {(it.accompanyingInfants ?? 0) > 0 && (
                           <div className="flex items-center gap-1.5 text-xs text-sky-400 whitespace-nowrap">
@@ -1063,6 +1072,13 @@ function DataTable({
                             <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
                             <span className="font-medium">{it.accompanyingChildren}</span>
                             <span className="text-foreground/40">5–12</span>
+                          </div>
+                        )}
+                        {(it.accompanyingCompanions ?? 0) > 0 && (
+                          <div className="flex items-center gap-1.5 text-xs text-amber-400 whitespace-nowrap">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                            <span className="font-medium">{it.accompanyingCompanions}</span>
+                            <span className="text-foreground/40">12+</span>
                           </div>
                         )}
                       </div>
@@ -1193,6 +1209,7 @@ function DetailModal({
         ['District', detail.district],
         ['Accompanying Infants (0–5)', detail.accompanyingInfants ?? 0],
         ['Accompanying Children (5–12)', detail.accompanyingChildren ?? 0],
+        ['Accompanying Companions (12+)', detail.accompanyingCompanions ?? 0],
         ['Venture / Business', detail.ventureName],
         ['Industry / Sector', detail.industry],
         ['Business Stage', detail.businessStage],

@@ -76,6 +76,7 @@ router.post('/', submitLimiter, (req, res) => {
         businessScale,
         accompanyingInfants,
         accompanyingChildren,
+        accompanyingCompanions,
       } = req.body || {};
 
       const ageNum = Number(age);
@@ -97,6 +98,7 @@ router.post('/', submitLimiter, (req, res) => {
         businessScale,
         accompanyingInfants: Math.max(0, parseInt(accompanyingInfants, 10) || 0),
         accompanyingChildren: Math.max(0, parseInt(accompanyingChildren, 10) || 0),
+        accompanyingCompanions: Math.max(0, parseInt(accompanyingCompanions, 10) || 0),
       });
 
       // Fire-and-forget: send confirmation WhatsApp message
