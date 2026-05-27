@@ -320,6 +320,25 @@ export default function RegistrationForm({ trigger }: Props) {
                 className="space-y-5 px-5 py-5 sm:px-9 sm:py-7"
                 noValidate
               >
+                {/* Companion Registration Notice */}
+                <div className="rounded-xl border border-amber-300/60 bg-amber-50/80 px-4 py-3.5 space-y-1.5">
+                  <p className="text-xs font-bold uppercase tracking-[0.1em] text-amber-700 mb-2">Please note the following before registration:</p>
+                  <ul className="space-y-1.5">
+                    <li className="flex items-start gap-2 text-xs text-amber-800">
+                      <span className="mt-0.5 shrink-0 text-amber-500">•</span>
+                      Each entrepreneur is eligible to register <span className="font-semibold">&nbsp;one child below 5 years of age free of charge</span>, if necessary.
+                    </li>
+                    <li className="flex items-start gap-2 text-xs text-amber-800">
+                      <span className="mt-0.5 shrink-0 text-amber-500">•</span>
+                      Children between <span className="font-semibold">&nbsp;5 and 12 years of age&nbsp;</span> will be charged a flat registration fee.
+                    </li>
+                    <li className="flex items-start gap-2 text-xs text-amber-800">
+                      <span className="mt-0.5 shrink-0 text-amber-500">•</span>
+                      Children above <span className="font-semibold">&nbsp;12 years of age (girls only)&nbsp;</span> will be charged the full registration fee.
+                    </li>
+                  </ul>
+                </div>
+
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
                   <div className="sm:col-span-2">
                     <label className={labelClass}>Full Name *</label>
@@ -444,7 +463,8 @@ export default function RegistrationForm({ trigger }: Props) {
                                 <button
                                   type="button"
                                   onClick={() => setAccompanyingInfants((n) => n + 1)}
-                                  className="w-8 h-8 rounded-full border border-black/15 bg-white flex items-center justify-center text-foreground/70 hover:bg-black/5 transition"
+                                  disabled={accompanyingInfants >= 1}
+                                  className="w-8 h-8 rounded-full border border-black/15 bg-white flex items-center justify-center text-foreground/70 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed transition"
                                 >
                                   <Plus size={14} />
                                 </button>
@@ -472,7 +492,8 @@ export default function RegistrationForm({ trigger }: Props) {
                                 <button
                                   type="button"
                                   onClick={() => setAccompanyingChildren((n) => n + 1)}
-                                  className="w-8 h-8 rounded-full border border-black/15 bg-white flex items-center justify-center text-foreground/70 hover:bg-black/5 transition"
+                                  disabled={accompanyingChildren >= 1}
+                                  className="w-8 h-8 rounded-full border border-black/15 bg-white flex items-center justify-center text-foreground/70 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed transition"
                                 >
                                   <Plus size={14} />
                                 </button>
@@ -500,7 +521,8 @@ export default function RegistrationForm({ trigger }: Props) {
                                 <button
                                   type="button"
                                   onClick={() => setAccompanyingCompanions((n) => n + 1)}
-                                  className="w-8 h-8 rounded-full border border-black/15 bg-white flex items-center justify-center text-foreground/70 hover:bg-black/5 transition"
+                                  disabled={accompanyingCompanions >= 1}
+                                  className="w-8 h-8 rounded-full border border-black/15 bg-white flex items-center justify-center text-foreground/70 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed transition"
                                 >
                                   <Plus size={14} />
                                 </button>
