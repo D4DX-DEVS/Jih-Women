@@ -530,46 +530,69 @@ function Dashboard({
     });
   }, [onLogout]);
 
+  const buildExcelRows = (items: Registration[]) =>
+    items.map((r) => ({
+      'Submitted At': r.createdAt ? new Date(r.createdAt).toLocaleString() : '',
+      'Full Name': r.fullName || '',
+      'Age': r.age ?? '',
+      'WhatsApp': r.whatsappNumber || '',
+      'Email': r.email || '',
+      'District': r.district || '',
+      'Accompanying Infants (0-5)': r.accompanyingInfants ?? 0,
+      'Accompanying Children (5-12)': r.accompanyingChildren ?? 0,
+      'Accompanying Companions (12+)': r.accompanyingCompanions ?? 0,
+      'Venture / Business': r.ventureName || '',
+      'Industry': r.industry || '',
+      'Business Stage': r.businessStage || '',
+      'Business Scale': r.businessScale || '',
+      'Payment Verified': r.paymentVerified ? 'Yes' : 'No',
+      'Pass Generated': r.entryPassGenerated ? 'Yes' : 'No',
+      'Pass ID': r.entryPassId || '',
+      'Pass Sent At': r.entryPassSentAt ? new Date(r.entryPassSentAt).toLocaleString() : '',
+    }));
+
+  const fetchAllPages = async (extraParams: string) => {
+    let allItems: Registration[] = [];
+    let pg = 1;
+    const lim = 200;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const data = await apiJson<ListResponse>(
+        `/api/admin/registrations?page=${pg}&limit=${lim}&sortBy=createdAt&sortDir=desc${extraParams}`,
+        { token }
+      );
+      allItems = [...allItems, ...data.items];
+      if (allItems.length >= data.total || data.items.length === 0) break;
+      pg++;
+    }
+    return allItems;
+  };
+
   const onExportExcel = async () => {
     try {
-      let allItems: Registration[] = [];
-      let pg = 1;
-      const lim = 200;
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        const data = await apiJson<ListResponse>(
-          `/api/admin/registrations?page=${pg}&limit=${lim}&sortBy=createdAt&sortDir=desc`,
-          { token }
-        );
-        allItems = [...allItems, ...data.items];
-        if (allItems.length >= data.total || data.items.length === 0) break;
-        pg++;
-      }
-
-      const rows = allItems.map((r) => ({
-        'Submitted At': r.createdAt ? new Date(r.createdAt).toLocaleString() : '',
-        'Full Name': r.fullName || '',
-        'Age': r.age ?? '',
-        'WhatsApp': r.whatsappNumber || '',
-        'Email': r.email || '',
-        'District': r.district || '',
-        'Accompanying Infants (0-5)': r.accompanyingInfants ?? 0,
-        'Accompanying Children (5-12)': r.accompanyingChildren ?? 0,
-        'Accompanying Companions (12+)': r.accompanyingCompanions ?? 0,
-        'Venture / Business': r.ventureName || '',
-        'Industry': r.industry || '',
-        'Business Stage': r.businessStage || '',
-        'Business Scale': r.businessScale || '',
-        'Payment Verified': r.paymentVerified ? 'Yes' : 'No',
-        'Pass Generated': r.entryPassGenerated ? 'Yes' : 'No',
-        'Pass ID': r.entryPassId || '',
-        'Pass Sent At': r.entryPassSentAt ? new Date(r.entryPassSentAt).toLocaleString() : '',
-      }));
-
+      const allItems = await fetchAllPages('');
+      const rows = buildExcelRows(allItems);
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Registrations');
       XLSX.writeFile(wb, `wes-registrations-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (err) {
+      const e = err as Error & { code?: number };
+      if (e?.code === 401) { onLogout(); return; }
+      onToast(e.message, 'error');
+    }
+  };
+
+  const onExportDistrictExcel = async () => {
+    if (!filters.district) return;
+    try {
+      const allItems = await fetchAllPages(`&district=${encodeURIComponent(filters.district)}`);
+      const rows = buildExcelRows(allItems);
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, filters.district);
+      const districtSlug = filters.district.toLowerCase().replace(/\s+/g, '-');
+      XLSX.writeFile(wb, `wes-registrations-${districtSlug}-${new Date().toISOString().slice(0, 10)}.xlsx`);
     } catch (err) {
       const e = err as Error & { code?: number };
       if (e?.code === 401) { onLogout(); return; }
@@ -588,6 +611,11 @@ function Dashboard({
             <div className="text-xs text-foreground/50">Registration Dashboard</div>
           </div>
           <div className="flex items-center gap-3">
+            {filters.district && (
+              <button onClick={onExportDistrictExcel} className="pill pill-outline text-sm hidden md:inline-flex" title={`Export ${filters.district} registrations`}>
+                Export {filters.district}
+              </button>
+            )}
             <button onClick={onExportExcel} className="pill pill-outline text-sm hidden md:inline-flex">
               Export Excel
             </button>
