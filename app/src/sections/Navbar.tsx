@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Menu, X, ArrowRight } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import gsap from 'gsap';
-import RegistrationForm from '../components/RegistrationForm';
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -70,33 +69,10 @@ export default function Navbar() {
               ))}
             </div>
 
-            {/* Desktop Register CTA */}
-            <div className="hidden md:block shrink-0">
-              <RegistrationForm
-                trigger={
-                  <button
-                    className="pill-button inline-flex items-center gap-2 text-white"
-                    style={{ background: 'linear-gradient(135deg, #c4187e 0%, #7318c4 100%)' }}
-                  >
-                    Register Now
-                    <ArrowRight size={15} />
-                  </button>
-                }
-              />
-            </div>
+            {/* Desktop Register CTA — hidden (registration closed) */}
 
-            {/* Mobile: Register button + Hamburger */}
+            {/* Mobile: Hamburger only (registration closed) */}
             <div className="md:hidden flex items-center gap-2 shrink-0">
-              <RegistrationForm
-                trigger={
-                  <button
-                    className="pill-button inline-flex items-center gap-1.5 text-sm text-white"
-                    style={{ padding: '9px 16px', background: 'linear-gradient(135deg, #c4187e 0%, #7318c4 100%)' }}
-                  >
-                    Register
-                  </button>
-                }
-              />
               <button
                 className="rounded-full border border-black/10 bg-black/[0.04] p-2 text-gray-700"
                 onClick={() => setMobileOpen(!mobileOpen)}
@@ -132,18 +108,6 @@ export default function Navbar() {
                 {link.label}
               </button>
             ))}
-            <RegistrationForm
-              trigger={
-                <button
-                  className="pill-button mt-2 inline-flex w-full items-center justify-center gap-2 text-white"
-                  style={{ background: 'linear-gradient(135deg, #c4187e 0%, #7318c4 100%)' }}
-                >
-                  Register Now
-                  <ArrowRight size={16} />
-                </button>
-              }
-            />
-
           </div>
         </div>
       )}

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, CalendarDays, MapPin, Sparkles, Users } from 'lucide-react';
+import { CalendarDays, MapPin, Sparkles, Users } from 'lucide-react';
 import gsap from 'gsap';
-import RegistrationForm from '../components/RegistrationForm';
 
 const spotlightCards = [
   {
@@ -294,14 +293,12 @@ export default function Hero() {
               ref={ctaRef}
               className="mt-6 flex flex-col gap-3 opacity-0 sm:mt-8 sm:flex-row sm:items-center"
             >
-              <RegistrationForm
-                trigger={
-                  <button className="pill-button pill-button-primary inline-flex w-full items-center justify-center gap-2 border border-white/10 sm:w-auto">
-                    Register Now
-                    <ArrowRight size={16} />
-                  </button>
-                }
-              />
+              <div className="inline-flex w-full items-center justify-center gap-2.5 rounded-full border border-white/20 bg-white/10 px-5 py-3 backdrop-blur-sm sm:w-auto">
+                <span className="h-2 w-2 rounded-full bg-rose-400 animate-pulse" />
+                <span className="text-sm font-semibold uppercase tracking-widest text-white/90">
+                  Registrations Closed
+                </span>
+              </div>
               <button
                 onClick={() => document.getElementById('schedule')?.scrollIntoView({ behavior: 'smooth' })}
                 className="pill-button inline-flex w-full items-center justify-center gap-2 border border-white/20 bg-white/10 text-white hover:bg-white/15 sm:w-auto"

@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowRight } from 'lucide-react';
-import RegistrationForm from '@/components/RegistrationForm';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -11,7 +9,7 @@ export default function RegistrationCTA() {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const bodyRef = useRef<HTMLParagraphElement>(null);
   const priceRef = useRef<HTMLDivElement>(null);
-  const ctaRef = useRef<HTMLButtonElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
   const infoRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
@@ -83,58 +81,50 @@ export default function RegistrationCTA() {
           ref={headingRef}
           className="font-['Syne'] text-3xl sm:text-5xl lg:text-[64px] font-bold text-white leading-[1.05] tracking-tight mb-4 sm:mb-6 opacity-0"
         >
-          Make your place part of the room.
+          Registrations are now closed.
         </h2>
 
         <p
           ref={bodyRef}
-          className="mx-auto mb-8 max-w-2xl text-sm leading-relaxed text-white/76 opacity-0 sm:mb-10 sm:text-lg"
+          className="mx-auto mb-10 max-w-2xl text-sm leading-relaxed text-white/76 opacity-0 sm:text-lg"
         >
-          Registration is limited to keep the experience intentional, comfortable, and high value.
-          Join a room filled with women who are serious about business growth, identity, leadership,
-          and meaningful collaboration.
+          We&apos;ve reached capacity for the Women Entrepreneurs Summit 2026. Thank you to everyone
+          who signed up — we&apos;re excited to welcome you on 20 June in Kozhikode.
         </p>
 
+        {/* Closed indicator */}
         <div
           ref={priceRef}
-          className="mb-8 opacity-0 sm:mb-10"
+          className="mb-10 flex flex-col items-center gap-4 opacity-0"
         >
-          <div className="flex items-center justify-center gap-3 sm:gap-4 mb-2">
-            <span className="font-['Syne'] text-2xl sm:text-4xl font-bold text-white/35 line-through decoration-white/50">
-              ₹1,000
-            </span>
-            <span className="rounded-full bg-primary/20 border border-primary/50 px-3 py-1 text-xs sm:text-sm font-bold uppercase tracking-wider text-primary">
-              Early Bird Offer
+          <div className="inline-flex items-center gap-3 rounded-full border border-rose-400/40 bg-rose-500/10 px-6 py-3 backdrop-blur-sm">
+            <span className="h-2.5 w-2.5 rounded-full bg-rose-400 animate-pulse" />
+            <span className="text-base font-bold uppercase tracking-widest text-rose-300">
+              Entry Registrations Closed
             </span>
           </div>
-          <span
-            className="font-['Syne'] text-[52px] sm:text-[80px] font-bold tracking-tight"
+          <p className="text-sm text-white/50 uppercase tracking-widest">
+            No further registrations will be accepted
+          </p>
+        </div>
+
+        {/* Thank you message */}
+        <div
+          ref={ctaRef}
+          className="mb-7 opacity-0 sm:mb-8"
+        >
+          <p
+            className="font-['Syne'] text-xl sm:text-3xl font-semibold text-white/90"
             style={{
               background: 'linear-gradient(90deg, #ffffff, #ffd4ea, #ff8abb)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
-              filter: 'drop-shadow(0 10px 24px rgba(255, 112, 190, 0.28))',
             }}
           >
-            ₹800
-          </span>
-          <span className="mt-2 block text-sm uppercase tracking-wider text-white/55">
-            per participant
-          </span>
+            Thank you for your support &amp; cooperation.
+          </p>
         </div>
-
-        <RegistrationForm
-          trigger={
-            <button
-              ref={ctaRef}
-              className="pill-button pill-button-primary mb-7 inline-flex w-full max-w-[18rem] items-center justify-center gap-3 px-8 py-4 text-base opacity-0 animate-pulse-glow sm:mb-8 sm:max-w-none sm:px-12 sm:py-5 sm:text-xl"
-            >
-              Register Now
-              <ArrowRight size={22} />
-            </button>
-          }
-        />
 
         {/* Event Info */}
         <p
