@@ -31,6 +31,7 @@ export default function Navbar() {
   const navLinks = [
     { label: 'Overview', id: 'about' },
     { label: 'Themes', id: 'highlights' },
+    { label: 'Guests', id: 'guests' },
     { label: 'Program', id: 'schedule' },
     { label: 'Venue', id: 'venue' },
     { label: 'Register', id: 'register' },
