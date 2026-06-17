@@ -9,6 +9,7 @@ import Hero from '../sections/Hero';
 import About from '../sections/About';
 import Highlights from '../sections/Highlights';
 import Guests from '../sections/Guests';
+import SessionPosters from '../sections/SessionPosters';
 import Schedule from '../sections/Schedule';
 import Venue from '../sections/Venue';
 import ShowcaseOpportunity from '../sections/ShowcaseOpportunity';
@@ -62,6 +63,7 @@ export default function Home() {
         <About />
         <Highlights />
         <Guests />
+        <SessionPosters />
         <Schedule />
         <Venue />
         <ShowcaseOpportunity />

@@ -32,6 +32,7 @@ export default function Navbar() {
     { label: 'Overview', id: 'about' },
     { label: 'Themes', id: 'highlights' },
     { label: 'Guests', id: 'guests' },
+    { label: 'Sessions', id: 'sessions' },
     { label: 'Program', id: 'schedule' },
     { label: 'Venue', id: 'venue' },
     { label: 'Register', id: 'register' },
