@@ -11,36 +11,115 @@ const guests = [
     name: 'Rifath Rahman',
     role: 'Co-Founder, Capio Interactive',
     image: '/guest1.webp',
+    label: 'Guest Speaker',
   },
   {
     name: 'PA Shameel Sajjad',
     role: 'General Secretary, Indian Association for Islamic Economics',
     image: '/guest2.webp',
+    label: 'Guest Speaker',
   },
   {
     name: 'Faris OK',
     role: 'Executive committee member and Finance Manager, People’s Foundation',
     image: '/guest3.webp',
+    label: 'Guest Speaker',
   },
   {
     name: 'Dr. Muhammad Shafi',
     role: 'Associate Professor, NIT Calicut',
     image: '/guest4.webp',
+    label: 'Guest Speaker',
   },
   {
     name: 'Dr. Nishad VM',
     role: 'Deputy Executive Director, People’s Foundation',
     image: '/guest5.webp',
+    label: 'Guest Speaker',
   },
   {
     name: 'Abida Rasheed',
     role: 'Celebrity Chef, Malabar food Icon, Entrepreneur',
     image: '/guest6.webp',
+    label: 'Guest Speaker',
   },
   {
     name: 'Dr. Nasreena KK',
     role: 'Vice President, Indian Association for Islamic Economics',
     image: '/guest7.webp',
+    label: 'Guest Speaker',
+  },
+  {
+    name: 'Dr. Aysha Ruby',
+    role: 'Couturier and Apparel Exporter, Chairwoman Fashion and Textile Committee, Global Economic Forum, Germany',
+    image: '/guest8.webp',
+    label: 'Guest Speaker',
+  },
+  {
+    name: 'Shamla Ismail',
+    role: 'MD, SM Garments Owner',
+    image: '/guest9.webp',
+    label: 'Guest Speaker',
+  },
+  {
+    name: 'Sameer Kalikavu',
+    role: 'Secretary, Ithihadul Ulama Kerala and Executive Member, Indian Association for Islamic Economics',
+    image: '/guest10.webp',
+    label: 'Guest Speaker',
+  },
+  {
+    name: 'Naseema KT',
+    role: 'Vice President, JIH Women’s Wing Kerala',
+    image: '/guest11.webp',
+    label: 'WES Voice',
+  },
+  {
+    name: 'Aisha Sameeha',
+    role: 'Founder of Koderfin',
+    image: '/guest12.webp',
+    label: 'Guest Speaker',
+  },
+  {
+    name: 'Dr. Nahas Mala',
+    role: 'Shoora Member, Jamaat-e-Islami Hind Kerala and Deputy Rector, Al Jamia Al Islamiya Santhapuram',
+    image: '/guest13.webp',
+    label: 'Guest Speaker',
+  },
+  {
+    name: 'P Mujeeburahman',
+    role: 'Ameer, Jamaat-e-Islami Hind Kerala',
+    image: '/guest14.webp',
+    label: 'Guest Speaker',
+  },
+  {
+    name: 'Sajitha PTP',
+    role: 'President, JIH Women’s Wing Kerala',
+    image: '/guest15.webp',
+    label: 'WES Voice',
+  },
+  {
+    name: 'Shifana K',
+    role: 'State President, GIO Kerala',
+    image: '/guest16.webp',
+    label: 'Guest Speaker',
+  },
+  {
+    name: 'Mumthas KK',
+    role: 'Founder of Mumzart, Resinart and Business Success Coach',
+    image: '/guest17.webp',
+    label: 'Guest Speaker',
+  },
+  {
+    name: 'PV Rahmabi',
+    role: 'Secretary, Jamaat-e-Islami Hind Kerala',
+    image: '/guest18.webp',
+    label: 'Guest Speaker',
+  },
+  {
+    name: 'Ruksana P',
+    role: 'Vice President, Jamaat-e-Islami Hind Women’s Wing Kerala',
+    image: '/guest19.webp',
+    label: 'Guest Speaker',
   },
 ];
 
@@ -173,7 +252,7 @@ export default function Guests() {
                       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#09010f]/90 via-[#09010f]/24 to-transparent" />
                       <div className="absolute left-4 right-4 top-4 flex items-center justify-between sm:left-5 sm:right-5 sm:top-5">
                         <span className="rounded-full border border-white/14 bg-black/22 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/80 backdrop-blur-md">
-                          Speaker {String(index + 1).padStart(2, '0')}
+                          {guest.label} {String(index + 1).padStart(2, '0')}
                         </span>
                         <span className="h-2.5 w-2.5 rounded-full bg-[#ff6fbd] shadow-[0_0_18px_rgba(255,111,189,0.9)]" />
                       </div>
@@ -182,7 +261,7 @@ export default function Guests() {
                       <h3 className="font-['Syne'] text-2xl font-bold leading-tight tracking-tight text-[#fff1c8] sm:text-3xl">
                         {guest.name}
                       </h3>
-                      <p className="mt-2 min-h-[44px] text-sm leading-6 text-white/68 sm:text-base">
+                      <p className="mt-2 min-h-[68px] text-sm leading-6 text-white/68 sm:text-base">
                         {guest.role}
                       </p>
                     </div>
@@ -193,7 +272,7 @@ export default function Guests() {
           </div>
 
           <div className="mt-8 flex flex-col items-center justify-between gap-5 sm:flex-row">
-            <div className="flex items-center gap-2">
+            <div className="flex max-w-3xl flex-wrap items-center justify-center gap-2">
               {guests.map((guest, index) => (
                 <button
                   key={guest.name}
