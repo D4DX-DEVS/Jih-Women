@@ -286,7 +286,7 @@ function Dashboard({
   onLogout: () => void;
   onToast: (message: string, kind?: 'success' | 'error') => void;
 }) {
-  const [activeTab, setActiveTab] = useState<'registrations' | 'payment-qr' | 'check-ins'>('registrations');
+  const [activeTab, setActiveTab] = useState<'registrations' | 'payment-qr' | 'check-ins' | 'check-outs'>('registrations');
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -655,6 +655,16 @@ function Dashboard({
           >
             Check-ins
           </button>
+          <button
+            onClick={() => setActiveTab('check-outs')}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition ${
+              activeTab === 'check-outs'
+                ? 'border-[#e61980] text-[#e61980]'
+                : 'border-transparent text-foreground/50 hover:text-foreground/70'
+            }`}
+          >
+            Check-outs
+          </button>
         </div>
       </header>
 
@@ -704,8 +714,10 @@ function Dashboard({
           </>
         ) : activeTab === 'payment-qr' ? (
           <PaymentQRManager token={token} onToast={onToast} onLogout={onLogout} />
+        ) : activeTab === 'check-ins' ? (
+          <CheckInsManager mode="check-in" token={token} onToast={onToast} onLogout={onLogout} />
         ) : (
-          <CheckInsManager token={token} onToast={onToast} onLogout={onLogout} />
+          <CheckInsManager mode="check-out" token={token} onToast={onToast} onLogout={onLogout} />
         )}
       </main>
 
@@ -1933,17 +1945,35 @@ function PaymentQRManager({
 type CheckInItem = {
   _id: string;
   fullName?: string;
-  ventureName?: string;
+  age?: number;
+  email?: string;
+  whatsappNumber?: string;
   district?: string;
+  ventureName?: string;
+  industry?: string;
+  businessStage?: string;
+  businessScale?: string;
   entryPassId?: string;
+  accompanyingInfants?: number;
+  accompanyingChildren?: number;
+  accompanyingCompanions?: number;
   checkedInAt?: string;
   checkedInBy?: string;
-  whatsappNumber?: string;
+  checkedOutAt?: string;
+  checkedOutBy?: string;
 };
 
 type CheckInStatsResponse = {
   totalCheckedIn: number;
   totalWithPass: number;
+  percentage: number;
+  // check-out stats variant fields (same response shape, different keys)
+  totalCheckedOut?: number;
+};
+
+type CheckOutStatsResponse = {
+  totalCheckedOut: number;
+  totalCheckedIn: number;
   percentage: number;
 };
 
@@ -1956,14 +1986,25 @@ type CheckInListResponse = {
 };
 
 function CheckInsManager({
+  mode,
   token,
   onToast,
   onLogout,
 }: {
+  mode: 'check-in' | 'check-out';
   token: string;
   onToast: (message: string, kind?: 'success' | 'error') => void;
   onLogout: () => void;
 }) {
+  const isCheckIn = mode === 'check-in';
+  const listEndpoint = isCheckIn ? '/api/admin/check-ins' : '/api/admin/check-outs';
+  const statsEndpoint = isCheckIn ? '/api/admin/check-ins/stats' : '/api/admin/check-outs/stats';
+  const sortByField = isCheckIn ? 'checkedInAt' : 'checkedOutAt';
+  const timestampKey: keyof CheckInItem = isCheckIn ? 'checkedInAt' : 'checkedOutAt';
+  const byKey: keyof CheckInItem = isCheckIn ? 'checkedInBy' : 'checkedOutBy';
+  const exportFilename = isCheckIn
+    ? `wes-check-ins-${new Date().toISOString().slice(0, 10)}.xlsx`
+    : `wes-check-outs-${new Date().toISOString().slice(0, 10)}.xlsx`;
   const [stats, setStats] = useState<CheckInStatsResponse | null>(null);
   const [list, setList] = useState<CheckInListResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1995,12 +2036,12 @@ function CheckInsManager({
 
   const loadStats = useCallback(async () => {
     try {
-      const data = await apiJson<CheckInStatsResponse>('/api/admin/check-ins/stats', { token });
+      const data = await apiJson<CheckInStatsResponse>(statsEndpoint, { token });
       setStats(data);
     } catch (err) {
       if (!handleAuthError(err)) onToast((err as Error).message, 'error');
     }
-  }, [token, handleAuthError, onToast]);
+  }, [token, statsEndpoint, handleAuthError, onToast]);
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -2008,13 +2049,13 @@ function CheckInsManager({
       const params = new URLSearchParams({
         page: String(page),
         limit: String(limit),
-        sortBy: 'checkedInAt',
+        sortBy: sortByField,
         sortDir: 'desc',
       });
       if (debouncedSearch) params.set('search', debouncedSearch);
 
       const data = await apiJson<CheckInListResponse>(
-        `/api/admin/check-ins?${params.toString()}`,
+        `${listEndpoint}?${params.toString()}`,
         { token }
       );
       setList(data);
@@ -2023,7 +2064,7 @@ function CheckInsManager({
     } finally {
       setLoading(false);
     }
-  }, [token, page, limit, debouncedSearch, handleAuthError, onToast]);
+  }, [token, page, limit, debouncedSearch, handleAuthError, onToast, listEndpoint, sortByField]);
 
   useEffect(() => {
     loadStats();
@@ -2041,7 +2082,7 @@ function CheckInsManager({
       // eslint-disable-next-line no-constant-condition
       while (true) {
         const data = await apiJson<CheckInListResponse>(
-          `/api/admin/check-ins?page=${pg}&limit=${lim}&sortBy=checkedInAt&sortDir=desc`,
+          `${listEndpoint}?page=${pg}&limit=${lim}&sortBy=${sortByField}&sortDir=desc`,
           { token }
         );
         allItems = [...allItems, ...data.items];
@@ -2049,20 +2090,33 @@ function CheckInsManager({
         pg++;
       }
 
+      const sheetName = isCheckIn ? 'Check-ins' : 'Check-outs';
+      const actionLabel = isCheckIn ? 'Checked In' : 'Checked Out';
       const rows = allItems.map((ci) => ({
-        'Checked In At': ci.checkedInAt ? new Date(ci.checkedInAt).toLocaleString() : '',
+        [isCheckIn ? 'Checked In At' : 'Checked Out At']:
+          (isCheckIn ? ci.checkedInAt : ci.checkedOutAt)
+            ? new Date((isCheckIn ? ci.checkedInAt : ci.checkedOutAt) as string).toLocaleString()
+            : '',
         'Full Name': ci.fullName || '',
+        'Age': ci.age ?? '',
         'WhatsApp': ci.whatsappNumber || '',
+        'Email': ci.email || '',
         'District': ci.district || '',
         'Venture / Business': ci.ventureName || '',
+        'Industry': ci.industry || '',
+        'Business Stage': ci.businessStage || '',
+        'Business Scale': ci.businessScale || '',
+        'Accompanying Infants (0-5)': ci.accompanyingInfants ?? 0,
+        'Accompanying Children (5-12)': ci.accompanyingChildren ?? 0,
+        'Accompanying Companions (12+)': ci.accompanyingCompanions ?? 0,
         'Pass ID': ci.entryPassId || '',
-        'Checked In By': ci.checkedInBy || '',
+        [`${actionLabel} By`]: (isCheckIn ? ci.checkedInBy : ci.checkedOutBy) || '',
       }));
 
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Check-ins');
-      XLSX.writeFile(wb, `wes-check-ins-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      XLSX.writeFile(wb, exportFilename);
     } catch (err) {
       const e = err as Error & { code?: number };
       if (e?.code === 401) { onLogout(); return; }
@@ -2076,30 +2130,63 @@ function CheckInsManager({
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="glass p-5">
-          <div className="text-xs uppercase tracking-wider text-foreground/50">Checked In</div>
-          <div className="admin-display text-3xl font-bold mt-2">
-            {stats?.totalCheckedIn ?? '—'}
-          </div>
-        </div>
-        <div className="glass p-5">
-          <div className="text-xs uppercase tracking-wider text-foreground/50">Total Passes</div>
-          <div className="admin-display text-3xl font-bold mt-2">
-            {stats?.totalWithPass ?? '—'}
-          </div>
-        </div>
-        <div className="glass p-5">
-          <div className="text-xs uppercase tracking-wider text-foreground/50">Attendance</div>
-          <div className="admin-display text-3xl font-bold mt-2">
-            {stats ? `${stats.percentage}%` : '—'}
-          </div>
-        </div>
-        <div className="glass p-5">
-          <div className="text-xs uppercase tracking-wider text-foreground/50">Remaining</div>
-          <div className="admin-display text-3xl font-bold mt-2">
-            {stats ? stats.totalWithPass - stats.totalCheckedIn : '—'}
-          </div>
-        </div>
+        {isCheckIn ? (
+          <>
+            <div className="glass p-5">
+              <div className="text-xs uppercase tracking-wider text-foreground/50">Checked In</div>
+              <div className="admin-display text-3xl font-bold mt-2">
+                {stats?.totalCheckedIn ?? '—'}
+              </div>
+            </div>
+            <div className="glass p-5">
+              <div className="text-xs uppercase tracking-wider text-foreground/50">Total Passes</div>
+              <div className="admin-display text-3xl font-bold mt-2">
+                {stats?.totalWithPass ?? '—'}
+              </div>
+            </div>
+            <div className="glass p-5">
+              <div className="text-xs uppercase tracking-wider text-foreground/50">Attendance %</div>
+              <div className="admin-display text-3xl font-bold mt-2">
+                {stats ? `${stats.percentage}%` : '—'}
+              </div>
+            </div>
+            <div className="glass p-5">
+              <div className="text-xs uppercase tracking-wider text-foreground/50">Remaining</div>
+              <div className="admin-display text-3xl font-bold mt-2">
+                {stats ? (stats.totalWithPass ?? 0) - (stats.totalCheckedIn ?? 0) : '—'}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="glass p-5">
+              <div className="text-xs uppercase tracking-wider text-foreground/50">Checked Out</div>
+              <div className="admin-display text-3xl font-bold mt-2">
+                {(stats as unknown as CheckOutStatsResponse)?.totalCheckedOut ?? '—'}
+              </div>
+            </div>
+            <div className="glass p-5">
+              <div className="text-xs uppercase tracking-wider text-foreground/50">Checked In (Total)</div>
+              <div className="admin-display text-3xl font-bold mt-2">
+                {(stats as unknown as CheckOutStatsResponse)?.totalCheckedIn ?? '—'}
+              </div>
+            </div>
+            <div className="glass p-5">
+              <div className="text-xs uppercase tracking-wider text-foreground/50">Check-out %</div>
+              <div className="admin-display text-3xl font-bold mt-2">
+                {stats ? `${stats.percentage}%` : '—'}
+              </div>
+            </div>
+            <div className="glass p-5">
+              <div className="text-xs uppercase tracking-wider text-foreground/50">Still Inside</div>
+              <div className="admin-display text-3xl font-bold mt-2">
+                {stats
+                  ? (stats.totalCheckedIn ?? 0) - ((stats as unknown as CheckOutStatsResponse).totalCheckedOut ?? 0)
+                  : '—'}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Controls */}
@@ -2148,7 +2235,9 @@ function CheckInsManager({
           </a>
         </div>
         <div className="mt-2 text-sm text-foreground/50">
-          {list ? `${list.total} checked-in attendee${list.total === 1 ? '' : 's'}` : ''}
+          {list
+            ? `${list.total} ${isCheckIn ? 'checked-in' : 'checked-out'} attendee${list.total === 1 ? '' : 's'}`
+            : ''}
         </div>
       </div>
 
@@ -2162,7 +2251,7 @@ function CheckInsManager({
                 <th>Venture</th>
                 <th>District</th>
                 <th>Pass ID</th>
-                <th>Checked In At</th>
+                <th>{isCheckIn ? 'Checked In At' : 'Checked Out At'}</th>
                 <th>By</th>
               </tr>
             </thead>
@@ -2176,7 +2265,7 @@ function CheckInsManager({
               ) : !list || list.items.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-10 text-foreground/50">
-                    No check-ins yet.
+                    {isCheckIn ? 'No check-ins yet.' : 'No check-outs yet.'}
                   </td>
                 </tr>
               ) : (
@@ -2190,8 +2279,8 @@ function CheckInsManager({
                     <td>
                       <span className="font-mono text-xs">{ci.entryPassId || '—'}</span>
                     </td>
-                    <td className="text-xs">{formatDate(ci.checkedInAt, true)}</td>
-                    <td className="text-xs text-foreground/60">{ci.checkedInBy || '—'}</td>
+                    <td className="text-xs">{formatDate(ci[timestampKey] as string | undefined, true)}</td>
+                    <td className="text-xs text-foreground/60">{(ci[byKey] as string) || '—'}</td>
                   </tr>
                 ))
               )}

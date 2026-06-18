@@ -540,7 +540,7 @@ router.get('/check-ins', async (req, res) => {
 
     const [items, total] = await Promise.all([
       Registration.find(query)
-        .select('fullName ventureName district entryPassId checkedInAt checkedInBy whatsappNumber')
+        .select('fullName age email whatsappNumber district ventureName industry businessStage businessScale entryPassId accompanyingInfants accompanyingChildren accompanyingCompanions checkedInAt checkedInBy checkedOutAt checkedOutBy')
         .sort({ [sortField]: sortDirection })
         .skip(skip)
         .limit(limitNum)
@@ -622,6 +622,132 @@ router.get('/check-ins/export', async (_req, res) => {
   } catch (err) {
     console.error('[admin] check-ins export error:', err);
     res.status(500).json({ error: 'Failed to export check-ins' });
+  }
+});
+
+/* ===================== CHECK-OUT (QR SCANNING) ===================== */
+
+// Scan / check-out by passId
+router.post('/check-out/:passId', async (req, res) => {
+  try {
+    const passId = String(req.params.passId).trim().toUpperCase();
+    if (!passId) return res.status(400).json({ error: 'Pass ID is required' });
+
+    const doc = await Registration.findOne({ entryPassId: passId });
+    if (!doc) {
+      return res.status(404).json({ error: 'Invalid pass', passId });
+    }
+
+    if (!doc.checkedIn) {
+      return res.status(422).json({
+        error: 'Not checked in — cannot check out',
+        passId,
+        fullName: doc.fullName,
+      });
+    }
+
+    if (doc.checkedOut) {
+      return res.status(409).json({
+        error: 'Already checked out',
+        passId,
+        fullName: doc.fullName,
+        checkedOutAt: doc.checkedOutAt,
+        checkedOutBy: doc.checkedOutBy,
+      });
+    }
+
+    doc.checkedOut = true;
+    doc.checkedOutAt = new Date();
+    doc.checkedOutBy = req.admin?.username || 'admin';
+    await doc.save();
+
+    res.json({
+      ok: true,
+      passId,
+      fullName: doc.fullName,
+      ventureName: doc.ventureName,
+      district: doc.district,
+      checkedOutAt: doc.checkedOutAt,
+      accompanyingInfants: doc.accompanyingInfants ?? 0,
+      accompanyingChildren: doc.accompanyingChildren ?? 0,
+      accompanyingCompanions: doc.accompanyingCompanions ?? 0,
+    });
+  } catch (err) {
+    console.error('[admin] check-out error:', err);
+    res.status(500).json({ error: 'Check-out failed' });
+  }
+});
+
+// List checked-out attendees
+router.get('/check-outs', async (req, res) => {
+  try {
+    const {
+      search = '',
+      sortBy = 'checkedOutAt',
+      sortDir = 'desc',
+      page = 1,
+      limit = 20,
+    } = req.query;
+
+    const query = { checkedOut: true };
+
+    if (search && String(search).trim().length > 0) {
+      const re = new RegExp(escapeRegex(String(search).trim()), 'i');
+      query.$or = [
+        { fullName: re },
+        { entryPassId: re },
+        { ventureName: re },
+        { district: re },
+      ];
+    }
+
+    const allowedSort = new Set(['checkedOutAt', 'fullName', 'district', 'ventureName']);
+    const sortField = allowedSort.has(String(sortBy)) ? String(sortBy) : 'checkedOutAt';
+    const sortDirection = String(sortDir).toLowerCase() === 'asc' ? 1 : -1;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(200, Math.max(1, parseInt(limit, 10) || 20));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [items, total] = await Promise.all([
+      Registration.find(query)
+        .select('fullName age email whatsappNumber district ventureName industry businessStage businessScale entryPassId accompanyingInfants accompanyingChildren accompanyingCompanions checkedInAt checkedInBy checkedOutAt checkedOutBy')
+        .sort({ [sortField]: sortDirection })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Registration.countDocuments(query),
+    ]);
+
+    res.json({
+      items,
+      total,
+      page: pageNum,
+      limit: limitNum,
+      pages: Math.ceil(total / limitNum) || 1,
+    });
+  } catch (err) {
+    console.error('[admin] check-outs list error:', err);
+    res.status(500).json({ error: 'Failed to load check-outs' });
+  }
+});
+
+// Check-out stats
+router.get('/check-outs/stats', async (_req, res) => {
+  try {
+    const [totalCheckedOut, totalCheckedIn] = await Promise.all([
+      Registration.countDocuments({ checkedOut: true }),
+      Registration.countDocuments({ checkedIn: true }),
+    ]);
+
+    res.json({
+      totalCheckedOut,
+      totalCheckedIn,
+      percentage: totalCheckedIn > 0 ? Math.round((totalCheckedOut / totalCheckedIn) * 100) : 0,
+    });
+  } catch (err) {
+    console.error('[admin] check-out stats error:', err);
+    res.status(500).json({ error: 'Failed to load check-out stats' });
   }
 });
 
