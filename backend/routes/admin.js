@@ -40,6 +40,7 @@ router.get('/registrations', async (req, res) => {
       businessStage,
       businessScale,
       district,
+      hasAccompanying,
       sortBy = 'createdAt',
       sortDir = 'desc',
       page = 1,
@@ -63,6 +64,27 @@ router.get('/registrations', async (req, res) => {
     if (businessStage) query.businessStage = businessStage;
     if (businessScale) query.businessScale = businessScale;
     if (district) query.district = new RegExp('^' + escapeRegex(String(district)) + '$', 'i');
+
+    if (hasAccompanying === 'companions') {
+      query.accompanyingCompanions = { $gt: 0 };
+    } else if (hasAccompanying === 'children') {
+      query.accompanyingChildren = { $gt: 0 };
+    } else if (hasAccompanying === 'infants') {
+      query.accompanyingInfants = { $gt: 0 };
+    } else if (hasAccompanying === 'any') {
+      const anyAccompanyingOr = [
+        { accompanyingCompanions: { $gt: 0 } },
+        { accompanyingChildren: { $gt: 0 } },
+        { accompanyingInfants: { $gt: 0 } },
+      ];
+      if (query.$or) {
+        // Combine search $or and accompanying $or with $and to avoid conflict
+        query.$and = [{ $or: query.$or }, { $or: anyAccompanyingOr }];
+        delete query.$or;
+      } else {
+        query.$or = anyAccompanyingOr;
+      }
+    }
 
     const sortField = SORTABLE_FIELDS.has(String(sortBy)) ? String(sortBy) : 'createdAt';
     const sortDirection = String(sortDir).toLowerCase() === 'asc' ? 1 : -1;

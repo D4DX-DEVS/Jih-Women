@@ -85,6 +85,7 @@ type Filters = {
   businessStage: string;
   businessScale: string;
   district: string;
+  hasAccompanying: string;
 };
 
 type Toast = { id: number; message: string; kind: 'success' | 'error' };
@@ -143,6 +144,7 @@ const DEFAULT_FILTERS: Filters = {
   businessStage: '',
   businessScale: '',
   district: '',
+  hasAccompanying: '',
 };
 
 const SORT_FIELDS: { value: string; label: string }[] = [
@@ -897,7 +899,8 @@ function FiltersBar({
     !!filters.industry ||
     !!filters.businessStage ||
     !!filters.businessScale ||
-    !!filters.district;
+    !!filters.district ||
+    !!filters.hasAccompanying;
 
   return (
     <div className="glass p-5">
@@ -914,7 +917,7 @@ function FiltersBar({
           Filters
           {isActive && (
             <span className="rounded-full bg-[#e61980] text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center leading-none">
-              {[filters.search, filters.industry, filters.businessStage, filters.businessScale, filters.district].filter(Boolean).length}
+              {[filters.search, filters.industry, filters.businessStage, filters.businessScale, filters.district, filters.hasAccompanying].filter(Boolean).length}
             </span>
           )}
         </button>
@@ -1001,6 +1004,22 @@ function FiltersBar({
             {KERALA_DISTRICTS.map((d) => (
               <option key={d} value={d}>{d}</option>
             ))}
+          </select>
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-xs font-medium uppercase tracking-wider text-foreground/60 mb-1.5">
+            Accompanying
+          </label>
+          <select
+            className="input"
+            value={filters.hasAccompanying}
+            onChange={(e) => onFilterChange('hasAccompanying', e.target.value)}
+          >
+            <option value="">Any</option>
+            <option value="any">Has Any Accompanying</option>
+            <option value="companions">Has Companions (12+)</option>
+            <option value="children">Has Children (5–12)</option>
+            <option value="infants">Has Infants (0–5)</option>
           </select>
         </div>
         <div className="md:col-span-3">
