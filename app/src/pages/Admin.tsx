@@ -286,7 +286,7 @@ function Dashboard({
   onLogout: () => void;
   onToast: (message: string, kind?: 'success' | 'error') => void;
 }) {
-  const [activeTab, setActiveTab] = useState<'registrations' | 'payment-qr' | 'check-ins' | 'check-outs'>('registrations');
+  const [activeTab, setActiveTab] = useState<'registrations' | 'payment-qr' | 'check-ins' | 'check-outs' | 'settings'>('registrations');
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -568,6 +568,27 @@ function Dashboard({
     return allItems;
   };
 
+  const fetchAllPagesWithFilters = async (customFilters: Filters, customSortBy: string, customSortDir: string) => {
+    let allItems: Registration[] = [];
+    let pg = 1;
+    const lim = 200;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const params = new URLSearchParams({
+        page: String(pg),
+        limit: String(lim),
+        sortBy: customSortBy,
+        sortDir: customSortDir,
+        ...Object.fromEntries(Object.entries(customFilters).filter(([, v]) => Boolean(v))),
+      });
+      const data = await apiJson<ListResponse>(`/api/admin/registrations?${params.toString()}`, { token });
+      allItems = [...allItems, ...data.items];
+      if (allItems.length >= data.total || data.items.length === 0) break;
+      pg++;
+    }
+    return allItems;
+  };
+
   const onExportExcel = async () => {
     try {
       const allItems = await fetchAllPages('');
@@ -576,6 +597,28 @@ function Dashboard({
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Registrations');
       XLSX.writeFile(wb, `wes-registrations-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (err) {
+      const e = err as Error & { code?: number };
+      if (e?.code === 401) { onLogout(); return; }
+      onToast(e.message, 'error');
+    }
+  };
+
+  const hasActiveFilters = Object.values(filters).some(Boolean);
+
+  const onExportFilteredExcel = async () => {
+    try {
+      const allItems = await fetchAllPagesWithFilters(filters, sortBy, sortDir);
+      const rows = buildExcelRows(allItems);
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Filtered');
+      const suffix = filters.district
+        ? `-${filters.district.toLowerCase().replace(/\s+/g, '-')}`
+        : filters.industry
+          ? `-${filters.industry.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+          : '-filtered';
+      XLSX.writeFile(wb, `wes-registrations${suffix}-${new Date().toISOString().slice(0, 10)}.xlsx`);
     } catch (err) {
       const e = err as Error & { code?: number };
       if (e?.code === 401) { onLogout(); return; }
@@ -614,6 +657,15 @@ function Dashboard({
             {filters.district && (
               <button onClick={onExportDistrictExcel} className="pill pill-outline text-sm hidden md:inline-flex" title={`Export ${filters.district} registrations`}>
                 Export {filters.district}
+              </button>
+            )}
+            {hasActiveFilters && (
+              <button
+                onClick={onExportFilteredExcel}
+                className="pill pill-outline text-sm hidden md:inline-flex"
+                title={`Export ${list?.total ?? ''} filtered results`}
+              >
+                Export Filtered {list?.total != null ? `(${list.total})` : ''}
               </button>
             )}
             <button onClick={onExportExcel} className="pill pill-outline text-sm hidden md:inline-flex">
@@ -664,6 +716,16 @@ function Dashboard({
             }`}
           >
             Check-outs
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition ${
+              activeTab === 'settings'
+                ? 'border-[#e61980] text-[#e61980]'
+                : 'border-transparent text-foreground/50 hover:text-foreground/70'
+            }`}
+          >
+            Settings
           </button>
         </div>
       </header>
@@ -716,8 +778,10 @@ function Dashboard({
           <PaymentQRManager token={token} onToast={onToast} onLogout={onLogout} />
         ) : activeTab === 'check-ins' ? (
           <CheckInsManager mode="check-in" token={token} onToast={onToast} onLogout={onLogout} />
-        ) : (
+        ) : activeTab === 'check-outs' ? (
           <CheckInsManager mode="check-out" token={token} onToast={onToast} onLogout={onLogout} />
+        ) : (
+          <SettingsManager token={token} onToast={onToast} onLogout={onLogout} />
         )}
       </main>
 
@@ -730,6 +794,7 @@ function Dashboard({
           onToast={onToast}
           onRefresh={refreshAfterMutation}
           onLogout={onLogout}
+          options={options}
         />
       )}
 
@@ -1209,6 +1274,7 @@ function DetailModal({
   onToast,
   onRefresh,
   onLogout,
+  options,
 }: {
   detail: Registration | null;
   onClose: () => void;
@@ -1217,8 +1283,60 @@ function DetailModal({
   onToast: (message: string, kind?: 'success' | 'error') => void;
   onRefresh: () => Promise<void>;
   onLogout: () => void;
+  options: OptionsResponse;
 }) {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editValues, setEditValues] = useState<Record<string, string | number>>({});
+
+  // Populate edit form when detail loads
+  useEffect(() => {
+    if (detail) {
+      setEditValues({
+        fullName: detail.fullName ?? '',
+        age: detail.age ?? '',
+        whatsappNumber: detail.whatsappNumber ?? '',
+        email: detail.email ?? '',
+        district: detail.district ?? '',
+        ventureName: detail.ventureName ?? '',
+        industry: detail.industry ?? '',
+        businessStage: detail.businessStage ?? '',
+        businessScale: detail.businessScale ?? '',
+        accompanyingInfants: detail.accompanyingInfants ?? 0,
+        accompanyingChildren: detail.accompanyingChildren ?? 0,
+        accompanyingCompanions: detail.accompanyingCompanions ?? 0,
+      });
+      setEditMode(false);
+    }
+  }, [detail?._id]);
+
+  const handleSaveEdit = async () => {
+    if (!detail) return;
+    setEditSaving(true);
+    try {
+      await apiJson(`/api/admin/registrations/${detail._id}`, {
+        method: 'PATCH',
+        token,
+        body: editValues,
+      });
+      onToast('Registration updated', 'success');
+      setEditMode(false);
+      await onRefresh();
+    } catch (err) {
+      const e = err as Error & { code?: number };
+      if (e?.code === 401) { onLogout(); return; }
+      onToast(e.message || 'Failed to save changes', 'error');
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const setField = (key: string, value: string | number) =>
+    setEditValues((prev) => ({ ...prev, [key]: value }));
+
+  const inputCls = 'w-full rounded-lg bg-black/[0.04] border border-black/12 text-foreground placeholder-foreground/30 px-3 py-2 text-sm outline-none focus:border-primary/50';
+  const labelCls = 'block text-[10px] uppercase tracking-wider text-foreground/50 mb-1';
 
   const handleAction = async (action: string, method: string, path: string) => {
     if (!detail) return;
@@ -1324,16 +1442,82 @@ function DetailModal({
 
             <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start">
               <div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  {fields.map(([label, val]) => (
-                    <div key={label} className="rounded-xl border border-black/8 bg-white/[0.03] px-4 py-3">
-                      <div className="text-xs uppercase tracking-wider text-foreground/50">{label}</div>
-                      <div className="mt-1 break-words text-foreground/90">
-                        {val === null || val === undefined || val === '' ? '—' : String(val)}
+                {editMode ? (
+                  <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 md:p-5 space-y-4">
+                    <div className="text-xs uppercase tracking-wider text-foreground/50 mb-2">Editing Registration</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelCls}>Full Name</label>
+                        <input className={inputCls} value={editValues.fullName as string} onChange={(e) => setField('fullName', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Age</label>
+                        <input type="number" className={inputCls} value={editValues.age as number} onChange={(e) => setField('age', Number(e.target.value))} min={10} max={120} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>WhatsApp Number</label>
+                        <input className={inputCls} value={editValues.whatsappNumber as string} onChange={(e) => setField('whatsappNumber', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Email</label>
+                        <input type="email" className={inputCls} value={editValues.email as string} onChange={(e) => setField('email', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>District</label>
+                        <select className={inputCls} value={editValues.district as string} onChange={(e) => setField('district', e.target.value)}>
+                          {KERALA_DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={labelCls}>Venture / Business Name</label>
+                        <input className={inputCls} value={editValues.ventureName as string} onChange={(e) => setField('ventureName', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Industry / Sector</label>
+                        <select className={inputCls} value={editValues.industry as string} onChange={(e) => setField('industry', e.target.value)}>
+                          {options.industry.map((v) => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={labelCls}>Business Stage</label>
+                        <select className={inputCls} value={editValues.businessStage as string} onChange={(e) => setField('businessStage', e.target.value)}>
+                          {options.businessStage.map((v) => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={labelCls}>Business Scale</label>
+                        <select className={inputCls} value={editValues.businessScale as string} onChange={(e) => setField('businessScale', e.target.value)}>
+                          {options.businessScale.map((v) => <option key={v} value={v}>{v}</option>)}
+                        </select>
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className={labelCls}>Infants (0–5)</label>
+                        <input type="number" className={inputCls} min={0} value={editValues.accompanyingInfants as number} onChange={(e) => setField('accompanyingInfants', Math.max(0, Number(e.target.value)))} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Children (5–12)</label>
+                        <input type="number" className={inputCls} min={0} value={editValues.accompanyingChildren as number} onChange={(e) => setField('accompanyingChildren', Math.max(0, Number(e.target.value)))} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Companions (12+)</label>
+                        <input type="number" className={inputCls} min={0} value={editValues.accompanyingCompanions as number} onChange={(e) => setField('accompanyingCompanions', Math.max(0, Number(e.target.value)))} />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    {fields.map(([label, val]) => (
+                      <div key={label} className="rounded-xl border border-black/8 bg-white/[0.03] px-4 py-3">
+                        <div className="text-xs uppercase tracking-wider text-foreground/50">{label}</div>
+                        <div className="mt-1 break-words text-foreground/90">
+                          {val === null || val === undefined || val === '' ? '—' : String(val)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {detail.paymentScreenshot && (
                   <div className="mt-5">
@@ -1423,9 +1607,25 @@ function DetailModal({
           <button onClick={onDelete} className="pill pill-outline pill-danger text-sm">
             Delete
           </button>
-          <button onClick={onClose} className="pill pill-primary text-sm">
-            Close
-          </button>
+          {!editMode ? (
+            <button onClick={() => setEditMode(true)} className="pill pill-outline text-sm">
+              Edit
+            </button>
+          ) : (
+            <>
+              <button onClick={() => setEditMode(false)} className="pill pill-outline text-sm" disabled={editSaving}>
+                Cancel
+              </button>
+              <button onClick={handleSaveEdit} className="pill pill-primary text-sm" disabled={editSaving}>
+                {editSaving ? <span className="spinner" /> : 'Save Changes'}
+              </button>
+            </>
+          )}
+          {!editMode && (
+            <button onClick={onClose} className="pill pill-primary text-sm">
+              Close
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -1504,6 +1704,112 @@ function ConfirmModal({
             {submitting ? <span className="spinner" /> : confirmLabel}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------- SETTINGS MANAGER ----------------- */
+
+function SettingsManager({
+  token,
+  onToast,
+  onLogout,
+}: {
+  token: string;
+  onToast: (message: string, kind?: 'success' | 'error') => void;
+  onLogout: () => void;
+}) {
+  const [registrationEnabled, setRegistrationEnabled] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const data = await apiJson<{ registrationEnabled: boolean }>(
+          '/api/admin/settings',
+          { token }
+        );
+        if (active) setRegistrationEnabled(data.registrationEnabled);
+      } catch (e: unknown) {
+        if (!active) return;
+        const err = e as Error & { code?: number };
+        if (err.code === 401) { onLogout(); return; }
+        onToast('Failed to load settings', 'error');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [token, onLogout, onToast]);
+
+  const toggle = async (enabled: boolean) => {
+    setSaving(true);
+    try {
+      const data = await apiJson<{ registrationEnabled: boolean }>(
+        '/api/admin/settings',
+        { token, method: 'PATCH', body: { registrationEnabled: enabled } }
+      );
+      setRegistrationEnabled(data.registrationEnabled);
+      onToast(
+        data.registrationEnabled
+          ? 'Registrations are now OPEN — landing page button is visible.'
+          : 'Registrations are now CLOSED — landing page button is hidden.',
+        'success'
+      );
+    } catch (e: unknown) {
+      const err = e as Error & { code?: number };
+      if (err.code === 401) { onLogout(); return; }
+      onToast('Failed to save settings', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="glass p-6 sm:p-8">
+        <h2 className="admin-display text-xl font-semibold mb-1">Registration Settings</h2>
+        <p className="text-sm text-foreground/50 mb-8">
+          Toggle whether the public registration button and form are shown on the landing page.
+          When disabled, the landing page shows &quot;Registrations are now closed&quot; and the server
+          rejects any new submissions.
+        </p>
+
+        {loading ? (
+          <div className="flex items-center gap-3 text-sm text-foreground/50">
+            <span className="spinner" /> Loading settings…
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-6">
+            <div>
+              <p className="font-medium text-foreground mb-0.5">Public Registration</p>
+              <p className="text-sm text-foreground/50">
+                {registrationEnabled
+                  ? 'Currently OPEN — the Register button is visible on the landing page.'
+                  : 'Currently CLOSED — the Register button is hidden on the landing page.'}
+              </p>
+            </div>
+
+            <button
+              onClick={() => toggle(!registrationEnabled)}
+              disabled={saving}
+              className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-60 ${
+                registrationEnabled ? 'bg-emerald-500' : 'bg-white/20'
+              }`}
+              role="switch"
+              aria-checked={registrationEnabled ?? false}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                  registrationEnabled ? 'translate-x-7' : 'translate-x-0.5'
+                }`}
+              />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

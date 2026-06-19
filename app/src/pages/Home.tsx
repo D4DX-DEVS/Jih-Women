@@ -19,15 +19,24 @@ import RegistrationForm from '../components/RegistrationForm';
 
 gsap.registerPlugin(ScrollTrigger);
 
+const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
+
 export default function Home() {
   const [showPopup, setShowPopup] = useState(false);
   const hiddenTriggerRef = useRef<HTMLButtonElement>(null);
+  const [registrationEnabled, setRegistrationEnabled] = useState(false);
 
-  // Show welcome popup after a short delay (temporarily hidden)
-  // useEffect(() => {
-  //   const timer = setTimeout(() => setShowPopup(true), 1800);
-  //   return () => clearTimeout(timer);
-  // }, []);
+  // Fetch registration toggle state
+  useEffect(() => {
+    fetch(`${API_URL}/api/registrations/settings`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (typeof data.registrationEnabled === 'boolean') {
+          setRegistrationEnabled(data.registrationEnabled);
+        }
+      })
+      .catch(() => { /* silently fail — stays disabled */ });
+  }, []);
 
   useEffect(() => {
     const lenis = new Lenis({
@@ -57,7 +66,7 @@ export default function Home() {
 
   return (
     <div className="relative">
-      <Navbar />
+      <Navbar registrationEnabled={registrationEnabled} />
       <main>
         <Hero />
         <About />
@@ -67,7 +76,7 @@ export default function Home() {
         <Schedule />
         <Venue />
         <ShowcaseOpportunity />
-        <RegistrationCTA />
+        <RegistrationCTA registrationEnabled={registrationEnabled} />
       </main>
       <Footer />
 

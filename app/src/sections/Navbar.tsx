@@ -1,8 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import gsap from 'gsap';
+import RegistrationForm from '../components/RegistrationForm';
 
-export default function Navbar() {
+type Props = {
+  registrationEnabled: boolean;
+};
+
+export default function Navbar({ registrationEnabled }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const mobileLinksRef = useRef<HTMLDivElement>(null);
@@ -35,7 +40,7 @@ export default function Navbar() {
     { label: 'Sessions', id: 'sessions' },
     { label: 'Program', id: 'schedule' },
     { label: 'Venue', id: 'venue' },
-    { label: 'Register', id: 'register' },
+    ...(registrationEnabled ? [{ label: 'Register', id: 'register' }] : []),
   ];
 
   return (
@@ -71,9 +76,21 @@ export default function Navbar() {
               ))}
             </div>
 
-            {/* Desktop Register CTA — hidden (registration closed) */}
+            {/* Desktop Register CTA */}
+            {registrationEnabled && (
+              <RegistrationForm
+                trigger={
+                  <button
+                    className="pill-button inline-flex items-center gap-2 font-semibold text-sm px-5 py-2.5"
+                    style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #db2777 100%)', color: '#fff' }}
+                  >
+                    Register Now
+                  </button>
+                }
+              />
+            )}
 
-            {/* Mobile: Hamburger only (registration closed) */}
+            {/* Mobile: Hamburger */}
             <div className="md:hidden flex items-center gap-2 shrink-0">
               <button
                 className="rounded-full border border-black/10 bg-black/[0.04] p-2 text-gray-700"

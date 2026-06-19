@@ -2,6 +2,8 @@ const express = require('express');
 const XLSX = require('xlsx');
 const Registration = require('../models/Registration');
 const PaymentQR = require('../models/PaymentQR');
+const Settings = require('../models/Settings');
+const { getSettings } = require('../models/Settings');
 const { requireAdmin } = require('../middleware/auth');
 const { qrImageUpload, getCdnUrl, deleteFile, keyFromUrl, s3 } = require('../config/spaces');
 const { PutObjectCommand } = require('@aws-sdk/client-s3');
@@ -218,6 +220,111 @@ router.delete('/registrations/:id', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(400).json({ error: 'Invalid id' });
+  }
+});
+
+// Edit a registration's core fields (admin only)
+router.patch('/registrations/:id', async (req, res) => {
+  try {
+    const {
+      INDUSTRY_OPTIONS,
+      BUSINESS_STAGE_OPTIONS,
+      BUSINESS_SCALE_OPTIONS,
+    } = require('../models/Registration');
+
+    const KERALA_DISTRICTS = [
+      'Thiruvananthapuram', 'Kollam', 'Pathanamthitta', 'Alappuzha', 'Kottayam',
+      'Idukki', 'Ernakulam', 'Thrissur', 'Palakkad', 'Malappuram',
+      'Kozhikode', 'Wayanad', 'Kannur', 'Kasaragod',
+    ];
+
+    const allowed = {
+      fullName: req.body.fullName,
+      age: req.body.age,
+      whatsappNumber: req.body.whatsappNumber,
+      email: req.body.email,
+      district: req.body.district,
+      ventureName: req.body.ventureName,
+      industry: req.body.industry,
+      businessStage: req.body.businessStage,
+      businessScale: req.body.businessScale,
+      accompanyingInfants: req.body.accompanyingInfants,
+      accompanyingChildren: req.body.accompanyingChildren,
+      accompanyingCompanions: req.body.accompanyingCompanions,
+    };
+
+    // Build sanitised update object — only include provided fields
+    const update = {};
+
+    if (allowed.fullName !== undefined) {
+      const v = String(allowed.fullName).trim();
+      if (!v || v.length > 120) return res.status(400).json({ error: 'Invalid fullName' });
+      update.fullName = v;
+    }
+    if (allowed.age !== undefined) {
+      const v = Number(allowed.age);
+      if (!Number.isInteger(v) || v < 10 || v > 120) return res.status(400).json({ error: 'Invalid age' });
+      update.age = v;
+    }
+    if (allowed.whatsappNumber !== undefined) {
+      const v = String(allowed.whatsappNumber).trim();
+      if (!v || v.length > 20) return res.status(400).json({ error: 'Invalid whatsappNumber' });
+      update.whatsappNumber = v;
+    }
+    if (allowed.email !== undefined) {
+      const v = String(allowed.email).trim().toLowerCase();
+      if (!v || v.length > 200) return res.status(400).json({ error: 'Invalid email' });
+      update.email = v;
+    }
+    if (allowed.district !== undefined) {
+      const v = String(allowed.district).trim();
+      if (!KERALA_DISTRICTS.includes(v)) return res.status(400).json({ error: 'Invalid district' });
+      update.district = v;
+    }
+    if (allowed.ventureName !== undefined) {
+      const v = String(allowed.ventureName).trim();
+      update.ventureName = v.length > 0 ? v : 'N/A';
+    }
+    if (allowed.industry !== undefined) {
+      if (!INDUSTRY_OPTIONS.includes(allowed.industry)) return res.status(400).json({ error: 'Invalid industry' });
+      update.industry = allowed.industry;
+    }
+    if (allowed.businessStage !== undefined) {
+      if (!BUSINESS_STAGE_OPTIONS.includes(allowed.businessStage)) return res.status(400).json({ error: 'Invalid businessStage' });
+      update.businessStage = allowed.businessStage;
+    }
+    if (allowed.businessScale !== undefined) {
+      if (!BUSINESS_SCALE_OPTIONS.includes(allowed.businessScale)) return res.status(400).json({ error: 'Invalid businessScale' });
+      update.businessScale = allowed.businessScale;
+    }
+    if (allowed.accompanyingInfants !== undefined) {
+      const v = Math.max(0, parseInt(allowed.accompanyingInfants, 10) || 0);
+      update.accompanyingInfants = v;
+    }
+    if (allowed.accompanyingChildren !== undefined) {
+      const v = Math.max(0, parseInt(allowed.accompanyingChildren, 10) || 0);
+      update.accompanyingChildren = v;
+    }
+    if (allowed.accompanyingCompanions !== undefined) {
+      const v = Math.max(0, parseInt(allowed.accompanyingCompanions, 10) || 0);
+      update.accompanyingCompanions = v;
+    }
+
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({ error: 'No valid fields provided' });
+    }
+
+    const doc = await Registration.findByIdAndUpdate(
+      req.params.id,
+      { $set: update },
+      { new: true, runValidators: true }
+    ).lean();
+
+    if (!doc) return res.status(404).json({ error: 'Not found' });
+    res.json(doc);
+  } catch (err) {
+    console.error('[admin] edit registration error:', err);
+    res.status(400).json({ error: err.message || 'Failed to update registration' });
   }
 });
 
@@ -748,6 +855,40 @@ router.get('/check-outs/stats', async (_req, res) => {
   } catch (err) {
     console.error('[admin] check-out stats error:', err);
     res.status(500).json({ error: 'Failed to load check-out stats' });
+  }
+});
+
+/* ===================== SETTINGS ===================== */
+
+// Get current settings
+router.get('/settings', async (_req, res) => {
+  try {
+    const settings = await getSettings();
+    res.json({ registrationEnabled: settings.registrationEnabled });
+  } catch (err) {
+    console.error('[admin] get settings error:', err);
+    res.status(500).json({ error: 'Failed to load settings' });
+  }
+});
+
+// Update settings
+router.patch('/settings', async (req, res) => {
+  try {
+    const { registrationEnabled } = req.body;
+    if (typeof registrationEnabled !== 'boolean') {
+      return res.status(400).json({ error: 'registrationEnabled must be a boolean' });
+    }
+    let doc = await Settings.findOne();
+    if (!doc) {
+      doc = await Settings.create({ registrationEnabled });
+    } else {
+      doc.registrationEnabled = registrationEnabled;
+      await doc.save();
+    }
+    res.json({ registrationEnabled: doc.registrationEnabled });
+  } catch (err) {
+    console.error('[admin] patch settings error:', err);
+    res.status(500).json({ error: 'Failed to update settings' });
   }
 });
 

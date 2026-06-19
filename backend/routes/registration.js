@@ -7,6 +7,7 @@ const {
   BUSINESS_STAGE_OPTIONS,
   BUSINESS_SCALE_OPTIONS,
 } = require('../models/Registration');
+const { getSettings } = require('../models/Settings');
 const { paymentScreenshotUpload, getCdnUrl } = require('../config/spaces');
 const { sendWhatsAppText } = require('../config/dxing');
 
@@ -28,6 +29,17 @@ router.get('/options', (_req, res) => {
     businessStage: BUSINESS_STAGE_OPTIONS,
     businessScale: BUSINESS_SCALE_OPTIONS,
   });
+});
+
+// Public endpoint: get registration settings (enabled/disabled)
+router.get('/settings', async (_req, res) => {
+  try {
+    const settings = await getSettings();
+    res.json({ registrationEnabled: settings.registrationEnabled });
+  } catch (err) {
+    console.error('[registration] settings error:', err);
+    res.status(500).json({ error: 'Failed to load settings' });
+  }
 });
 
 // Public endpoint: get the currently active payment QR
@@ -52,6 +64,17 @@ router.post('/', submitLimiter, (req, res) => {
   const upload = paymentScreenshotUpload.single('paymentScreenshot');
 
   upload(req, res, async (uploadErr) => {
+    // Check registration is currently enabled before accepting uploads
+    try {
+      const settings = await getSettings();
+      if (!settings.registrationEnabled) {
+        return res.status(403).json({ error: 'Registrations are currently closed.' });
+      }
+    } catch (err) {
+      console.error('[registration] settings check error:', err);
+      return res.status(500).json({ error: 'Failed to verify registration status.' });
+    }
+
     if (uploadErr) {
       const msg = uploadErr.code === 'LIMIT_FILE_SIZE'
         ? 'File too large. Maximum size is 5MB.'

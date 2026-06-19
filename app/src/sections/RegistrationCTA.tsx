@@ -1,10 +1,16 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ArrowRight } from 'lucide-react';
+import RegistrationForm from '../components/RegistrationForm';
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function RegistrationCTA() {
+type Props = {
+  registrationEnabled: boolean;
+};
+
+export default function RegistrationCTA({ registrationEnabled }: Props) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const bodyRef = useRef<HTMLParagraphElement>(null);
@@ -77,62 +83,124 @@ export default function RegistrationCTA() {
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="overflow-hidden rounded-[32px] border border-white/12 bg-white/[0.08] p-6 text-center shadow-[0_24px_70px_rgba(7,2,20,0.24)] backdrop-blur-xl sm:p-8 lg:p-10">
-        <h2
-          ref={headingRef}
-          className="font-['Syne'] text-3xl sm:text-5xl lg:text-[64px] font-bold text-white leading-[1.05] tracking-tight mb-4 sm:mb-6 opacity-0"
-        >
-          Registrations are now closed.
-        </h2>
 
-        <p
-          ref={bodyRef}
-          className="mx-auto mb-10 max-w-2xl text-sm leading-relaxed text-white/76 opacity-0 sm:text-lg"
-        >
-          We&apos;ve reached capacity for the Women Entrepreneurs Summit 2026. Thank you to everyone
-          who signed up — we&apos;re excited to welcome you on 20 June in Kozhikode.
-        </p>
+          {registrationEnabled ? (
+            <>
+              <h2
+                ref={headingRef}
+                className="font-['Syne'] text-3xl sm:text-5xl lg:text-[64px] font-bold text-white leading-[1.05] tracking-tight mb-4 sm:mb-6 opacity-0"
+              >
+                Register for WES 2026
+              </h2>
 
-        {/* Closed indicator */}
-        <div
-          ref={priceRef}
-          className="mb-10 flex flex-col items-center gap-4 opacity-0"
-        >
-          <div className="inline-flex items-center gap-3 rounded-full border border-rose-400/40 bg-rose-500/10 px-6 py-3 backdrop-blur-sm">
-            <span className="h-2.5 w-2.5 rounded-full bg-rose-400 animate-pulse" />
-            <span className="text-base font-bold uppercase tracking-widest text-rose-300">
-              Entry Registrations Closed
-            </span>
-          </div>
-          <p className="text-sm text-white/50 uppercase tracking-widest">
-            No further registrations will be accepted
-          </p>
-        </div>
+              <p
+                ref={bodyRef}
+                className="mx-auto mb-10 max-w-2xl text-sm leading-relaxed text-white/76 opacity-0 sm:text-lg"
+              >
+                Secure your place at Kerala&apos;s premier Women Entrepreneurs Summit — 20 June 2026,
+                KPM TRIPENTA HOTEL, Kozhikode.
+              </p>
 
-        {/* Thank you message */}
-        <div
-          ref={ctaRef}
-          className="mb-7 opacity-0 sm:mb-8"
-        >
-          <p
-            className="font-['Syne'] text-xl sm:text-3xl font-semibold text-white/90"
-            style={{
-              background: 'linear-gradient(90deg, #ffffff, #ffd4ea, #ff8abb)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            Thank you for your support &amp; cooperation.
-          </p>
-        </div>
+              {/* Live badge */}
+              <div
+                ref={priceRef}
+                className="mb-10 flex flex-col items-center gap-4 opacity-0"
+              >
+                <div className="inline-flex items-center gap-3 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-6 py-3 backdrop-blur-sm">
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-base font-bold uppercase tracking-widest text-emerald-300">
+                    Registrations Open
+                  </span>
+                </div>
+              </div>
 
-        {/* Event Info */}
-        <p
-          ref={infoRef}
-          className="mx-auto max-w-xl text-sm text-white/60 opacity-0 sm:text-base"
-        >
-          Saturday, June 20, 2026 · KPM TRIPENTA HOTEL, Kozhikode · Hosted by Jamaat-e-Islami Hind Women&apos;s Wing Kerala
-        </p>
+              {/* CTA button */}
+              <div ref={ctaRef} className="mb-7 opacity-0 sm:mb-8 flex justify-center">
+                <RegistrationForm
+                  trigger={
+                    <button
+                      className="pill-button inline-flex items-center gap-2.5 font-semibold text-base px-8 py-4"
+                      style={{
+                        background: 'linear-gradient(135deg, #ffffff 0%, #ffd4ea 100%)',
+                        color: '#1a0335',
+                      }}
+                    >
+                      Register Now
+                      <ArrowRight size={18} />
+                    </button>
+                  }
+                />
+              </div>
+
+              {/* Event Info */}
+              <p
+                ref={infoRef}
+                className="mx-auto max-w-xl text-sm text-white/60 opacity-0 sm:text-base"
+              >
+                Saturday, June 20, 2026 · KPM TRIPENTA HOTEL, Kozhikode · Hosted by Jamaat-e-Islami Hind Women&apos;s Wing Kerala
+              </p>
+            </>
+          ) : (
+            <>
+              <h2
+                ref={headingRef}
+                className="font-['Syne'] text-3xl sm:text-5xl lg:text-[64px] font-bold text-white leading-[1.05] tracking-tight mb-4 sm:mb-6 opacity-0"
+              >
+                Registrations are now closed.
+              </h2>
+
+              <p
+                ref={bodyRef}
+                className="mx-auto mb-10 max-w-2xl text-sm leading-relaxed text-white/76 opacity-0 sm:text-lg"
+              >
+                We&apos;ve reached capacity for the Women Entrepreneurs Summit 2026. Thank you to everyone
+                who signed up — we&apos;re excited to welcome you on 20 June in Kozhikode.
+              </p>
+
+              {/* Closed indicator */}
+              <div
+                ref={priceRef}
+                className="mb-10 flex flex-col items-center gap-4 opacity-0"
+              >
+                <div className="inline-flex items-center gap-3 rounded-full border border-rose-400/40 bg-rose-500/10 px-6 py-3 backdrop-blur-sm">
+                  <span className="h-2.5 w-2.5 rounded-full bg-rose-400 animate-pulse" />
+                  <span className="text-base font-bold uppercase tracking-widest text-rose-300">
+                    Entry Registrations Closed
+                  </span>
+                </div>
+                <p className="text-sm text-white/50 uppercase tracking-widest">
+                  No further registrations will be accepted
+                </p>
+              </div>
+
+              {/* Thank you message */}
+              <div
+                ref={ctaRef}
+                className="mb-7 opacity-0 sm:mb-8"
+              >
+                <p
+                  className="font-['Syne'] text-xl sm:text-3xl font-semibold text-white/90"
+                  style={{
+                    background: 'linear-gradient(90deg, #ffffff, #ffd4ea, #ff8abb)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  Thank you for your support &amp; cooperation.
+                </p>
+              </div>
+
+              {/* Event Info */}
+              <p
+                ref={infoRef}
+                className="mx-auto max-w-xl text-sm text-white/60 opacity-0 sm:text-base"
+              >
+                Saturday, June 20, 2026 · KPM TRIPENTA HOTEL, Kozhikode · Hosted by Jamaat-e-Islami Hind Women&apos;s Wing Kerala
+              </p>
+            </>
+          )}
+
         </div>
       </div>
     </section>
