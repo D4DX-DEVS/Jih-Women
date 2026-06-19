@@ -34,7 +34,7 @@ const scheduleItems: ScheduleItem[] = [
       {
         stage: 'Main Stage',
         title: 'Inaugural Session',
-        description: 'Opening reflections, the summit vision, and the tone for a day centred on women, enterprise, and impact.',
+        description: 'Opening reflections featuring P. Mujeebu Rahman (Ameer, Jamaat-e-Islami Hind Kerala), Sajitha PTP, Rajeena Beegum, and Ruksana Moosa — setting the tone for a day centred on women, enterprise, and impact.',
       },
     ],
   },
@@ -50,23 +50,23 @@ const scheduleItems: ScheduleItem[] = [
   //   ],
   // },
   {
-    time: '11:10 AM – 12:10 PM',
+    time: '11:10 AM – 12:00 PM',
     sessions: [
       {
         stage: 'Main Stage',
         title: 'Panel Discussion',
-        description: 'Exploring ethical finance, value-driven investments, and how Islamic financial principles empower women entrepreneurs.',
-        tag: 'Islamic Financial Perspective',
+        description: 'An insightful conversation on running businesses with integrity and purpose — featuring PV Rahmabi, Sameer Kalikavu, P.A Shameel Sajjad, and Dr. Nasreena KK.',
+        tag: 'Ethical And Value Based Business',
       },
     ],
   },
   {
-    time: '12:10 PM – 1:00 PM',
+    time: '12:00 PM – 1:00 PM',
     sessions: [
       {
         stage: 'Main Stage',
-        title: 'Women Identity',
-        description: 'Conversations on self-belief, leadership presence, and building with clarity across different life and business stages.',
+        title: 'Women Identity & Leadership',
+        description: 'A session with P. Ruksana (Vice President, JIH Women\'s Wing Kerala) on self-belief, leadership presence, and building with clarity across different life and business stages.',
       },
     ],
   },
@@ -113,7 +113,7 @@ const scheduleItems: ScheduleItem[] = [
       {
         stage: 'Main Stage',
         title: 'Closing Ceremony',
-        description: 'Reflections, recognitions, and a send-off that captures the spirit and energy of the day.',
+        description: 'Closing reflections with Sajitha PTP, Dr. Nahas Mala, Shifana K, Naseema K.T, and Sahira Manayath — celebrating the spirit and energy of the day.',
       },
     ],
   },
@@ -121,16 +121,19 @@ const scheduleItems: ScheduleItem[] = [
 
 const consultationCounters = [
   {
-    title: 'Islamic Finance Perspective',
-    description: 'One-on-one guidance on halal investment, ethical business finance, and Islamic economic frameworks.',
+    title: 'Startup Ecosystem',
+    speaker: 'Dr. Nishad V.M',
+    description: 'Insights on launching, scaling, and connecting within the broader startup and entrepreneurship landscape.',
+  },
+  {
+    title: 'Creating Impact through Ethical Business',
+    speaker: 'Faris OK',
+    description: 'Explore how values-driven enterprises can generate meaningful change while building sustainable businesses.',
   },
   {
     title: 'Crisis Management & Business Growth',
+    speaker: 'Dr. Muhammad Shafi',
     description: 'Practical strategies for navigating challenges, building resilience, and sustaining growth under pressure.',
-  },
-  {
-    title: 'Startup Ecosystem',
-    description: 'Insights on launching, scaling, and connecting within the broader startup and entrepreneurship landscape.',
   },
 ];
 
@@ -371,9 +374,12 @@ export default function Schedule() {
                 <span className="relative z-10 mb-3 inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 border border-primary/40 text-primary font-bold text-sm">
                   {i + 1}
                 </span>
-                <h4 className="relative z-10 font-['Syne'] text-lg font-bold text-white mb-2 tracking-tight">
+                <h4 className="relative z-10 font-['Syne'] text-lg font-bold text-white mb-1 tracking-tight">
                   {counter.title}
                 </h4>
+                {counter.speaker && (
+                  <p className="relative z-10 text-xs font-semibold text-primary/90 mb-2">{counter.speaker}</p>
+                )}
                 <p className="relative z-10 text-sm text-white/70 leading-relaxed">
                   {counter.description}
                 </p>
