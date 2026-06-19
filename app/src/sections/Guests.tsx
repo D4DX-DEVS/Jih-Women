@@ -120,8 +120,18 @@ const guests = [
     role: 'Vice President, Jamaat-e-Islami Hind Women’s Wing Kerala',
     image: '/guest19.webp',
     label: 'Guest Speaker',
+  },  {
+    name: 'Afeeda Ahmad',
+    role: 'Secretary, JIH Women\u2019s Wing Kerala',
+    image: '/guest20.webp',
+    label: 'WES Voice',
   },
-];
+  {
+    name: 'Rajeena Beegum',
+    role: 'General Secretary, JIH Women\u2019s Wing Kerala',
+    image: '/guest21.webp',
+    label: 'WES Voice',
+  },];
 
 export default function Guests() {
   const sectionRef = useRef<HTMLElement>(null);

@@ -86,9 +86,9 @@ const scheduleItems: ScheduleItem[] = [
     sessions: [
       {
         stage: 'Main Stage',
-        title: 'Panel Discussion',
-        description: 'Real stories and honest lessons from leading entrepreneurs — turning points, resilience, and practical wisdom.',
-        tag: 'Leading Entrepreneurs',
+        title: 'Trailblazers\' Talk: Real Stories, Real Success',
+        description: 'Honest accounts from Abida Rasheed, Dr. Aysha Ruby, Mumthas KK, and Shamla Ismail — turning points, resilience, and practical wisdom from leading entrepreneurs.',
+        tag: 'Panel Discussion',
       },
     ],
   },
@@ -97,13 +97,13 @@ const scheduleItems: ScheduleItem[] = [
     sessions: [
       {
         stage: 'Main Stage',
-        title: 'Digital Marketing',
-        description: 'Sharper thinking on messaging, online presence, audience connection, and digital visibility for your business.',
+        title: 'Digital Marketing & Branding',
+        description: 'Sharper thinking on messaging, online presence, audience connection, and digital visibility for your business — with Rifath Rahman, Co-Founder of Capio Interactive.',
       },
       {
         stage: 'Sub Stage',
-        title: 'Strategic Business Thinking',
-        description: 'Creative tools to refine offers, solve business problems, and build more intentional growth paths.',
+        title: 'Business Design Thinking',
+        description: 'Creative tools to refine offers, solve business problems, and build more intentional growth paths — with Aisha Sameeha, Founder of Koderfin.',
       },
     ],
   },
