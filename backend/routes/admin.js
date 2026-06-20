@@ -1,11 +1,15 @@
 const express = require('express');
 const XLSX = require('xlsx');
+const path = require('path');
+const sharp = require('sharp');
+const crypto = require('crypto');
 const Registration = require('../models/Registration');
 const PaymentQR = require('../models/PaymentQR');
 const Settings = require('../models/Settings');
+const GalleryImage = require('../models/GalleryImage');
 const { getSettings } = require('../models/Settings');
 const { requireAdmin } = require('../middleware/auth');
-const { qrImageUpload, getCdnUrl, deleteFile, keyFromUrl, s3 } = require('../config/spaces');
+const { qrImageUpload, galleryUpload, uploadBuffer, getCdnUrl, deleteFile, keyFromUrl, s3 } = require('../config/spaces');
 const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const { generateEntryPass, generatePassId } = require('../utils/entryPassGenerator');
 const { sendWhatsAppImage } = require('../config/dxing');
@@ -911,6 +915,135 @@ router.patch('/settings', async (req, res) => {
   } catch (err) {
     console.error('[admin] patch settings error:', err);
     res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// ─── Gallery ─────────────────────────────────────────────────────────────────
+
+// GET /api/admin/gallery — list all images sorted by order, createdAt
+router.get('/gallery', async (_req, res) => {
+  try {
+    const images = await GalleryImage.find().sort({ order: 1, createdAt: 1 }).lean();
+    res.json({ images });
+  } catch (err) {
+    console.error('[admin] gallery list error:', err);
+    res.status(500).json({ error: 'Failed to fetch gallery' });
+  }
+});
+
+// POST /api/admin/gallery — upload images (multipart, field name "images")
+// For each file: compress with sharp → upload full + thumbnail → save to DB
+router.post('/gallery', (req, res) => {
+  const upload = galleryUpload.array('images', 20);
+  upload(req, res, async (uploadErr) => {
+    if (uploadErr) {
+      return res.status(400).json({ error: uploadErr.message });
+    }
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files provided' });
+    }
+
+    const folder = process.env.DO_SPACES_FOLDER
+      ? `${process.env.DO_SPACES_FOLDER}/`
+      : '';
+
+    const created = [];
+
+    try {
+      for (const file of req.files) {
+        const uid = crypto.randomUUID();
+        const isVideo = file.mimetype.startsWith('video/');
+
+        if (isVideo) {
+          // Upload video directly — no compression (sharp only handles images)
+          const ext = path.extname(file.originalname).toLowerCase() || '.mp4';
+          const videoKey = `${folder}gallery/videos/${uid}${ext}`;
+          const videoUrl = await uploadBuffer(file.buffer, videoKey, file.mimetype);
+
+          const doc = await GalleryImage.create({
+            imageUrl: videoUrl,
+            thumbnailUrl: videoUrl, // frontend uses <video> element for preview
+            caption: '',
+            order: 0,
+            type: 'video',
+          });
+          created.push(doc);
+        } else {
+          // Image: compress with sharp
+          const fullBuffer = await sharp(file.buffer)
+            .rotate() // auto-rotate from EXIF
+            .resize({ width: 1920, withoutEnlargement: true })
+            .webp({ quality: 82 })
+            .toBuffer();
+
+          const thumbBuffer = await sharp(file.buffer)
+            .rotate()
+            .resize({ width: 600, withoutEnlargement: true })
+            .webp({ quality: 72 })
+            .toBuffer();
+
+          const fullKey = `${folder}gallery/${uid}.webp`;
+          const thumbKey = `${folder}gallery/thumb/${uid}.webp`;
+
+          const [imageUrl, thumbnailUrl] = await Promise.all([
+            uploadBuffer(fullBuffer, fullKey, 'image/webp'),
+            uploadBuffer(thumbBuffer, thumbKey, 'image/webp'),
+          ]);
+
+          const doc = await GalleryImage.create({
+            imageUrl,
+            thumbnailUrl,
+            caption: '',
+            order: 0,
+            type: 'image',
+          });
+          created.push(doc);
+        }
+      }
+
+      res.status(201).json({ images: created });
+    } catch (err) {
+      console.error('[admin] gallery upload error:', err);
+      res.status(500).json({ error: 'Failed to upload gallery images' });
+    }
+  });
+});
+
+// PATCH /api/admin/gallery/:id — update caption or order
+router.patch('/gallery/:id', async (req, res) => {
+  try {
+    const { caption, order } = req.body;
+    const update = {};
+    if (caption !== undefined) update.caption = String(caption).slice(0, 300);
+    if (order !== undefined) update.order = Number(order);
+
+    const doc = await GalleryImage.findByIdAndUpdate(req.params.id, update, { new: true });
+    if (!doc) return res.status(404).json({ error: 'Image not found' });
+    res.json({ image: doc });
+  } catch (err) {
+    console.error('[admin] gallery patch error:', err);
+    res.status(500).json({ error: 'Failed to update gallery image' });
+  }
+});
+
+// DELETE /api/admin/gallery/:id — delete doc + both Spaces objects
+router.delete('/gallery/:id', async (req, res) => {
+  try {
+    const doc = await GalleryImage.findByIdAndDelete(req.params.id);
+    if (!doc) return res.status(404).json({ error: 'Image not found' });
+
+    // Clean up Spaces objects (best-effort)
+    const fullKey = keyFromUrl(doc.imageUrl);
+    const thumbKey = keyFromUrl(doc.thumbnailUrl);
+    await Promise.all([
+      fullKey ? deleteFile(fullKey) : Promise.resolve(),
+      thumbKey ? deleteFile(thumbKey) : Promise.resolve(),
+    ]);
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[admin] gallery delete error:', err);
+    res.status(500).json({ error: 'Failed to delete gallery image' });
   }
 });
 

@@ -288,7 +288,7 @@ function Dashboard({
   onLogout: () => void;
   onToast: (message: string, kind?: 'success' | 'error') => void;
 }) {
-  const [activeTab, setActiveTab] = useState<'registrations' | 'payment-qr' | 'check-ins' | 'check-outs' | 'settings' | 'feedback'>('registrations');
+  const [activeTab, setActiveTab] = useState<'registrations' | 'payment-qr' | 'check-ins' | 'check-outs' | 'settings' | 'feedback' | 'gallery'>('registrations');
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -739,6 +739,16 @@ function Dashboard({
           >
             Feedback
           </button>
+          <button
+            onClick={() => setActiveTab('gallery')}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition ${
+              activeTab === 'gallery'
+                ? 'border-[#e61980] text-[#e61980]'
+                : 'border-transparent text-foreground/50 hover:text-foreground/70'
+            }`}
+          >
+            Gallery
+          </button>
         </div>
       </header>
 
@@ -794,6 +804,8 @@ function Dashboard({
           <CheckInsManager mode="check-out" token={token} onToast={onToast} onLogout={onLogout} />
         ) : activeTab === 'feedback' ? (
           <FeedbackManager token={token} onToast={onToast} onLogout={onLogout} />
+        ) : activeTab === 'gallery' ? (
+          <GalleryManager token={token} onToast={onToast} onLogout={onLogout} />
         ) : (
           <SettingsManager token={token} onToast={onToast} onLogout={onLogout} />
         )}
@@ -2955,6 +2967,366 @@ function FeedbackManager({
           tone="danger"
           onConfirm={() => onDelete(deleteConfirm)}
           onClose={() => setDeleteConfirm(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ─── GALLERY MANAGER ─── */
+
+type GalleryImageItem = {
+  _id: string;
+  imageUrl: string;
+  thumbnailUrl: string;
+  caption?: string;
+  order?: number;
+  type?: 'image' | 'video';
+  createdAt?: string;
+};
+
+// Upload a single file with progress tracking via XMLHttpRequest (fetch can't report upload progress)
+function uploadGalleryFile(
+  file: File,
+  token: string,
+  onProgress: (fraction: number) => void
+): Promise<{ status: number; data: { error?: string; images?: unknown[] } }> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_URL}/api/admin/gallery`);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.upload.onprogress = (ev) => {
+      if (ev.lengthComputable) onProgress(ev.loaded / ev.total);
+    };
+    xhr.onload = () => {
+      let data: { error?: string; images?: unknown[] } = {};
+      try { data = JSON.parse(xhr.responseText); } catch { /* non-JSON response */ }
+      resolve({ status: xhr.status, data });
+    };
+    xhr.onerror = () => reject(new Error('Network error during upload'));
+    xhr.onabort = () => reject(new Error('Upload aborted'));
+    const fd = new FormData();
+    fd.append('images', file);
+    xhr.send(fd);
+  });
+}
+
+function GalleryManager({
+  token,
+  onToast,
+  onLogout,
+}: {
+  token: string;
+  onToast: (message: string, kind?: 'success' | 'error') => void;
+  onLogout: () => void;
+}) {
+  const [images, setImages] = useState<GalleryImageItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploadTotal, setUploadTotal] = useState(0);
+  const [uploadDone, setUploadDone] = useState(0);
+  const [uploadPercent, setUploadPercent] = useState(0);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [editItem, setEditItem] = useState<GalleryImageItem | null>(null);
+  const [editCaption, setEditCaption] = useState('');
+  const [editOrder, setEditOrder] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const loadImages = useCallback(async () => {
+    try {
+      const data = await apiJson<{ images: GalleryImageItem[] }>('/api/admin/gallery', { token });
+      setImages(data.images);
+    } catch (err) {
+      const e = err as Error & { code?: number };
+      if (e?.code === 401) { onLogout(); return; }
+      onToast((e as Error).message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [token, onToast, onLogout]);
+
+  useEffect(() => { loadImages(); }, [loadImages]);
+
+  const onUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (files.length === 0) { onToast('Select at least one image', 'error'); return; }
+    const total = files.length;
+    setUploading(true);
+    setUploadTotal(total);
+    setUploadDone(0);
+    setUploadPercent(0);
+    let success = 0;
+    try {
+      for (let i = 0; i < total; i++) {
+        const { status, data } = await uploadGalleryFile(
+          files[i],
+          token,
+          (frac) => setUploadPercent(Math.round(((i + frac) / total) * 100))
+        );
+        if (status === 401) { onLogout(); return; }
+        if (status < 200 || status >= 300) {
+          throw new Error(data?.error || `Failed to upload "${files[i].name}"`);
+        }
+        success += 1;
+        setUploadDone(success);
+        setUploadPercent(Math.round((success / total) * 100));
+      }
+      onToast(`${success} image(s) uploaded`, 'success');
+      setFiles([]);
+      if (fileRef.current) fileRef.current.value = '';
+      await loadImages();
+    } catch (err) {
+      onToast((err as Error).message, 'error');
+      // Refresh anyway so any successfully uploaded images appear
+      await loadImages();
+    } finally {
+      setUploading(false);
+      setUploadTotal(0);
+      setUploadDone(0);
+      setUploadPercent(0);
+    }
+  };
+
+  const openEdit = (img: GalleryImageItem) => {
+    setEditItem(img);
+    setEditCaption(img.caption || '');
+    setEditOrder(String(img.order ?? 0));
+  };
+
+  const onEditSave = async () => {
+    if (!editItem) return;
+    setEditSaving(true);
+    try {
+      await apiJson(`/api/admin/gallery/${editItem._id}`, {
+        method: 'PATCH',
+        token,
+        body: { caption: editCaption, order: Number(editOrder) },
+      });
+      onToast('Updated', 'success');
+      setEditItem(null);
+      await loadImages();
+    } catch (err) {
+      const e = err as Error & { code?: number };
+      if (e?.code === 401) { onLogout(); return; }
+      onToast(e.message, 'error');
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const onDelete = (img: GalleryImageItem) => {
+    setConfirmDialog({
+      title: 'Delete Image',
+      description: 'Remove this photo from the gallery? This cannot be undone.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+      onConfirm: async () => {
+        setActionLoading(img._id);
+        try {
+          await apiJson(`/api/admin/gallery/${img._id}`, { method: 'DELETE', token });
+          onToast('Image deleted', 'success');
+          await loadImages();
+        } catch (err) {
+          const e = err as Error & { code?: number };
+          if (e?.code === 401) { onLogout(); return; }
+          onToast(e.message, 'error');
+        } finally {
+          setActionLoading(null);
+        }
+      },
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Upload form */}
+      <div className="glass p-6">
+        <h2 className="admin-display text-lg font-bold mb-4">Upload Photos</h2>
+        <form onSubmit={onUpload} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wider text-foreground/60 mb-2">
+              Select Images or Videos (JPEG / PNG / WebP / MP4 / MOV / WebM, multiple allowed)
+            </label>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+              multiple
+              className="input"
+              disabled={uploading}
+              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+            />
+            {files.length > 0 && !uploading && (
+              <p className="text-xs text-foreground/50 mt-1.5">{files.length} file(s) selected</p>
+            )}
+          </div>
+          <p className="text-xs text-foreground/40">
+            Images are automatically compressed &amp; optimised before upload. Videos are uploaded as-is. Quality is preserved; file size is reduced for images.
+          </p>
+
+          {/* Upload progress */}
+          {uploading && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-medium">
+                <span className="text-foreground/70">
+                  Uploading {Math.min(uploadDone + 1, uploadTotal)} of {uploadTotal}
+                  <span className="text-foreground/40"> · {uploadDone} done</span>
+                </span>
+                <span className="text-[#e61980]">{uploadPercent}%</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-black/10">
+                <div
+                  className="h-full rounded-full bg-[#e61980] transition-all duration-200 ease-out"
+                  style={{ width: `${uploadPercent}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-foreground/40">
+                Please keep this tab open until all images finish uploading.
+              </p>
+            </div>
+          )}
+
+          <button type="submit" className="pill pill-primary" disabled={uploading || files.length === 0}>
+            {uploading ? (
+              <span className="flex items-center gap-2">
+                <span className="spinner" />
+                {uploadPercent}% · {uploadDone}/{uploadTotal}
+              </span>
+            ) : (
+              'Upload'
+            )}
+          </button>
+        </form>
+      </div>
+
+      {/* Gallery grid */}
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <span className="spinner" />
+        </div>
+      ) : images.length === 0 ? (
+        <div className="glass p-8 text-center text-foreground/50 text-sm">No gallery images yet. Upload some above.</div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {images.map((img) => (
+            <div key={img._id} className="glass overflow-hidden rounded-2xl group">
+              <div className="relative aspect-square overflow-hidden">
+                {img.type === 'video' ? (
+                  <>
+                    <video
+                      src={img.thumbnailUrl}
+                      className="h-full w-full object-cover"
+                      preload="metadata"
+                      muted
+                      playsInline
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="rounded-full bg-black/50 p-2.5 backdrop-blur-sm">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21" /></svg>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <img
+                    src={img.thumbnailUrl}
+                    alt={img.caption || 'Gallery image'}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                )}
+                {actionLoading === img._id && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                    <span className="spinner" />
+                  </div>
+                )}
+              </div>
+              <div className="p-3 space-y-2">
+                {img.caption && (
+                  <p className="text-xs text-foreground/60 line-clamp-2">{img.caption}</p>
+                )}
+                <p className="text-[10px] text-foreground/35">Order: {img.order ?? 0}</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => openEdit(img)}
+                    className="pill pill-outline text-xs flex-1"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDelete(img)}
+                    className="pill pill-outline text-xs flex-1 text-red-400 border-red-500/30 hover:bg-red-500/10"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Edit modal */}
+      {editItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="glass-strong w-full max-w-sm p-6 space-y-4">
+            <h3 className="admin-display font-bold text-lg">Edit Image</h3>
+            <img
+              src={editItem.thumbnailUrl}
+              alt="preview"
+              className="w-full rounded-xl object-cover max-h-48"
+            />
+            <div>
+              <label className="block text-xs font-medium uppercase tracking-wider text-foreground/60 mb-2">Caption</label>
+              <input
+                type="text"
+                className="input"
+                maxLength={300}
+                value={editCaption}
+                onChange={(e) => setEditCaption(e.target.value)}
+                placeholder="Optional caption…"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium uppercase tracking-wider text-foreground/60 mb-2">Display Order</label>
+              <input
+                type="number"
+                className="input"
+                value={editOrder}
+                onChange={(e) => setEditOrder(e.target.value)}
+                placeholder="0"
+              />
+              <p className="text-[11px] text-foreground/40 mt-1">Lower numbers appear first</p>
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => setEditItem(null)}
+                className="pill pill-outline flex-1"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={onEditSave}
+                className="pill pill-primary flex-1"
+                disabled={editSaving}
+              >
+                {editSaving ? <span className="spinner" /> : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDialog && (
+        <ConfirmModal
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          confirmLabel={confirmDialog.confirmLabel}
+          tone={confirmDialog.tone}
+          onConfirm={confirmDialog.onConfirm}
+          onClose={() => setConfirmDialog(null)}
         />
       )}
     </div>

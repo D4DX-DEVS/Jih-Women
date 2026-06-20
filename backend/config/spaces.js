@@ -1,4 +1,4 @@
-const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, DeleteObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const path = require('path');
@@ -108,13 +108,53 @@ const paymentScreenshotUpload = createUpload('payment-screenshots');
 const qrImageUpload = createUpload('payment-qr');
 const entryPassUpload = createUpload('entry-passes');
 
+// Gallery: accept images + videos, store in memory so sharp (images) or direct upload (videos) can process
+const GALLERY_MIMES = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/jpg',
+  'video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo',
+]);
+
+const galleryUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter(_req, file, cb) {
+    if (GALLERY_MIMES.has(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images (JPEG, PNG, WebP) or videos (MP4, MOV, WebM) are allowed for the gallery'));
+    }
+  },
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB — allow large video files
+});
+
+/**
+ * Upload a Buffer directly to Spaces and return the CDN URL.
+ * @param {Buffer} buffer  - Image buffer
+ * @param {string} key     - S3 object key (relative path in bucket)
+ * @param {string} contentType - MIME type (e.g. 'image/webp')
+ */
+async function uploadBuffer(buffer, key, contentType) {
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: DO_SPACES_BUCKET,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+      ACL: 'public-read',
+    })
+  );
+  return getCdnUrl(key);
+}
+
 module.exports = {
   s3,
   paymentScreenshotUpload,
   qrImageUpload,
   entryPassUpload,
+  galleryUpload,
+  uploadBuffer,
   getCdnUrl,
   deleteFile,
   keyFromUrl,
   createUpload,
+  makeKey,
 };

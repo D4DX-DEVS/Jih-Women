@@ -40,6 +40,7 @@ export default function Navbar({ registrationEnabled }: Props) {
     { label: 'Sessions', id: 'sessions' },
     { label: 'Program', id: 'schedule' },
     { label: 'Venue', id: 'venue' },
+    { label: 'Gallery', id: 'gallery' },
     ...(registrationEnabled ? [{ label: 'Register', id: 'register' }] : []),
   ];
 

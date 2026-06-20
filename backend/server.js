@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const registrationRoutes = require('./routes/registration');
 const adminRoutes = require('./routes/admin');
 const feedbackRoutes = require('./routes/feedback');
+const galleryRoutes = require('./routes/gallery');
 
 const app = express();
 app.disable('x-powered-by');
@@ -36,6 +37,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/registrations', registrationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/gallery', galleryRoutes);
 
 app.use('/admin', express.static(path.join(__dirname, 'public', 'admin')));
 
