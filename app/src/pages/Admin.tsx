@@ -288,7 +288,7 @@ function Dashboard({
   onLogout: () => void;
   onToast: (message: string, kind?: 'success' | 'error') => void;
 }) {
-  const [activeTab, setActiveTab] = useState<'registrations' | 'payment-qr' | 'check-ins' | 'check-outs' | 'settings'>('registrations');
+  const [activeTab, setActiveTab] = useState<'registrations' | 'payment-qr' | 'check-ins' | 'check-outs' | 'settings' | 'feedback'>('registrations');
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -729,6 +729,16 @@ function Dashboard({
           >
             Settings
           </button>
+          <button
+            onClick={() => setActiveTab('feedback')}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition ${
+              activeTab === 'feedback'
+                ? 'border-[#e61980] text-[#e61980]'
+                : 'border-transparent text-foreground/50 hover:text-foreground/70'
+            }`}
+          >
+            Feedback
+          </button>
         </div>
       </header>
 
@@ -782,6 +792,8 @@ function Dashboard({
           <CheckInsManager mode="check-in" token={token} onToast={onToast} onLogout={onLogout} />
         ) : activeTab === 'check-outs' ? (
           <CheckInsManager mode="check-out" token={token} onToast={onToast} onLogout={onLogout} />
+        ) : activeTab === 'feedback' ? (
+          <FeedbackManager token={token} onToast={onToast} onLogout={onLogout} />
         ) : (
           <SettingsManager token={token} onToast={onToast} onLogout={onLogout} />
         )}
@@ -2636,6 +2648,315 @@ function CheckInsManager({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ----------------- FEEDBACK MANAGER ----------------- */
+
+type FeedbackItem = {
+  _id: string;
+  name: string;
+  whatsappNumber: string;
+  email?: string;
+  overallRating: number;
+  sessionQuality: number;
+  venueRating: number;
+  liked?: string;
+  improvements?: string;
+  recommend: string;
+  comments?: string;
+  createdAt?: string;
+};
+
+type FeedbackListResponse = {
+  items: FeedbackItem[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+};
+
+function StarDisplay({ value }: { value: number }) {
+  return (
+    <span className="inline-flex gap-0.5 items-center">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <span key={s} className={`text-[13px] ${s <= value ? 'text-yellow-400' : 'text-foreground/20'}`}>
+          ★
+        </span>
+      ))}
+      <span className="ml-1 text-xs text-foreground/50">{value}/5</span>
+    </span>
+  );
+}
+
+function FeedbackManager({
+  token,
+  onToast,
+  onLogout,
+}: {
+  token: string;
+  onToast: (message: string, kind?: 'success' | 'error') => void;
+  onLogout: () => void;
+}) {
+  const [list, setList] = useState<FeedbackListResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(20);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<FeedbackItem | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const handleAuthError = useCallback(
+    (err: unknown) => {
+      const e = err as Error & { code?: number };
+      if (e?.code === 401) { onLogout(); return true; }
+      return false;
+    },
+    [onLogout]
+  );
+
+  const loadList = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiJson<FeedbackListResponse>(
+        `/api/feedback?page=${page}&limit=${limit}`,
+        { token }
+      );
+      setList(data);
+    } catch (err) {
+      if (!handleAuthError(err)) onToast((err as Error).message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, limit, token, handleAuthError, onToast]);
+
+  useEffect(() => { loadList(); }, [loadList]);
+
+  const onDelete = async (item: FeedbackItem) => {
+    try {
+      await apiJson(`/api/feedback/${item._id}`, { method: 'DELETE', token });
+      onToast('Feedback deleted', 'success');
+      setDeleteConfirm(null);
+      setExpanded(null);
+      await loadList();
+    } catch (err) {
+      if (!handleAuthError(err)) onToast((err as Error).message, 'error');
+    }
+  };
+
+  const onExportExcel = async () => {
+    setExporting(true);
+    try {
+      const res = await apiRequest('/api/feedback/export', { token });
+      if (res.status === 401) { onLogout(); return; }
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || 'Export failed');
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `wes-feedback-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      onToast('Feedback exported', 'success');
+    } catch (err) {
+      onToast((err as Error).message, 'error');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const totalPages = list?.pages ?? 1;
+  const avgOverall = list && list.items.length > 0
+    ? (list.items.reduce((s, f) => s + f.overallRating, 0) / list.items.length).toFixed(1)
+    : null;
+
+  return (
+    <div className="space-y-6">
+      {/* Header + export */}
+      <div className="glass p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="admin-display text-xl font-semibold">Feedback Responses</h2>
+          <p className="text-sm text-foreground/50 mt-0.5">
+            {list
+              ? `${list.total} response${list.total === 1 ? '' : 's'}`
+              : 'Loading…'}
+            {avgOverall && (
+              <span className="ml-2 text-yellow-400">
+                · avg {avgOverall} ★ (this page)
+              </span>
+            )}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={loadList}
+            className="pill pill-outline text-sm"
+          >
+            Refresh
+          </button>
+          <button
+            onClick={onExportExcel}
+            disabled={exporting}
+            className="pill pill-outline text-sm"
+          >
+            {exporting ? <span className="spinner" /> : 'Export Excel'}
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="glass overflow-hidden">
+        <div className="scroll-x">
+          <table className="data" style={{ tableLayout: 'auto' }}>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>WhatsApp</th>
+                <th>Email</th>
+                <th>Overall</th>
+                <th>Sessions</th>
+                <th>Venue</th>
+                <th>Recommend</th>
+                <th>Submitted</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={9} className="text-center py-10 text-foreground/50">
+                    <span className="spinner" />
+                  </td>
+                </tr>
+              ) : !list || list.items.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="text-center py-10 text-foreground/50">
+                    No feedback responses yet.
+                  </td>
+                </tr>
+              ) : (
+                list.items.map((fb) => (
+                  <>
+                    <tr key={fb._id}>
+                      <td>
+                        <div className="font-semibold">{fb.name || '—'}</div>
+                      </td>
+                      <td>{fb.whatsappNumber || '—'}</td>
+                      <td>
+                        <div className="text-xs text-foreground/70">{fb.email || '—'}</div>
+                      </td>
+                      <td><StarDisplay value={fb.overallRating} /></td>
+                      <td><StarDisplay value={fb.sessionQuality} /></td>
+                      <td><StarDisplay value={fb.venueRating} /></td>
+                      <td>
+                        <span className={`badge ${
+                          fb.recommend === 'Yes'
+                            ? 'bg-green-500/20 text-green-300 border-green-500/30'
+                            : fb.recommend === 'No'
+                              ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                              : 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
+                        }`}>
+                          {fb.recommend}
+                        </span>
+                      </td>
+                      <td className="text-xs text-foreground/60">{formatDate(fb.createdAt)}</td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setExpanded(expanded === fb._id ? null : fb._id)}
+                            className="pill pill-outline admin-table-action text-xs"
+                          >
+                            {expanded === fb._id ? 'Collapse' : 'Details'}
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(fb)}
+                            className="pill pill-outline pill-danger admin-table-action text-xs"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {expanded === fb._id && (
+                      <tr key={`${fb._id}-expanded`} className="bg-black/[0.03]">
+                        <td colSpan={9} className="px-5 py-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div className="rounded-xl border border-black/8 bg-white/[0.03] p-4">
+                              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-2">
+                                What They Liked Most
+                              </div>
+                              <p className="text-foreground/80 text-sm leading-relaxed whitespace-pre-wrap">
+                                {fb.liked || <span className="italic text-foreground/35">Not provided</span>}
+                              </p>
+                            </div>
+                            <div className="rounded-xl border border-black/8 bg-white/[0.03] p-4">
+                              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-2">
+                                Improvements Suggested
+                              </div>
+                              <p className="text-foreground/80 text-sm leading-relaxed whitespace-pre-wrap">
+                                {fb.improvements || <span className="italic text-foreground/35">Not provided</span>}
+                              </p>
+                            </div>
+                            <div className="rounded-xl border border-black/8 bg-white/[0.03] p-4">
+                              <div className="text-xs uppercase tracking-wider text-foreground/50 mb-2">
+                                Other Comments
+                              </div>
+                              <p className="text-foreground/80 text-sm leading-relaxed whitespace-pre-wrap">
+                                {fb.comments || <span className="italic text-foreground/35">Not provided</span>}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex items-center justify-between px-5 py-4 border-t border-black/10">
+          <div className="text-sm text-foreground/50">
+            {list && totalPages > 0
+              ? `Page ${list.page} of ${totalPages} · ${list.total} total`
+              : '—'}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="pill pill-outline text-sm"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="pill pill-outline text-sm"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {deleteConfirm && (
+        <ConfirmModal
+          title="Delete Feedback"
+          description={`Delete the feedback response from ${deleteConfirm.name}? This cannot be undone.`}
+          confirmLabel="Delete"
+          tone="danger"
+          onConfirm={() => onDelete(deleteConfirm)}
+          onClose={() => setDeleteConfirm(null)}
+        />
+      )}
     </div>
   );
 }

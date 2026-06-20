@@ -14,6 +14,7 @@ import Schedule from '../sections/Schedule';
 import Venue from '../sections/Venue';
 import ShowcaseOpportunity from '../sections/ShowcaseOpportunity';
 import RegistrationCTA from '../sections/RegistrationCTA';
+import Feedback from '../sections/Feedback';
 import Footer from '../sections/Footer';
 import RegistrationForm from '../components/RegistrationForm';
 
@@ -72,6 +73,7 @@ export default function Home() {
         <Venue />
         <ShowcaseOpportunity />
         <RegistrationCTA registrationEnabled={registrationEnabled} />
+        <Feedback />
       </main>
       <Footer />
 
