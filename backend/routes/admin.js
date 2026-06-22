@@ -758,6 +758,60 @@ router.get('/check-ins/export', async (_req, res) => {
   }
 });
 
+// List not-checked-in attendees (have entry pass but not yet checked in)
+router.get('/check-ins/not-checked-in', async (req, res) => {
+  try {
+    const {
+      search = '',
+      sortBy = 'fullName',
+      sortDir = 'asc',
+      page = 1,
+      limit = 200,
+    } = req.query;
+
+    const query = { entryPassGenerated: true, checkedIn: { $ne: true } };
+
+    if (search && String(search).trim().length > 0) {
+      const re = new RegExp(escapeRegex(String(search).trim()), 'i');
+      query.$or = [
+        { fullName: re },
+        { entryPassId: re },
+        { ventureName: re },
+        { district: re },
+      ];
+    }
+
+    const allowedSort = new Set(['fullName', 'district', 'ventureName', 'createdAt']);
+    const sortField = allowedSort.has(String(sortBy)) ? String(sortBy) : 'fullName';
+    const sortDirection = String(sortDir).toLowerCase() === 'asc' ? 1 : -1;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(500, Math.max(1, parseInt(limit, 10) || 200));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [items, total] = await Promise.all([
+      Registration.find(query)
+        .select('fullName age email whatsappNumber district ventureName industry businessStage businessScale entryPassId accompanyingInfants accompanyingChildren accompanyingCompanions createdAt')
+        .sort({ [sortField]: sortDirection })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Registration.countDocuments(query),
+    ]);
+
+    res.json({
+      items,
+      total,
+      page: pageNum,
+      limit: limitNum,
+      pages: Math.ceil(total / limitNum) || 1,
+    });
+  } catch (err) {
+    console.error('[admin] not-checked-in list error:', err);
+    res.status(500).json({ error: 'Failed to load not-checked-in list' });
+  }
+});
+
 /* ===================== CHECK-OUT (QR SCANNING) ===================== */
 
 // Scan / check-out by passId

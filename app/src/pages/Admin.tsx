@@ -2473,6 +2473,49 @@ function CheckInsManager({
     }
   };
 
+  const onExportRemaining = async () => {
+    try {
+      let allItems: CheckInItem[] = [];
+      let pg = 1;
+      const lim = 200;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const data = await apiJson<CheckInListResponse>(
+          `/api/admin/check-ins/not-checked-in?page=${pg}&limit=${lim}&sortBy=fullName&sortDir=asc`,
+          { token }
+        );
+        allItems = [...allItems, ...data.items];
+        if (allItems.length >= data.total || data.items.length === 0) break;
+        pg++;
+      }
+
+      const rows = allItems.map((r) => ({
+        'Full Name': r.fullName || '',
+        'Age': r.age ?? '',
+        'WhatsApp': r.whatsappNumber || '',
+        'Email': r.email || '',
+        'District': r.district || '',
+        'Venture / Business': r.ventureName || '',
+        'Industry': r.industry || '',
+        'Business Stage': r.businessStage || '',
+        'Business Scale': r.businessScale || '',
+        'Accompanying Infants (0-5)': r.accompanyingInfants ?? 0,
+        'Accompanying Children (5-12)': r.accompanyingChildren ?? 0,
+        'Accompanying Companions (12+)': r.accompanyingCompanions ?? 0,
+        'Pass ID': r.entryPassId || '',
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Not Checked-in');
+      XLSX.writeFile(wb, `wes-not-checked-in-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (err) {
+      const e = err as Error & { code?: number };
+      if (e?.code === 401) { onLogout(); return; }
+      onToast(e.message, 'error');
+    }
+  };
+
   const totalPages = list?.pages ?? 1;
 
   return (
@@ -2579,6 +2622,11 @@ function CheckInsManager({
           <button onClick={onExportCheckIns} className="pill pill-outline text-sm">
             Export Excel
           </button>
+          {isCheckIn && (
+            <button onClick={onExportRemaining} className="pill pill-outline text-sm">
+              Export Remaining
+            </button>
+          )}
           <a href="/scanner" target="_blank" rel="noopener noreferrer" className="pill pill-primary text-sm">
             Open Scanner
           </a>
