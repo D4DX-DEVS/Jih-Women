@@ -27,6 +27,8 @@
   }
 
   html {
+    /* Propagates to the viewport and suppresses the horizontal scrollbar.
+       Leave as `hidden`: on the root this is harmless to `position: sticky`. */
     overflow-x: hidden;
   }
 
@@ -35,7 +37,14 @@
     font-family: 'Outfit', sans-serif;
     margin: 0;
     min-width: 320px;
-    overflow-x: hidden;
+    /* `clip`, never `hidden`. `hidden` makes body a scroll container, which
+       becomes the nearest scrollport for every `position: sticky` descendant;
+       body never scrolls itself, so those elements silently stop sticking.
+       `clip` suppresses the same overflow without creating a scroll container.
+       Do NOT add an `overflow-x: hidden` fallback before this line — Safari
+       below 16 would keep `hidden` and stay broken, whereas dropping the
+       unknown `clip` leaves body at `visible`, which behaves correctly. */
+    overflow-x: clip;
     background-image:
       radial-gradient(circle at top left, rgba(229, 35, 129, 0.34), transparent 24%),
       radial-gradient(circle at top right, rgba(255, 55, 92, 0.26), transparent 28%),

@@ -1,240 +1,466 @@
-/* Scoped admin panel styling — kept visually identical to the original static admin */
+/* ==========================================================================
+   Admin console — shared by the WES event workspace, the organisation CMS
+   and the QR scanner. Every class name here is referenced by those screens,
+   so keep names stable and restyle in place.
+   ========================================================================== */
 
 .admin-shell {
-  --background: 0 0% 100%;
-  --foreground: 270 100% 7%;
+  /* shadcn tokens consumed by Tailwind utilities inside the console */
+  --background: 230 30% 97%;
+  --foreground: 248 33% 14%;
   --card: 0 0% 100%;
-  --card-foreground: 270 100% 7%;
+  --card-foreground: 248 33% 14%;
   --popover: 0 0% 100%;
-  --popover-foreground: 270 100% 7%;
-  --muted: 330 20% 96%;
-  --muted-foreground: 270 12% 34%;
-  --border: 0 0% 0% / 0.08;
-  --input: 0 0% 0% / 0.08;
-  font-family: 'Outfit', system-ui, sans-serif;
-  background:
-    radial-gradient(1200px 600px at 80% -10%, rgba(230, 25, 128, 0.07), transparent 60%),
-    radial-gradient(800px 500px at 0% 110%, rgba(230, 25, 128, 0.05), transparent 60%),
-    linear-gradient(135deg, #ffffff 0%, #fff0f5 40%, #ffe4f2 75%, #ffffff 100%);
+  --popover-foreground: 248 33% 14%;
+  --muted: 230 30% 96%;
+  --muted-foreground: 231 15% 50%;
+  --border: 232 24% 92%;
+  --input: 232 24% 92%;
+
+  /* console palette */
+  --a-bg: #f4f5fa;
+  --a-surface: #ffffff;
+  --a-subtle: #f8f9fc;
+  --a-border: #e6e8f0;
+  --a-border-strong: #d3d7e4;
+  --a-text: #1b1830;
+  --a-muted: #6b7192;
+  --a-faint: #9aa0bc;
+  --a-brand: #e6187e;
+  --a-brand-dark: #c71169;
+  --a-brand-soft: #fdf2f8;
+  --a-danger: #dc2626;
+  --a-success: #16a34a;
+  --a-ring: rgba(230, 24, 126, 0.16);
+
+  /* Height of the sticky console header. WesWorkspace's sub-header and the org
+     sidebar's sticky offset are both derived from this — change it here only. */
+  --admin-header-h: 56px;
+
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+  background: var(--a-bg);
   min-height: 100vh;
-  color: hsl(270 100% 7%);
+  color: var(--a-text);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.admin-shell *,
+.admin-shell *::before,
+.admin-shell *::after {
+  box-sizing: border-box;
 }
 
 .admin-shell .admin-display {
-  font-family: 'Syne', system-ui, sans-serif;
+  font-family: 'Outfit', system-ui, sans-serif;
+  letter-spacing: -0.015em;
 }
+
+.admin-shell :focus-visible {
+  outline: 2px solid var(--a-brand);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ── Surfaces ─────────────────────────────────────────────────────────────── */
 
 .admin-shell .glass {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--a-surface);
+  border: 1px solid var(--a-border);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(27, 24, 48, 0.03),
+    0 1px 3px rgba(27, 24, 48, 0.04);
+}
+
+.admin-shell .glass-strong {
+  background: var(--a-surface);
+  border: 1px solid var(--a-border);
   border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+  box-shadow:
+    0 8px 12px -6px rgba(27, 24, 48, 0.08),
+    0 24px 48px -12px rgba(27, 24, 48, 0.22);
 }
 
-.admin-shell .glass-strong {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-}
-
-.admin-shell .glass,
-.admin-shell .glass-strong {
-  color: hsl(var(--foreground));
-}
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
 
 .admin-shell .pill {
-  border-radius: 9999px;
-  padding: 10px 20px;
-  font-weight: 600;
-  transition: all 0.25s ease;
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
+  border-radius: 9px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
 }
 
 .admin-shell .pill:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
 .admin-shell .pill-primary {
-  background: linear-gradient(90deg, #e61980, #c4136a);
-  color: #ffffff;
-  box-shadow: 0 4px 18px rgba(230, 25, 128, 0.4);
+  background: var(--a-brand);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(230, 24, 126, 0.24);
 }
 
 .admin-shell .pill-primary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 26px rgba(230, 25, 128, 0.55);
+  background: var(--a-brand-dark);
 }
 
 .admin-shell .pill-outline {
-  background: transparent;
-  color: hsl(270 100% 7%);
-  border: 1px solid rgba(0, 0, 0, 0.25);
+  background: var(--a-surface);
+  color: #3d4260;
+  border-color: var(--a-border-strong);
 }
 
 .admin-shell .pill-outline:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.45);
+  background: var(--a-subtle);
+  border-color: var(--a-faint);
 }
 
 .admin-shell .pill-danger {
-  border-color: rgba(220, 38, 38, 0.4);
-  color: #b91c1c;
+  background: var(--a-surface);
+  color: var(--a-danger);
+  border-color: rgba(220, 38, 38, 0.32);
 }
 
 .admin-shell .pill-danger:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.08);
+  background: #fef2f2;
 }
 
 .admin-shell .pill-danger-solid {
-  background: linear-gradient(90deg, rgba(239, 68, 68, 0.95), rgba(220, 38, 38, 0.95));
+  background: var(--a-danger);
   color: #fff;
-  box-shadow: 0 12px 30px rgba(220, 38, 38, 0.24);
 }
 
 .admin-shell .pill-danger-solid:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 16px 34px rgba(220, 38, 38, 0.32);
+  background: #b91c1c;
+}
+
+/* ── Form controls ────────────────────────────────────────────────────────── */
+
+/* Preview link — opens the matching public page. Reads as a quiet secondary
+   action next to the primary button, and dims when the record is unpublished. */
+.admin-shell .preview-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--a-border-strong);
+  background: var(--a-surface);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--a-muted);
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.admin-shell .preview-btn:hover {
+  border-color: var(--a-brand);
+  color: var(--a-brand);
+  background: var(--a-brand-soft);
+}
+
+.admin-shell .preview-btn[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.admin-shell .preview-btn[aria-disabled='true']:hover {
+  border-color: var(--a-border-strong);
+  color: var(--a-muted);
+  background: var(--a-surface);
+}
+
+.admin-shell .preview-row {
+  display: inline-grid;
+  place-items: center;
+  height: 28px;
+  width: 28px;
+  border-radius: 8px;
+  color: var(--a-faint);
+  transition: all 0.15s ease;
+}
+
+.admin-shell .preview-row:hover {
+  background: var(--a-brand-soft);
+  color: var(--a-brand);
+}
+
+/* Recommended upload size. Distinct from `.field-hint` so an existing hint and
+   the size guidance can both be shown without one clobbering the other. */
+.admin-shell .upload-spec {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 7px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: var(--a-subtle);
+  border: 1px solid var(--a-border);
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--a-muted);
+}
+
+.admin-shell .upload-spec svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--a-faint);
+}
+
+.admin-shell .upload-spec strong {
+  font-weight: 600;
+  color: var(--a-text);
 }
 
 .admin-shell .input,
-.admin-shell select.input {
+.admin-shell select.input,
+.admin-shell textarea.input {
   width: 100%;
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  color: hsl(270 100% 7%);
-  border-radius: 12px;
-  padding: 10px 14px;
+  background: var(--a-surface);
+  border: 1px solid var(--a-border-strong);
+  color: var(--a-text);
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  font-family: inherit;
   outline: none;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.admin-shell textarea.input {
+  resize: vertical;
+  min-height: 68px;
+}
+
+.admin-shell select.input {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236b7192' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
 }
 
 .admin-shell .input:focus {
-  border-color: #e61980;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(230, 25, 128, 0.1);
+  border-color: var(--a-brand);
+  box-shadow: 0 0 0 3px var(--a-ring);
 }
 
 .admin-shell .input::placeholder {
-  color: rgba(0, 0, 0, 0.35);
+  color: var(--a-faint);
 }
 
-.admin-shell select.input option {
-  background: #ffffff;
-  color: hsl(270 100% 7%);
+.admin-shell .input:disabled {
+  background: var(--a-subtle);
+  color: var(--a-muted);
 }
+
+/* Shared field furniture used by every create/edit form */
+.admin-shell .field-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4a4f70;
+  letter-spacing: 0.005em;
+}
+
+.admin-shell .field-req {
+  color: var(--a-brand);
+  margin-left: 2px;
+}
+
+.admin-shell .field-hint {
+  margin-top: 5px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--a-faint);
+}
+
+.admin-shell .field-lang {
+  margin-bottom: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--a-faint);
+}
+
+.admin-shell .field-group {
+  border: 1px solid var(--a-border);
+  background: var(--a-subtle);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.admin-shell .form-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--a-muted);
+}
+
+.admin-shell .form-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--a-border);
+}
+
+/* ── Badges ───────────────────────────────────────────────────────────────── */
 
 .admin-shell .badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 6px;
   font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   font-weight: 600;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background: rgba(0, 0, 0, 0.05);
-  color: hsl(270 100% 20%);
+  border: 1px solid var(--a-border-strong);
+  background: var(--a-subtle);
+  color: #4a4f70;
+  white-space: nowrap;
 }
+
+.admin-shell .badge-success {
+  border-color: rgba(22, 163, 74, 0.3);
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.admin-shell .badge-muted {
+  border-color: var(--a-border);
+  background: var(--a-subtle);
+  color: var(--a-faint);
+}
+
+/* ── Tables ───────────────────────────────────────────────────────────────── */
 
 .admin-shell table.data {
   width: 100%;
-  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
 }
 
-.admin-shell table.admin-data-table th:nth-child(1),
-.admin-shell table.admin-data-table td:nth-child(1) {
-  width: 15%;
-}
-
-.admin-shell table.admin-data-table th:nth-child(2),
-.admin-shell table.admin-data-table td:nth-child(2) {
-  width: 6%;
-}
-
-.admin-shell table.admin-data-table th:nth-child(3),
-.admin-shell table.admin-data-table td:nth-child(3) {
-  width: 19%;
-}
-
-.admin-shell table.admin-data-table th:nth-child(4),
-.admin-shell table.admin-data-table td:nth-child(4) {
-  width: 10%;
-}
-
-.admin-shell table.admin-data-table th:nth-child(5),
-.admin-shell table.admin-data-table td:nth-child(5) {
-  width: 7%;
-}
-
-.admin-shell table.admin-data-table th:nth-child(6),
-.admin-shell table.admin-data-table td:nth-child(6) {
-  width: 9%;
-}
-
-.admin-shell table.admin-data-table th:nth-child(7),
-.admin-shell table.admin-data-table td:nth-child(7) {
-  width: 11%;
-}
-
-.admin-shell table.admin-data-table th:nth-child(8),
-.admin-shell table.admin-data-table td:nth-child(8) {
-  width: 11%;
-}
-
-.admin-shell table.admin-data-table th:nth-child(9),
-.admin-shell table.admin-data-table td:nth-child(9) {
-  width: 8%;
-}
-
-.admin-shell table.admin-data-table th:last-child,
-.admin-shell table.admin-data-table td:last-child {
-  width: 104px;
+/* Only the wide WES registration grid needs fixed column widths. */
+.admin-shell table.admin-data-table {
+  table-layout: fixed;
 }
 
 .admin-shell table.data th {
   text-align: left;
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.45);
-  padding: 12px 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  cursor: pointer;
+  font-weight: 600;
+  color: var(--a-faint);
+  padding: 11px 16px;
+  background: var(--a-subtle);
+  border-bottom: 1px solid var(--a-border);
   user-select: none;
   white-space: nowrap;
 }
 
+.admin-shell table.data th:first-child {
+  border-top-left-radius: 13px;
+}
+
+.admin-shell table.data th:last-child {
+  border-top-right-radius: 13px;
+}
+
+.admin-shell table.admin-data-table th {
+  cursor: pointer;
+}
+
 .admin-shell table.data th .arrow {
-  opacity: 0.4;
+  opacity: 0.35;
   margin-left: 4px;
 }
 
 .admin-shell table.data th.active .arrow {
   opacity: 1;
-  color: #e61980;
+  color: var(--a-brand);
 }
 
 .admin-shell table.data td {
-  padding: 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--a-border);
   font-size: 13px;
+  vertical-align: middle;
+  color: #33384f;
+}
+
+.admin-shell table.data tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-shell table.data tbody tr:hover td {
+  background: var(--a-brand-soft);
+}
+
+.admin-shell table.admin-data-table td {
   vertical-align: top;
   overflow: hidden;
 }
 
+/* WES registration column widths */
+.admin-shell table.admin-data-table th:nth-child(1),
+.admin-shell table.admin-data-table td:nth-child(1) { width: 15%; }
+.admin-shell table.admin-data-table th:nth-child(2),
+.admin-shell table.admin-data-table td:nth-child(2) { width: 6%; }
+.admin-shell table.admin-data-table th:nth-child(3),
+.admin-shell table.admin-data-table td:nth-child(3) { width: 19%; }
+.admin-shell table.admin-data-table th:nth-child(4),
+.admin-shell table.admin-data-table td:nth-child(4) { width: 10%; }
+.admin-shell table.admin-data-table th:nth-child(5),
+.admin-shell table.admin-data-table td:nth-child(5) { width: 7%; }
+.admin-shell table.admin-data-table th:nth-child(6),
+.admin-shell table.admin-data-table td:nth-child(6) { width: 9%; }
+.admin-shell table.admin-data-table th:nth-child(7),
+.admin-shell table.admin-data-table td:nth-child(7) { width: 11%; }
+.admin-shell table.admin-data-table th:nth-child(8),
+.admin-shell table.admin-data-table td:nth-child(8) { width: 11%; }
+.admin-shell table.admin-data-table th:nth-child(9),
+.admin-shell table.admin-data-table td:nth-child(9) { width: 8%; }
+.admin-shell table.admin-data-table th:last-child,
+.admin-shell table.admin-data-table td:last-child { width: 104px; }
+
+@media (max-width: 1200px) {
+  .admin-shell table.admin-data-table {
+    table-layout: auto;
+  }
+
+  .admin-shell table.admin-data-table th,
+  .admin-shell table.admin-data-table td {
+    width: auto !important;
+  }
+}
+
 .admin-shell .admin-cell-name {
-  max-width: none;
   font-weight: 600;
   line-height: 1.35;
   white-space: normal;
@@ -244,24 +470,14 @@
 .admin-shell .admin-cell-contact,
 .admin-shell .admin-cell-venture,
 .admin-shell .admin-cell-compact {
-  max-width: none;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.admin-shell .admin-cell-compact {
-  max-width: none;
-}
-
-.admin-shell .admin-cell-venture {
-  max-width: none;
-}
-
 .admin-shell .admin-cell-subtle {
   margin-top: 2px;
-  max-width: none;
-  color: rgba(0, 0, 0, 0.45);
+  color: var(--a-faint);
   font-size: 11px;
   white-space: nowrap;
   overflow: hidden;
@@ -278,92 +494,363 @@
 
 .admin-shell .admin-table-action {
   min-width: 72px;
-  padding: 8px 14px;
+  padding: 7px 13px;
 }
 
-.admin-shell table.data tr:hover td {
-  background: rgba(230, 25, 128, 0.04);
+/* Cell content must never push the table wider than its container */
+.admin-shell .cell-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
+
+.admin-shell .cell-truncate {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Scrolling ────────────────────────────────────────────────────────────── */
 
 .admin-shell .scroll-x {
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.admin-shell .scroll-x,
+.admin-shell .admin-scrollbar-hide,
+.admin-shell .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-@media (max-width: 1200px) {
-  .admin-shell table.data {
-    table-layout: auto;
-  }
-
-  .admin-shell table.admin-data-table th:nth-child(1),
-  .admin-shell table.admin-data-table td:nth-child(1),
-  .admin-shell table.admin-data-table th:nth-child(2),
-  .admin-shell table.admin-data-table td:nth-child(2),
-  .admin-shell table.admin-data-table th:nth-child(3),
-  .admin-shell table.admin-data-table td:nth-child(3),
-  .admin-shell table.admin-data-table th:nth-child(4),
-  .admin-shell table.admin-data-table td:nth-child(4),
-  .admin-shell table.admin-data-table th:nth-child(5),
-  .admin-shell table.admin-data-table td:nth-child(5),
-  .admin-shell table.admin-data-table th:nth-child(6),
-  .admin-shell table.admin-data-table td:nth-child(6),
-  .admin-shell table.admin-data-table th:nth-child(7),
-  .admin-shell table.admin-data-table td:nth-child(7),
-  .admin-shell table.admin-data-table th:nth-child(8),
-  .admin-shell table.admin-data-table td:nth-child(8),
-  .admin-shell table.admin-data-table th:nth-child(9),
-  .admin-shell table.admin-data-table td:nth-child(9),
-  .admin-shell table.admin-data-table th:last-child,
-  .admin-shell table.admin-data-table td:last-child {
-    width: auto;
-  }
-}
-
-.admin-shell .scroll-x::-webkit-scrollbar {
+.admin-shell .scroll-x::-webkit-scrollbar,
+.admin-shell .admin-scrollbar-hide::-webkit-scrollbar,
+.admin-shell .no-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
   display: none;
 }
 
-.admin-shell .admin-scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+/* Modal bodies keep a slim, unobtrusive scrollbar */
+.admin-shell .slim-scroll::-webkit-scrollbar {
+  width: 8px;
 }
 
-.admin-shell .admin-scrollbar-hide::-webkit-scrollbar {
-  display: none;
+.admin-shell .slim-scroll::-webkit-scrollbar-thumb {
+  background: var(--a-border-strong);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
-.admin-shell .toast {
+/* ── Navigation ───────────────────────────────────────────────────────────── */
+
+/* Workspace switcher — a segmented control with a sliding indicator. The
+   indicator is a single absolutely positioned element translated by index, so
+   the movement is one GPU-composited transform rather than two colour fades. */
+.admin-shell .ws-switch {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  padding: 3px;
+  border-radius: 11px;
+  background: #eef0f6;
+  border: 1px solid #e3e6ef;
+}
+
+.admin-shell .ws-switch-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 8px;
+  background: var(--a-surface);
+  box-shadow:
+    0 1px 2px rgba(27, 24, 48, 0.1),
+    0 2px 8px -2px rgba(27, 24, 48, 0.12);
+  transition:
+    left 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+    width 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  pointer-events: none;
+}
+
+.admin-shell .ws-switch-option {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.15;
+  white-space: nowrap;
+  color: var(--a-muted);
+  transition: color 0.18s ease;
+}
+
+.admin-shell .ws-switch-option:hover {
+  color: var(--a-text);
+}
+
+.admin-shell .ws-switch-option[aria-selected='true'] {
+  color: var(--a-brand);
+  font-weight: 600;
+}
+
+.admin-shell .ws-switch-option svg {
+  opacity: 0.75;
+}
+
+.admin-shell .ws-switch-option[aria-selected='true'] svg {
+  opacity: 1;
+}
+
+/* Sidebar shell. Deliberately NOT `.glass`: that class is shared by every card
+   and table in both workspaces and the scanner, so restyling it here would
+   repaint the whole console. */
+.admin-shell .side-nav {
+  background: var(--a-surface);
+  border: 1px solid var(--a-border);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(27, 24, 48, 0.03),
+    0 1px 3px rgba(27, 24, 48, 0.04);
+}
+
+.admin-shell .side-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #4a4f70;
+  text-align: left;
+  transition:
+    background-color 0.14s ease,
+    color 0.14s ease;
+}
+
+.admin-shell .side-link:hover {
+  background: var(--a-subtle);
+  color: var(--a-text);
+}
+
+.admin-shell .side-link svg {
+  flex-shrink: 0;
+  opacity: 0.55;
+  transition: opacity 0.14s ease;
+}
+
+.admin-shell .side-link:hover svg {
+  opacity: 0.8;
+}
+
+.admin-shell .side-link-active {
+  background: var(--a-brand-soft);
+  color: var(--a-brand-dark);
+  font-weight: 600;
+}
+
+.admin-shell .side-link-active svg {
+  opacity: 1;
+  color: var(--a-brand);
+}
+
+/* The active marker is a pseudo-element so it cannot disturb the flex row. */
+.admin-shell .side-link-active::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  height: 17px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--a-brand);
+  transform: translateY(-50%);
+}
+
+/* Collapsible group header */
+.admin-shell .side-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--a-faint);
+  text-align: left;
+  transition:
+    background-color 0.14s ease,
+    color 0.14s ease;
+}
+
+.admin-shell .side-group:hover {
+  background: var(--a-subtle);
+  color: var(--a-muted);
+}
+
+.admin-shell .side-group-caret {
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.admin-shell .side-group[aria-expanded='true'] .side-group-caret {
+  transform: rotate(90deg);
+}
+
+.admin-shell .side-group[aria-expanded='true'] {
+  color: var(--a-muted);
+}
+
+/* Height animation without measuring: a 0fr → 1fr grid row. The inner wrapper
+   must keep `min-height: 0` and `overflow: hidden` for the row to collapse. */
+.admin-shell .side-group-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.admin-shell .side-group-panel[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+
+.admin-shell .side-group-panel > div {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.admin-shell .side-count {
+  min-width: 20px;
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(27, 24, 48, 0.06);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-align: center;
+  color: var(--a-muted);
+}
+
+.admin-shell .side-link-active .side-count {
+  background: rgba(230, 24, 126, 0.14);
+  color: var(--a-brand-dark);
+}
+
+/* Roll-up badge on a collapsed group, so the unread/RSVP signal survives. */
+.admin-shell .side-count-alert {
+  background: var(--a-brand);
+  color: #fff;
+}
+
+/* Mobile nav trigger + slide-over drawer (below lg the rail is not rendered) */
+.admin-shell .side-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: rgba(27, 24, 48, 0.42);
+  animation: side-fade 0.18s ease;
+}
+
+.admin-shell .side-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 46;
+  width: min(310px, 86vw);
+  overflow-y: auto;
+  background: var(--a-surface);
+  border-right: 1px solid var(--a-border);
+  box-shadow: 0 24px 48px -12px rgba(27, 24, 48, 0.3);
+  animation: side-slide 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes side-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes side-slide {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell .ws-switch-thumb,
+  .admin-shell .side-group-caret,
+  .admin-shell .side-group-panel {
+    transition: none;
+  }
+
+  .admin-shell .side-scrim,
+  .admin-shell .side-drawer {
+    animation: none;
+  }
+}
+
+/* ── Feedback ─────────────────────────────────────────────────────────────── */
+
+.admin-shell .toast,
+.toast {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  padding: 14px 20px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.97);
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  z-index: 60;
-  color: hsl(270 100% 7%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 11px;
+  background: #ffffff;
+  border: 1px solid var(--a-border-strong, #d3d7e4);
+  box-shadow: 0 12px 32px -8px rgba(27, 24, 48, 0.28);
+  font-size: 13.5px;
+  font-family: 'Outfit', system-ui, sans-serif;
+  color: #1b1830;
+  z-index: 90;
+  max-width: min(420px, calc(100vw - 48px));
 }
 
-.admin-shell .toast.error {
+.admin-shell .toast.error,
+.toast.error {
   border-color: rgba(220, 38, 38, 0.4);
-  color: #b91c1c;
+  background: #fef2f2;
+  color: #991b1b;
 }
 
-.admin-shell .toast.success {
+.admin-shell .toast.success,
+.toast.success {
   border-color: rgba(22, 163, 74, 0.4);
+  background: #f0fdf4;
   color: #15803d;
 }
 
 .admin-shell .spinner {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  border: 2px solid rgba(230, 25, 128, 0.2);
-  border-top-color: #e61980;
-  animation: admin-spin 0.8s linear infinite;
+  border: 2px solid rgba(230, 24, 126, 0.22);
+  border-top-color: var(--a-brand);
+  animation: admin-spin 0.7s linear infinite;
   display: inline-block;
+  vertical-align: middle;
 }
 
 @keyframes admin-spin {
@@ -375,10 +862,65 @@
 .admin-shell .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(6px);
-  z-index: 50;
+  background: rgba(20, 17, 38, 0.42);
+  backdrop-filter: blur(3px);
+  z-index: 70;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 20px;
+}
+
+/* ── Rich text editor ─────────────────────────────────────────────────────── */
+
+.admin-shell .admin-richtext:empty::before {
+  content: attr(data-placeholder);
+  color: var(--a-faint);
+}
+
+.admin-shell .admin-richtext {
+  overflow-wrap: anywhere;
+}
+
+.admin-shell .admin-richtext h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0.7rem 0 0.35rem;
+}
+
+.admin-shell .admin-richtext h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0.6rem 0 0.3rem;
+}
+
+.admin-shell .admin-richtext p {
+  margin: 0 0 0.55rem;
+  line-height: 1.7;
+}
+
+.admin-shell .admin-richtext ul,
+.admin-shell .admin-richtext ol {
+  margin: 0 0 0.55rem 1.25rem;
+  line-height: 1.7;
+}
+
+.admin-shell .admin-richtext ul {
+  list-style: disc;
+}
+
+.admin-shell .admin-richtext ol {
+  list-style: decimal;
+}
+
+.admin-shell .admin-richtext blockquote {
+  border-left: 3px solid rgba(230, 24, 126, 0.35);
+  padding-left: 0.85rem;
+  color: var(--a-muted);
+  margin: 0 0 0.55rem;
+}
+
+.admin-shell .admin-richtext a {
+  color: var(--a-brand);
+  text-decoration: underline;
 }

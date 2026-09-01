@@ -1,0 +1,31 @@
+{
+  "name": "womens-wing-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Official website of the Women's Wing, Jamaat-e-Islami Kerala",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "smoke": "vite build --ssr scripts/smoke-entry.tsx --outDir .smoke && node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "lucide-react": "^0.562.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router": "^7.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.4",
+    "jsdom": "^24.1.3"
+  }
+}

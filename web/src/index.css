@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-mist text-ink antialiased;
+    margin: 0;
+    min-width: 320px;
+    font-feature-settings: 'liga' 1, 'kern' 1;
+  }
+
+  /* Malayalam sits lower and needs more leading than Latin to stay legible */
+  html[lang='ml'] body {
+    line-height: 1.9;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+    text-wrap: balance;
+    overflow-wrap: break-word;
+  }
+
+  /* Editors paste long unbroken strings (URLs, IDs). Without this they run
+     straight out of their column and over the rest of the layout. */
+  p, li, dd, dt, figcaption, blockquote, td, th {
+    overflow-wrap: anywhere;
+  }
+
+  ::selection {
+    background: rgba(230, 24, 126, 0.22);
+  }
+
+  :focus-visible {
+    outline: 2px solid #E6187E;
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  /* Slim, unobtrusive scrollbars on the light background */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(44, 10, 77, 0.18);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(44, 10, 77, 0.3);
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  .prose-content {
+    @apply text-[15px] md:text-base leading-[1.95] text-ink/80;
+    overflow-wrap: anywhere;
+  }
+
+  /* Any block that renders text an editor typed */
+  .user-text {
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+
+  .prose-content h2 {
+    @apply font-display text-xl md:text-2xl font-semibold text-plum-800 mt-9 mb-3;
+  }
+
+  .prose-content h3 {
+    @apply font-display text-lg md:text-xl font-semibold text-plum-800 mt-7 mb-2;
+  }
+
+  .prose-content p {
+    @apply mb-4;
+  }
+
+  .prose-content ul {
+    @apply list-disc ps-6 mb-4 space-y-1.5 marker:text-magenta-400;
+  }
+
+  .prose-content ol {
+    @apply list-decimal ps-6 mb-4 space-y-1.5 marker:text-magenta-500;
+  }
+
+  .prose-content blockquote {
+    @apply border-s-4 border-magenta-300 bg-magenta-50/60 ps-5 pe-4 py-3 my-5 rounded-e-2xl text-ink/75 not-italic;
+  }
+
+  .prose-content a {
+    @apply text-magenta-600 underline underline-offset-4 decoration-magenta-300 hover:decoration-magenta-600;
+  }
+
+  .prose-content img {
+    @apply rounded-2xl my-6 w-full;
+  }
+
+  .prose-content table {
+    @apply w-full text-sm my-6;
+    display: block;
+    overflow-x: auto;
+  }
+
+  .prose-content pre {
+    @apply overflow-x-auto rounded-xl bg-plum-50 p-4 text-[13px];
+  }
+
+  .prose-content th {
+    @apply bg-plum-50 text-plum-800 font-semibold;
+  }
+
+  .prose-content th,
+  .prose-content td {
+    @apply border border-plum-100 px-3 py-2 text-start;
+  }
+
+  /* Justified Malayalam reads better in the President's message block */
+  .prose-justify {
+    text-align: justify;
+    text-justify: inter-word;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lift;
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-magenta-500;
+  }
+
+  /* Faint botanical watermark used behind the footer and the message card */
+  .leaf-watermark {
+    background-image: radial-gradient(
+        ellipse 60% 80% at 100% 100%,
+        rgba(255, 255, 255, 0.06),
+        transparent 70%
+      ),
+      repeating-linear-gradient(
+        -35deg,
+        rgba(255, 255, 255, 0.035) 0 2px,
+        transparent 2px 22px
+      );
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}

@@ -10,6 +10,8 @@ const registrationRoutes = require('./routes/registration');
 const adminRoutes = require('./routes/admin');
 const feedbackRoutes = require('./routes/feedback');
 const galleryRoutes = require('./routes/gallery');
+const siteRoutes = require('./routes/site');
+const cmsRoutes = require('./routes/cms');
 
 const app = express();
 app.disable('x-powered-by');
@@ -31,18 +33,33 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: '100kb' }));
+// CMS documents carry rich-text bodies, so the JSON body limit is larger than
+// the 100kb the registration API needed.
+app.use(express.json({ limit: '2mb' }));
 
 app.use('/api/auth', authRoutes);
+
+// WES event module
 app.use('/api/registrations', registrationRoutes);
-app.use('/api/admin', adminRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/gallery', galleryRoutes);
+
+// Organisation website module — mounted before /api/admin so the shared
+// requireAdmin guard runs once per request.
+app.use('/api/site', siteRoutes);
+app.use('/api/admin/cms', cmsRoutes);
+
+app.use('/api/admin', adminRoutes);
 
 app.use('/admin', express.static(path.join(__dirname, 'public', 'admin')));
 
 app.get('/', (_req, res) => {
-  res.json({ ok: true, service: 'WES backend', adminPanel: '/admin' });
+  res.json({
+    ok: true,
+    service: 'Women\'s Wing backend',
+    modules: ['wes', 'org-site'],
+    adminPanel: '/admin',
+  });
 });
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));

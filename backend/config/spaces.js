@@ -158,3 +158,33 @@ module.exports = {
   createUpload,
   makeKey,
 };
+
+// ── CMS uploads ───────────────────────────────────────────────────────────────
+// The organisation website admin uploads a wider set of assets than the WES
+// event flow: images, PDFs, office documents, audio (podcasts) and video.
+// Files are held in memory so images can be compressed with sharp before upload.
+const CMS_MIMES = new Set([
+  'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-m4a', 'audio/mp4',
+  'video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo',
+]);
+
+const cmsUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter(_req, file, cb) {
+    if (CMS_MIMES.has(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Unsupported file type. Allowed: images, PDF, Word/Excel, audio, video.'));
+    }
+  },
+  limits: { fileSize: 500 * 1024 * 1024 },
+});
+
+module.exports.CMS_MIMES = CMS_MIMES;
+module.exports.cmsUpload = cmsUpload;
