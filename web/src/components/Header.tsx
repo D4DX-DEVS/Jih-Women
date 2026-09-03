@@ -27,7 +27,7 @@ type NavLeaf = { label: string; to: string };
 type NavItem = { label: string; to?: string; children?: NavLeaf[] };
 
 export default function Header() {
-  const { lang, data, path, s } = useSite();
+  const { lang, data, path } = useSite();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -112,9 +112,9 @@ export default function Header() {
     { label: str('contact', navLang), to: path('/contact') },
   ];
 
-  const items: NavItem[] = useMemo(() => buildItems(lang), [lang, departments, programs, path]);
-  /* Mobile drawer menu is always shown in English, independent of the site's ML/EN toggle. */
-  const mobileItems: NavItem[] = useMemo(() => buildItems('en'), [departments, programs, path]);
+  /* Header chrome (desktop nav + mobile drawer) is always shown in English,
+     independent of the site's ML/EN toggle — only page content follows it. */
+  const items: NavItem[] = useMemo(() => buildItems('en'), [departments, programs, path]);
 
   const socials = [
     { href: settings?.social?.facebook, Icon: Facebook, label: 'Facebook' },
@@ -144,8 +144,7 @@ export default function Header() {
 
   const joinUrl = settings?.joinUrl || path('/contact');
   const joinIsExternal = /^https?:\/\//.test(joinUrl);
-  const joinLabel = tLang(settings?.joinLabel, lang) || str('joinUs', lang);
-  const joinLabelMobile = tLang(settings?.joinLabel, 'en') || str('joinUs', 'en');
+  const joinLabel = tLang(settings?.joinLabel, 'en') || str('joinUs', 'en');
 
   return (
     <>
@@ -153,17 +152,17 @@ export default function Header() {
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-[80] focus:rounded-full focus:bg-magenta-500 focus:px-5 focus:py-2 focus:text-sm focus:text-white"
       >
-        {s('skipToContent')}
+        {str('skipToContent', 'en')}
       </a>
 
-      {/* Announcement bar */}
+      {/* Announcement bar — always English, independent of the ML/EN toggle */}
       <div className="bg-plum-800 text-white">
         <div className={SHELL}>
         <div className="flex h-10 items-center justify-between gap-2 text-[12.5px] sm:gap-4">
             <div className="flex min-w-0 flex-1 items-center gap-2">
               <Sparkles size={14} className="shrink-0 text-magenta-300" />
               <span className="truncate text-white/80">
-                {t(settings?.topBarText, lang) || t(settings?.tagline, lang)}
+                {t(settings?.topBarText, 'en') || t(settings?.tagline, 'en')}
               </span>
             </div>
 
@@ -184,7 +183,7 @@ export default function Header() {
 
               {socials.length > 0 && (
                 <div className="hidden items-center gap-2 sm:flex">
-                  <span className="text-white/55">{s('followUsShort')}</span>
+                  <span className="text-white/55">{str('followUsShort', 'en')}</span>
                   <div className="flex items-center gap-1.5">
                     {socials.map(({ href, Icon, label }) => (
                       <a
@@ -213,13 +212,13 @@ export default function Header() {
             <Link
               to={path('/')}
               className="flex shrink-0 items-center"
-              aria-label={t(settings?.siteName, lang) || "Women's Wing Kerala"}
+              aria-label={t(settings?.siteName, 'en') || "Women's Wing Kerala"}
             >
               {/* The bundled mark already carries the full organisation name,
                   so no wordmark text is rendered beside it. */}
               <img
                 src="/logo.png"
-                alt={t(settings?.siteName, lang) || "Women's Wing Kerala"}
+                alt={t(settings?.siteName, 'en') || "Women's Wing Kerala"}
                 className="h-9 w-auto object-contain object-left sm:h-10 lg:h-11"
               />
             </Link>
@@ -290,7 +289,7 @@ export default function Header() {
             <div className="flex shrink-0 items-center gap-2">
               <button
                 onClick={() => setSearchOpen((v) => !v)}
-                aria-label={s('search')}
+                aria-label={str('search', 'en')}
                 className="grid h-10 w-10 place-items-center rounded-full text-ink-muted transition hover:bg-magenta-50 hover:text-magenta-600"
               >
                 <Search size={18} />
@@ -318,7 +317,7 @@ export default function Header() {
 
               <button
                 onClick={() => setMobileOpen(true)}
-                aria-label={s('menu')}
+                aria-label={str('menu', 'en')}
                 className="grid h-10 w-10 place-items-center rounded-full text-plum-800 transition hover:bg-magenta-50 xl:hidden"
               >
                 <Menu size={20} />
@@ -336,13 +335,13 @@ export default function Header() {
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder={s('searchPlaceholder')}
+                  placeholder={str('searchPlaceholder', 'en')}
                   className="w-full bg-transparent text-[15px] outline-none placeholder:text-ink-faint"
                 />
                 <button
                   type="button"
                   onClick={() => setSearchOpen(false)}
-                  aria-label={s('close')}
+                  aria-label={str('close', 'en')}
                   className="text-ink-faint transition hover:text-ink"
                 >
                   <X size={18} />
@@ -395,7 +394,7 @@ export default function Header() {
               </div>
 
               <div className="flex-1 overflow-y-auto px-4 py-3">
-                {mobileItems.map((item) =>
+                {items.map((item) =>
                   item.children ? (
                     <details key={`en-${item.to ?? item.label}`} className="group border-b border-plum-100/70">
                       <summary className="flex cursor-pointer list-none items-center justify-between py-3.5 text-[15px] font-medium text-plum-800">
@@ -434,7 +433,7 @@ export default function Header() {
                   className="flex w-full items-center justify-center gap-2 rounded-full bg-magenta-500 px-5 py-3 text-sm font-medium text-white"
                 >
                   <UserPlus size={16} />
-                  {joinLabelMobile}
+                  {joinLabel}
                 </Link>
               </div>
             </div>
