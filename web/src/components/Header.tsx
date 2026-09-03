@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router';
 import {
   ChevronDown,
@@ -15,12 +16,12 @@ import {
   Youtube,
 } from 'lucide-react';
 import { useSite } from '../lib/site';
-import { LANGS, t } from '../lib/i18n';
+import { LANGS, str, t, tLang } from '../lib/i18n';
 import type { Lang } from '../lib/types';
 
 /* The header needs more room than the 1200px page grid: seven Malayalam
    nav labels plus the logo and the join button do not fit inside it. */
-const SHELL = 'mx-auto w-full max-w-[1320px] px-5 lg:px-8';
+const SHELL = 'mx-auto w-full min-w-0 max-w-[1320px] px-4 sm:px-5 lg:px-8';
 
 type NavLeaf = { label: string; to: string };
 type NavItem = { label: string; to?: string; children?: NavLeaf[] };
@@ -34,11 +35,15 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
 
+  const pageKey = `${location.pathname.replace(/^\/(ml|en)/, '') || '/'}${location.search}`;
+
   useEffect(() => {
+    // Close overlays on real page navigation only — not when switching ML↔EN on the same page,
+    // so the open mobile menu can refresh to the selected language immediately.
     setMobileOpen(false);
     setOpenMenu(null);
     setSearchOpen(false);
-  }, [location.pathname]);
+  }, [pageKey]);
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
@@ -51,51 +56,64 @@ export default function Header() {
   const departments = data?.nav.departments ?? [];
   const programs = data?.nav.programs ?? [];
 
-  const items: NavItem[] = [
-    { label: s('home'), to: path('/') },
-    {
-      label: s('aboutUs'),
-      children: [
-        { label: s('ideology'), to: path('/who-we-are/ideology') },
-        { label: s('ourValues'), to: path('/who-we-are/our-values') },
-        { label: s('constitution'), to: path('/who-we-are/constitution') },
-        { label: s('ourLegacy'), to: path('/who-we-are/our-legacy') },
-        { label: s('leaders'), to: path('/leaders') },
-      ],
-    },
-    {
-      label: s('departments'),
-      children: [
-        ...departments.map((d) => ({ label: t(d.title, lang), to: path(`/departments/${d.slug}`) })),
-        { label: s('viewAll'), to: path('/departments') },
-      ],
-    },
-    {
-      label: s('programs'),
-      children: [
-        ...programs.map((p) => ({ label: t(p.title, lang), to: path(`/programs/${p.slug}`) })),
-        { label: s('viewAll'), to: path('/programs') },
-      ],
-    },
-    { label: s('events'), to: path('/events') },
-    {
-      label: s('mediaNews'),
-      children: [
-        { label: s('news'), to: path('/media/news') },
-        { label: s('pressReleases'), to: path('/media/press-release') },
-        { label: s('statements'), to: path('/media/statement') },
-        { label: s('interviews'), to: path('/media/interview') },
-        { label: s('speeches'), to: path('/media/speech') },
-        { label: s('videos'), to: path('/media/videos') },
-        { label: s('podcasts'), to: path('/media/podcasts') },
-        { label: s('photoGallery'), to: path('/media/gallery') },
-        { label: s('downloads'), to: path('/media/downloads') },
-        { label: s('publications'), to: path('/publications') },
-        { label: s('externalLinks'), to: path('/links') },
-      ],
-    },
-    { label: s('contact'), to: path('/contact') },
-  ];
+  const items: NavItem[] = useMemo(
+    () => [
+      { label: str('home', lang), to: path('/') },
+      {
+        label: str('aboutUs', lang),
+        children: [
+          { label: str('ideology', lang), to: path('/who-we-are/ideology') },
+          { label: str('ourValues', lang), to: path('/who-we-are/our-values') },
+          { label: str('constitution', lang), to: path('/who-we-are/constitution') },
+          { label: str('ourLegacy', lang), to: path('/who-we-are/our-legacy') },
+          { label: str('leaders', lang), to: path('/leaders') },
+        ],
+      },
+      {
+        label: str('departments', lang),
+        children: [
+          ...departments
+            .map((d) => ({
+              label: tLang(d.title, lang),
+              to: path(`/departments/${d.slug}`),
+            }))
+            .filter((c) => Boolean(c.label)),
+          { label: str('viewAll', lang), to: path('/departments') },
+        ],
+      },
+      {
+        label: str('programs', lang),
+        children: [
+          ...programs
+            .map((p) => ({
+              label: tLang(p.title, lang),
+              to: path(`/programs/${p.slug}`),
+            }))
+            .filter((c) => Boolean(c.label)),
+          { label: str('viewAll', lang), to: path('/programs') },
+        ],
+      },
+      { label: str('events', lang), to: path('/events') },
+      {
+        label: str('mediaNews', lang),
+        children: [
+          { label: str('news', lang), to: path('/media/news') },
+          { label: str('pressReleases', lang), to: path('/media/press-release') },
+          { label: str('statements', lang), to: path('/media/statement') },
+          { label: str('interviews', lang), to: path('/media/interview') },
+          { label: str('speeches', lang), to: path('/media/speech') },
+          { label: str('videos', lang), to: path('/media/videos') },
+          { label: str('podcasts', lang), to: path('/media/podcasts') },
+          { label: str('photoGallery', lang), to: path('/media/gallery') },
+          { label: str('downloads', lang), to: path('/media/downloads') },
+          { label: str('publications', lang), to: path('/publications') },
+          { label: str('externalLinks', lang), to: path('/links') },
+        ],
+      },
+      { label: str('contact', lang), to: path('/contact') },
+    ],
+    [lang, departments, programs, path]
+  );
 
   const socials = [
     { href: settings?.social?.facebook, Icon: Facebook, label: 'Facebook' },
@@ -125,7 +143,7 @@ export default function Header() {
 
   const joinUrl = settings?.joinUrl || path('/contact');
   const joinIsExternal = /^https?:\/\//.test(joinUrl);
-  const joinLabel = t(settings?.joinLabel, lang) || s('joinUs');
+  const joinLabel = tLang(settings?.joinLabel, lang) || str('joinUs', lang);
 
   return (
     <>
@@ -139,8 +157,8 @@ export default function Header() {
       {/* Announcement bar */}
       <div className="bg-plum-800 text-white">
         <div className={SHELL}>
-          <div className="flex h-10 items-center justify-between gap-4 text-[12.5px]">
-            <div className="flex min-w-0 items-center gap-2">
+        <div className="flex h-10 items-center justify-between gap-2 text-[12.5px] sm:gap-4">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
               <Sparkles size={14} className="shrink-0 text-magenta-300" />
               <span className="truncate text-white/80">
                 {t(settings?.topBarText, lang) || t(settings?.tagline, lang)}
@@ -189,7 +207,7 @@ export default function Header() {
       {/* Main header */}
       <header className="sticky top-0 z-50 border-b border-plum-100 bg-white/95 shadow-[0_1px_16px_-8px_rgba(44,10,77,0.25)] backdrop-blur">
         <div className={SHELL}>
-          <div className="flex h-[74px] items-center justify-between gap-3 lg:h-[84px] xl:gap-5">
+        <div className="flex h-[74px] min-w-0 items-center justify-between gap-2 lg:h-[84px] xl:gap-5">
             <Link
               to={path('/')}
               className="flex shrink-0 items-center"
@@ -333,66 +351,94 @@ export default function Header() {
         )}
       </header>
 
-      {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-[70] xl:hidden">
-          <div className="absolute inset-0 bg-plum-950/50" onClick={() => setMobileOpen(false)} />
-          <div className="absolute inset-y-0 end-0 flex w-[88%] max-w-sm animate-fade-in flex-col bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-plum-100 px-5 py-4">
-              <span className="font-display text-base font-semibold text-plum-800">{s('menu')}</span>
-              <button
-                onClick={() => setMobileOpen(false)}
-                aria-label={s('close')}
-                className="grid h-9 w-9 place-items-center rounded-full hover:bg-magenta-50"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-4 py-3">
-              {items.map((item) =>
-                item.children ? (
-                  <details key={item.label} className="group border-b border-plum-100/70">
-                    <summary className="flex cursor-pointer list-none items-center justify-between py-3.5 text-[15px] font-medium text-plum-800">
-                      {item.label}
-                      <ChevronDown size={16} className="opacity-50 transition group-open:rotate-180" />
-                    </summary>
-                    <div className="pb-3 ps-3">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.to}
-                          to={child.to}
-                          className="block py-2 text-[14px] text-ink-muted hover:text-magenta-600"
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </details>
-                ) : (
-                  <Link
-                    key={item.label}
-                    to={item.to!}
-                    className="block border-b border-plum-100/70 py-3.5 text-[15px] font-medium text-plum-800 hover:text-magenta-600"
+      {/* Mobile drawer — portaled above page content; labels follow active lang */}
+      {mobileOpen &&
+        createPortal(
+          <div key={lang} className="fixed inset-0 z-[100] xl:hidden">
+            <div
+              className="absolute inset-0 bg-plum-950/50"
+              onClick={() => setMobileOpen(false)}
+              aria-hidden="true"
+            />
+            <div className="absolute inset-y-0 end-0 z-10 flex w-[88%] max-w-sm animate-fade-in flex-col bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-plum-100 px-5 py-4">
+                <span className="font-display text-base font-semibold text-plum-800">
+                  {str('menu', lang)}
+                </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center rounded-full bg-plum-50 p-0.5">
+                    {LANGS.map((l) => (
+                      <button
+                        key={l.code}
+                        type="button"
+                        onClick={() => switchLang(l.code)}
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                          lang === l.code
+                            ? 'bg-magenta-500 text-white'
+                            : 'text-plum-800/55 hover:text-plum-800'
+                        }`}
+                      >
+                        {l.short}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setMobileOpen(false)}
+                    aria-label={str('close', lang)}
+                    className="grid h-9 w-9 place-items-center rounded-full hover:bg-magenta-50"
                   >
-                    {item.label}
-                  </Link>
-                )
-              )}
-            </div>
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
 
-            <div className="border-t border-plum-100 p-4">
-              <Link
-                to={joinUrl}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-magenta-500 px-5 py-3 text-sm font-medium text-white"
-              >
-                <UserPlus size={16} />
-                {joinLabel}
-              </Link>
+              <div className="flex-1 overflow-y-auto px-4 py-3">
+                {items.map((item) =>
+                  item.children ? (
+                    <details key={`${lang}-${item.to ?? item.label}`} className="group border-b border-plum-100/70">
+                      <summary className="flex cursor-pointer list-none items-center justify-between py-3.5 text-[15px] font-medium text-plum-800">
+                        {item.label}
+                        <ChevronDown size={16} className="opacity-50 transition group-open:rotate-180" />
+                      </summary>
+                      <div className="pb-3 ps-3">
+                        {item.children.map((child) =>
+                          child.label ? (
+                            <Link
+                              key={child.to}
+                              to={child.to}
+                              className="block py-2 text-[14px] text-ink-muted hover:text-magenta-600"
+                            >
+                              {child.label}
+                            </Link>
+                          ) : null
+                        )}
+                      </div>
+                    </details>
+                  ) : (
+                    <Link
+                      key={`${lang}-${item.to}`}
+                      to={item.to!}
+                      className="block border-b border-plum-100/70 py-3.5 text-[15px] font-medium text-plum-800 hover:text-magenta-600"
+                    >
+                      {item.label}
+                    </Link>
+                  )
+                )}
+              </div>
+
+              <div className="border-t border-plum-100 p-4">
+                <Link
+                  to={joinUrl}
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-magenta-500 px-5 py-3 text-sm font-medium text-white"
+                >
+                  <UserPlus size={16} />
+                  {joinLabel}
+                </Link>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }

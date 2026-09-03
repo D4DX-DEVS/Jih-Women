@@ -12,12 +12,12 @@ import {
 } from 'lucide-react';
 import { apiPost } from '../lib/api';
 import { useSite } from '../lib/site';
-import { t } from '../lib/i18n';
+import { str, tLang } from '../lib/i18n';
 import { whatsappHref } from '../lib/format';
 import { Container } from './Primitives';
 
 export default function Footer() {
-  const { lang, data, path, s } = useSite();
+  const { lang, data, path } = useSite();
   const settings = data?.settings;
   const departments = data?.nav.departments ?? [];
 
@@ -31,15 +31,22 @@ export default function Footer() {
   ].filter((x) => Boolean(x.href));
 
   const quickLinks = [
-    { label: s('aboutUs'), to: path('/who-we-are') },
-    { label: s('visionMission'), to: path('/who-we-are/ideology') },
-    { label: s('departments'), to: path('/departments') },
-    { label: s('programs'), to: path('/programs') },
-    { label: s('events'), to: path('/events') },
-    { label: s('mediaNews'), to: path('/media/news') },
-    { label: s('photoGallery'), to: path('/media/gallery') },
-    { label: s('contact'), to: path('/contact') },
+    { label: str('aboutUs', lang), to: path('/who-we-are') },
+    { label: str('visionMission', lang), to: path('/who-we-are/ideology') },
+    { label: str('departments', lang), to: path('/departments') },
+    { label: str('programs', lang), to: path('/programs') },
+    { label: str('events', lang), to: path('/events') },
+    { label: str('mediaNews', lang), to: path('/media/news') },
+    { label: str('photoGallery', lang), to: path('/media/gallery') },
+    { label: str('contact', lang), to: path('/contact') },
   ];
+
+  const siteName = tLang(settings?.siteName, lang) || str('footerOrgFull', lang);
+  const footerNote = tLang(settings?.footerNote, lang) || str('footerBlurb', lang);
+  const address = tLang(settings?.address, lang);
+  /* Malayalam mark from CMS; English uses the same English wordmark as the header */
+  const brandLogo = lang === 'en' ? '/logo.png' : settings?.logoUrl || '/logo.png';
+  const showCmsLogoPlate = lang === 'ml' && Boolean(settings?.logoUrl);
 
   return (
     <footer className="relative overflow-hidden bg-plum-800 text-white/70">
@@ -53,57 +60,37 @@ export default function Footer() {
             <Link
               to={path('/')}
               className="flex items-center gap-3"
-              aria-label={t(settings?.siteName, lang) || "Women's Wing Kerala"}
+              aria-label={siteName}
             >
-              {settings?.logoUrl ? (
+              {showCmsLogoPlate ? (
                 /* The mark is dark ink, so it needs a light plate on the deep
                    footer. The wing name sits beside it, as in the header. */
                 <>
                   <img
-                    src={settings.logoUrl}
+                    src={brandLogo}
                     alt=""
                     className="h-12 w-auto max-w-[190px] shrink-0 rounded-lg bg-white/95 object-contain object-left px-2.5 py-2"
                   />
                   <span className="leading-[1.3]">
-                    <span className="block whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.15em] text-magenta-300">
-                      {lang === 'ml' ? 'വനിതാ വിഭാഗം' : "Women's Wing"}
+                    <span className="block whitespace-normal text-[11px] font-bold uppercase tracking-[0.15em] text-magenta-300 sm:whitespace-nowrap">
+                      {str('footerWing', lang)}
                     </span>
-                    <span className="block whitespace-nowrap text-[9.5px] font-semibold uppercase tracking-[0.15em] text-white/55">
-                      {lang === 'ml' ? 'കേരള' : 'Kerala'}
+                    <span className="block whitespace-normal text-[9.5px] font-semibold uppercase tracking-[0.15em] text-white/55 sm:whitespace-nowrap">
+                      {str('footerKerala', lang)}
                     </span>
                   </span>
                 </>
               ) : (
-                <>
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/10">
-                    <svg viewBox="0 0 64 64" className="h-8 w-8" aria-hidden="true">
-                      <path
-                        d="M32 12c-5 6-9 9.5-9 15v18h18V27c0-5.5-4-9-9-15z"
-                        fill="none"
-                        stroke="#F49BC6"
-                        strokeWidth="3.5"
-                        strokeLinejoin="round"
-                      />
-                      <path d="M20 30v15M44 30v15" stroke="#F49BC6" strokeWidth="3.5" strokeLinecap="round" />
-                    </svg>
-                  </span>
-                  <span className="leading-tight">
-                    <span className="block font-display text-[14px] font-bold uppercase tracking-wide text-white">
-                      {lang === 'ml' ? 'ജമാഅത്തെ ഇസ്‌ലാമി ഹിന്ദ്' : 'Jamaat e Islami Hind'}
-                    </span>
-                    <span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-magenta-300">
-                      {lang === 'ml' ? 'വനിതാ വിഭാഗം കേരള' : "Women's Wing Kerala"}
-                    </span>
-                  </span>
-                </>
+                <img
+                  src={brandLogo}
+                  alt={siteName}
+                  className="h-12 w-auto max-w-[220px] shrink-0 object-contain object-left"
+                />
               )}
             </Link>
 
             <p className="mt-5 text-[13.5px] leading-relaxed">
-              {t(settings?.footerNote, lang) ||
-                (lang === 'ml'
-                  ? 'പുരോഗമനപരവും നീതിപൂർവകവുമായ ഒരു സമൂഹത്തിനായി മുസ്‌ലിം സ്ത്രീകളുടെ ശാക്തീകരണവും സമഗ്ര വികസനവും ലക്ഷ്യമിടുന്നു.'
-                  : 'Working towards the empowerment and holistic development of Muslim women for a progressive and just society.')}
+              {footerNote}
             </p>
 
             {socials.length > 0 && (
@@ -124,7 +111,7 @@ export default function Footer() {
             )}
           </div>
 
-          <FooterColumn title={s('quickLinks')}>
+          <FooterColumn title={str('quickLinks', lang)}>
             {quickLinks.map((l) => (
               <li key={l.to}>
                 <Link to={l.to} className="transition hover:text-magenta-300">
@@ -134,25 +121,29 @@ export default function Footer() {
             ))}
           </FooterColumn>
 
-          <FooterColumn title={s('departments')}>
+          <FooterColumn title={str('departments', lang)}>
             {departments.length > 0 ? (
-              departments.map((d) => (
-                <li key={d._id}>
-                  <Link to={path(`/departments/${d.slug}`)} className="transition hover:text-magenta-300">
-                    {t(d.title, lang)}
-                  </Link>
-                </li>
-              ))
+              departments.map((d) => {
+                const title = tLang(d.title, lang);
+                if (!title) return null;
+                return (
+                  <li key={d._id}>
+                    <Link to={path(`/departments/${d.slug}`)} className="transition hover:text-magenta-300">
+                      {title}
+                    </Link>
+                  </li>
+                );
+              })
             ) : (
               <li>
                 <Link to={path('/departments')} className="transition hover:text-magenta-300">
-                  {s('departments')}
+                  {str('departments', lang)}
                 </Link>
               </li>
             )}
           </FooterColumn>
 
-          <FooterColumn title={s('contact')}>
+          <FooterColumn title={str('contact', lang)}>
             {settings?.phone && (
               <li className="flex gap-3">
                 <Phone size={15} className="mt-1 shrink-0 text-magenta-300" />
@@ -182,11 +173,11 @@ export default function Footer() {
                 </a>
               </li>
             )}
-            {t(settings?.address, lang) && (
+            {address && (
               <li className="flex gap-3">
                 <MapPin size={15} className="mt-1 shrink-0 text-magenta-300" />
                 <span className="whitespace-pre-line leading-relaxed">
-                  {t(settings?.address, lang)}
+                  {address}
                 </span>
               </li>
             )}
@@ -194,8 +185,8 @@ export default function Footer() {
 
           {settings?.sections?.newsletter !== false && (
             <div>
-              <FooterHeading>{s('newsletter')}</FooterHeading>
-              <p className="mb-4 text-[13.5px] leading-relaxed">{s('newsletterBlurb')}</p>
+              <FooterHeading>{str('newsletter', lang)}</FooterHeading>
+              <p className="mb-4 text-[13.5px] leading-relaxed">{str('newsletterBlurb', lang)}</p>
               <NewsletterForm />
             </div>
           )}
@@ -203,17 +194,17 @@ export default function Footer() {
       </Container>
 
       <div className="relative border-t border-white/10">
-        <Container className="flex flex-col items-center justify-between gap-3 py-5 text-[12.5px] text-white/50 md:flex-row">
-          <span>
-            © {new Date().getFullYear()} {t(settings?.siteName, lang)}. {s('allRightsReserved')}.
+        <Container className="flex flex-col items-center justify-between gap-3 py-5 text-center text-[12.5px] text-white/50 sm:flex-row sm:text-start">
+          <span className="min-w-0">
+            © {new Date().getFullYear()} {siteName}. {str('allRightsReserved', lang)}.
           </span>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
             <Link to={path('/who-we-are')} className="transition hover:text-white">
-              {s('privacyPolicy')}
+              {str('privacyPolicy', lang)}
             </Link>
             <span className="opacity-30">|</span>
             <Link to={path('/who-we-are')} className="transition hover:text-white">
-              {s('termsConditions')}
+              {str('termsConditions', lang)}
             </Link>
           </div>
         </Container>
@@ -241,7 +232,7 @@ function FooterColumn({ title, children }: { title: string; children: React.Reac
 }
 
 function NewsletterForm() {
-  const { s } = useSite();
+  const { lang } = useSite();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'done'>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -263,7 +254,7 @@ function NewsletterForm() {
   if (status === 'done') {
     return (
       <p className="rounded-2xl border border-magenta-400/40 bg-magenta-500/10 px-4 py-3 text-[13px] text-magenta-200">
-        {s('subscribed')}
+        {str('subscribed', lang)}
       </p>
     );
   }
@@ -275,7 +266,7 @@ function NewsletterForm() {
         required
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder={s('enterYourEmail')}
+        placeholder={str('enterYourEmail', lang)}
         className="w-full rounded-xl border border-white/15 bg-white/[0.07] px-4 py-2.5 text-[13.5px] text-white outline-none transition placeholder:text-white/40 focus:border-magenta-400"
       />
       {error && <p className="text-[12px] text-red-300">{error}</p>}
@@ -284,7 +275,7 @@ function NewsletterForm() {
         disabled={status === 'sending'}
         className="w-full rounded-xl bg-magenta-500 px-5 py-2.5 text-[13.5px] font-medium text-white transition hover:bg-magenta-600 disabled:opacity-60"
       >
-        {status === 'sending' ? s('sending') : s('subscribe')}
+        {status === 'sending' ? str('sending', lang) : str('subscribe', lang)}
       </button>
     </form>
   );

@@ -491,7 +491,7 @@ function Overview({ stats, onOpen }: { stats: Stats | null; onOpen: (key: string
       )}
 
       <SectionCard title="Content" description="Click any tile to manage that section.">
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {OVERVIEW_TILES.map((tile) => (
             <button
               key={tile.key}

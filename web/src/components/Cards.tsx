@@ -109,9 +109,9 @@ export function EventCard({ event }: { event: OrgEvent }) {
   return (
     <Link
       to={path(`/events/${event.slug}`)}
-      className="card-hover group flex gap-5 rounded-3xl border border-plum-100 bg-white p-5 shadow-soft"
+      className="card-hover group flex min-w-0 gap-4 rounded-3xl border border-plum-100 bg-white p-4 shadow-soft sm:gap-5 sm:p-5"
     >
-      <div className="flex h-[74px] w-[70px] shrink-0 flex-col items-center justify-center rounded-2xl bg-plum-800 text-white">
+      <div className="flex h-[64px] w-[60px] shrink-0 flex-col items-center justify-center rounded-2xl bg-plum-800 text-white sm:h-[74px] sm:w-[70px]">
         <span className="font-display text-2xl font-bold leading-none">{day}</span>
         <span className="mt-1 text-[11px] uppercase tracking-wide text-magenta-300">{month}</span>
       </div>
@@ -347,10 +347,10 @@ export function VideoPlayerModal({ item, onClose }: { item: VideoItem; onClose: 
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-ink/85 p-4" onClick={onClose}>
-      <div className="w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-3 flex items-start justify-between gap-4 text-white">
-          <h3 className="font-display text-lg font-semibold">{t(item.title, lang)}</h3>
+    <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-ink/85 p-3 sm:p-4" onClick={onClose}>
+      <div className="my-auto w-full min-w-0 max-w-3xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-3 flex min-w-0 items-start justify-between gap-3 text-white sm:gap-4">
+          <h3 className="min-w-0 flex-1 font-display text-base font-semibold leading-snug sm:text-lg">{t(item.title, lang)}</h3>
           <button onClick={onClose} aria-label="Close" className="shrink-0 opacity-70 hover:opacity-100">
             <X size={22} />
           </button>
@@ -488,7 +488,7 @@ export function GalleryGrid({ items }: { items: MediaItem[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((item, i) => (
           <button
             key={i}

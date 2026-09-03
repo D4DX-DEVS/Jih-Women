@@ -677,7 +677,7 @@ function StatsGrid({ stats }: { stats: StatsResponse | null }) {
   const totalAttendees = entrepreneurs + infants + children + companions;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-5">
       <div className="glass p-5">
         <div className="text-xs uppercase tracking-wider text-foreground/50">Total Attendees</div>
         <div className="admin-display text-3xl font-bold mt-2">{stats ? totalAttendees : '—'}</div>
@@ -1363,7 +1363,7 @@ function DetailModal({
                         </select>
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <div>
                         <label className={labelCls}>Infants (0–5)</label>
                         <input type="number" className={inputCls} min={0} value={editValues.accompanyingInfants as number} onChange={(e) => setField('accompanyingInfants', Math.max(0, Number(e.target.value)))} />
@@ -2358,7 +2358,7 @@ function CheckInsManager({
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
         {isCheckIn ? (
           <>
             <div className="glass p-5">
@@ -3099,7 +3099,7 @@ function GalleryManager({
       ) : images.length === 0 ? (
         <div className="glass p-8 text-center text-foreground/50 text-sm">No gallery images yet. Upload some above.</div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
           {images.map((img) => (
             <div key={img._id} className="glass overflow-hidden rounded-2xl group">
               <div className="relative aspect-square overflow-hidden">

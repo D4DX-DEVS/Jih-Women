@@ -228,7 +228,7 @@ export default function ContactInbox({ token, onToast, onLogout }: Props) {
             </>
           }
         >
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
             <div>
               <div className="text-xs uppercase tracking-wider text-foreground/50">Phone</div>
               <div>{open.phone || '—'}</div>

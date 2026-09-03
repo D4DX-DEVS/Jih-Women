@@ -800,7 +800,7 @@ export function GalleryEditor({
 
   return (
     <Field label={`${label} · ${items.length}`} hint={hint}>
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 min-[400px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((item, i) => (
           <div key={i} className="overflow-hidden rounded-lg border border-[#e6e8f0] bg-white">
             {item.kind === 'video' ? (
