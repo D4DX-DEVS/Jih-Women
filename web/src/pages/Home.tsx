@@ -204,7 +204,7 @@ function Hero({ slides }: { slides: Slide[] }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="relative min-h-[700px] w-full md:h-[76vh] md:min-h-[560px]">
+      <div className="relative min-h-[640px] w-full md:h-[76vh] md:min-h-[560px]">
         {slides.map((item, i) => (
           <div
             key={item._id}
@@ -288,7 +288,7 @@ function Hero({ slides }: { slides: Slide[] }) {
               <ChevronRight size={18} />
             </button>
 
-            <div className="absolute inset-x-0 bottom-16 z-10 flex justify-center gap-2 sm:bottom-20 md:bottom-24">
+            <div className="absolute inset-x-0 bottom-20 z-10 flex justify-center gap-2 sm:bottom-24 md:bottom-24">
               {slides.map((item, i) => (
                 <button
                   key={item._id}

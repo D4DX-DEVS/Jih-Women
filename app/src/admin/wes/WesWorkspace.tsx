@@ -487,25 +487,50 @@ export default function WesWorkspace({
             <div className="admin-display text-xl font-bold tracking-tight">Registrations &amp; Attendance</div>
             <div className="text-xs text-foreground/50">Women Entrepreneurs Summit</div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-3 md:flex">
             {filters.district && (
-              <button onClick={onExportDistrictExcel} className="pill pill-outline text-sm hidden md:inline-flex" title={`Export ${filters.district} registrations`}>
+              <button onClick={onExportDistrictExcel} className="pill pill-outline text-sm inline-flex" title={`Export ${filters.district} registrations`}>
                 Export {filters.district}
               </button>
             )}
             {hasActiveFilters && (
               <button
                 onClick={onExportFilteredExcel}
-                className="pill pill-outline text-sm hidden md:inline-flex"
+                className="pill pill-outline text-sm inline-flex"
                 title={`Export ${list?.total ?? ''} filtered results`}
               >
                 Export Filtered {list?.total != null ? `(${list.total})` : ''}
               </button>
             )}
-            <button onClick={onExportExcel} className="pill pill-outline text-sm hidden md:inline-flex">
+            <button onClick={onExportExcel} className="pill pill-outline text-sm inline-flex">
               Export Excel
             </button>
           </div>
+
+          <details className="relative md:hidden">
+            <summary className="pill pill-outline text-sm inline-flex cursor-pointer list-none">Export ⋯</summary>
+            <div className="absolute end-0 z-30 mt-2 w-56 rounded-lg border border-[#e6e8f0] bg-white py-1 shadow-lift">
+              {filters.district && (
+                <button
+                  onClick={onExportDistrictExcel}
+                  className="block w-full px-4 py-2 text-start text-sm hover:bg-[#f6f1fb]"
+                >
+                  Export {filters.district}
+                </button>
+              )}
+              {hasActiveFilters && (
+                <button
+                  onClick={onExportFilteredExcel}
+                  className="block w-full px-4 py-2 text-start text-sm hover:bg-[#f6f1fb]"
+                >
+                  Export Filtered {list?.total != null ? `(${list.total})` : ''}
+                </button>
+              )}
+              <button onClick={onExportExcel} className="block w-full px-4 py-2 text-start text-sm hover:bg-[#f6f1fb]">
+                Export Excel
+              </button>
+            </div>
+          </details>
         </div>
         <div className="no-scrollbar max-w-7xl mx-auto px-6 flex gap-1 overflow-x-auto">
           <button

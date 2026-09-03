@@ -17,7 +17,7 @@ import { whatsappHref } from '../lib/format';
 import { Container } from './Primitives';
 
 export default function Footer() {
-  const { lang, data, path } = useSite();
+  const { data, path } = useSite();
   const settings = data?.settings;
   const departments = data?.nav.departments ?? [];
 
@@ -30,23 +30,24 @@ export default function Footer() {
     { href: settings?.email ? `mailto:${settings.email}` : '', Icon: Mail, label: 'Email' },
   ].filter((x) => Boolean(x.href));
 
+  /* Footer is always shown in English, independent of the site's ML/EN toggle. */
   const quickLinks = [
-    { label: str('aboutUs', lang), to: path('/who-we-are') },
-    { label: str('visionMission', lang), to: path('/who-we-are/ideology') },
-    { label: str('departments', lang), to: path('/departments') },
-    { label: str('programs', lang), to: path('/programs') },
-    { label: str('events', lang), to: path('/events') },
-    { label: str('mediaNews', lang), to: path('/media/news') },
-    { label: str('photoGallery', lang), to: path('/media/gallery') },
-    { label: str('contact', lang), to: path('/contact') },
+    { label: str('aboutUs', 'en'), to: path('/who-we-are') },
+    { label: str('visionMission', 'en'), to: path('/who-we-are/ideology') },
+    { label: str('departments', 'en'), to: path('/departments') },
+    { label: str('programs', 'en'), to: path('/programs') },
+    { label: str('events', 'en'), to: path('/events') },
+    { label: str('mediaNews', 'en'), to: path('/media/news') },
+    { label: str('photoGallery', 'en'), to: path('/media/gallery') },
+    { label: str('contact', 'en'), to: path('/contact') },
   ];
 
-  const siteName = tLang(settings?.siteName, lang) || str('footerOrgFull', lang);
-  const footerNote = tLang(settings?.footerNote, lang) || str('footerBlurb', lang);
-  const address = tLang(settings?.address, lang);
+  const siteName = tLang(settings?.siteName, 'en') || str('footerOrgFull', 'en');
+  const footerNote = tLang(settings?.footerNote, 'en') || str('footerBlurb', 'en');
+  const address = tLang(settings?.address, 'en');
   /* Malayalam mark from CMS; English uses the same English wordmark as the header */
-  const brandLogo = lang === 'en' ? '/logo.png' : settings?.logoUrl || '/logo.png';
-  const showCmsLogoPlate = lang === 'ml' && Boolean(settings?.logoUrl);
+  const brandLogo = '/logo.png';
+  const showCmsLogoPlate = false;
 
   return (
     <footer className="relative overflow-hidden bg-plum-800 text-white/70">
@@ -73,10 +74,10 @@ export default function Footer() {
                   />
                   <span className="leading-[1.3]">
                     <span className="block whitespace-normal text-[11px] font-bold uppercase tracking-[0.15em] text-magenta-300 sm:whitespace-nowrap">
-                      {str('footerWing', lang)}
+                      {str('footerWing', 'en')}
                     </span>
                     <span className="block whitespace-normal text-[9.5px] font-semibold uppercase tracking-[0.15em] text-white/55 sm:whitespace-nowrap">
-                      {str('footerKerala', lang)}
+                      {str('footerKerala', 'en')}
                     </span>
                   </span>
                 </>
@@ -111,7 +112,7 @@ export default function Footer() {
             )}
           </div>
 
-          <FooterColumn title={str('quickLinks', lang)}>
+          <FooterColumn title={str('quickLinks', 'en')}>
             {quickLinks.map((l) => (
               <li key={l.to}>
                 <Link to={l.to} className="transition hover:text-magenta-300">
@@ -121,10 +122,10 @@ export default function Footer() {
             ))}
           </FooterColumn>
 
-          <FooterColumn title={str('departments', lang)}>
+          <FooterColumn title={str('departments', 'en')}>
             {departments.length > 0 ? (
               departments.map((d) => {
-                const title = tLang(d.title, lang);
+                const title = tLang(d.title, 'en');
                 if (!title) return null;
                 return (
                   <li key={d._id}>
@@ -137,13 +138,13 @@ export default function Footer() {
             ) : (
               <li>
                 <Link to={path('/departments')} className="transition hover:text-magenta-300">
-                  {str('departments', lang)}
+                  {str('departments', 'en')}
                 </Link>
               </li>
             )}
           </FooterColumn>
 
-          <FooterColumn title={str('contact', lang)}>
+          <FooterColumn title={str('contact', 'en')}>
             {settings?.phone && (
               <li className="flex gap-3">
                 <Phone size={15} className="mt-1 shrink-0 text-magenta-300" />
@@ -185,8 +186,8 @@ export default function Footer() {
 
           {settings?.sections?.newsletter !== false && (
             <div>
-              <FooterHeading>{str('newsletter', lang)}</FooterHeading>
-              <p className="mb-4 text-[13.5px] leading-relaxed">{str('newsletterBlurb', lang)}</p>
+              <FooterHeading>{str('newsletter', 'en')}</FooterHeading>
+              <p className="mb-4 text-[13.5px] leading-relaxed">{str('newsletterBlurb', 'en')}</p>
               <NewsletterForm />
             </div>
           )}
@@ -196,15 +197,15 @@ export default function Footer() {
       <div className="relative border-t border-white/10">
         <Container className="flex flex-col items-center justify-between gap-3 py-5 text-center text-[12.5px] text-white/50 sm:flex-row sm:text-start">
           <span className="min-w-0">
-            © {new Date().getFullYear()} {siteName}. {str('allRightsReserved', lang)}.
+            © {new Date().getFullYear()} {siteName}. {str('allRightsReserved', 'en')}.
           </span>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
             <Link to={path('/who-we-are')} className="transition hover:text-white">
-              {str('privacyPolicy', lang)}
+              {str('privacyPolicy', 'en')}
             </Link>
             <span className="opacity-30">|</span>
             <Link to={path('/who-we-are')} className="transition hover:text-white">
-              {str('termsConditions', lang)}
+              {str('termsConditions', 'en')}
             </Link>
           </div>
         </Container>
@@ -232,7 +233,6 @@ function FooterColumn({ title, children }: { title: string; children: React.Reac
 }
 
 function NewsletterForm() {
-  const { lang } = useSite();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'done'>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -254,7 +254,7 @@ function NewsletterForm() {
   if (status === 'done') {
     return (
       <p className="rounded-2xl border border-magenta-400/40 bg-magenta-500/10 px-4 py-3 text-[13px] text-magenta-200">
-        {str('subscribed', lang)}
+        {str('subscribed', 'en')}
       </p>
     );
   }
@@ -266,7 +266,7 @@ function NewsletterForm() {
         required
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder={str('enterYourEmail', lang)}
+        placeholder={str('enterYourEmail', 'en')}
         className="w-full rounded-xl border border-white/15 bg-white/[0.07] px-4 py-2.5 text-[13.5px] text-white outline-none transition placeholder:text-white/40 focus:border-magenta-400"
       />
       {error && <p className="text-[12px] text-red-300">{error}</p>}
@@ -275,7 +275,7 @@ function NewsletterForm() {
         disabled={status === 'sending'}
         className="w-full rounded-xl bg-magenta-500 px-5 py-2.5 text-[13.5px] font-medium text-white transition hover:bg-magenta-600 disabled:opacity-60"
       >
-        {status === 'sending' ? str('sending', lang) : str('subscribe', lang)}
+        {status === 'sending' ? str('sending', 'en') : str('subscribe', 'en')}
       </button>
     </form>
   );

@@ -56,64 +56,65 @@ export default function Header() {
   const departments = data?.nav.departments ?? [];
   const programs = data?.nav.programs ?? [];
 
-  const items: NavItem[] = useMemo(
-    () => [
-      { label: str('home', lang), to: path('/') },
-      {
-        label: str('aboutUs', lang),
-        children: [
-          { label: str('ideology', lang), to: path('/who-we-are/ideology') },
-          { label: str('ourValues', lang), to: path('/who-we-are/our-values') },
-          { label: str('constitution', lang), to: path('/who-we-are/constitution') },
-          { label: str('ourLegacy', lang), to: path('/who-we-are/our-legacy') },
-          { label: str('leaders', lang), to: path('/leaders') },
-        ],
-      },
-      {
-        label: str('departments', lang),
-        children: [
-          ...departments
-            .map((d) => ({
-              label: tLang(d.title, lang),
-              to: path(`/departments/${d.slug}`),
-            }))
-            .filter((c) => Boolean(c.label)),
-          { label: str('viewAll', lang), to: path('/departments') },
-        ],
-      },
-      {
-        label: str('programs', lang),
-        children: [
-          ...programs
-            .map((p) => ({
-              label: tLang(p.title, lang),
-              to: path(`/programs/${p.slug}`),
-            }))
-            .filter((c) => Boolean(c.label)),
-          { label: str('viewAll', lang), to: path('/programs') },
-        ],
-      },
-      { label: str('events', lang), to: path('/events') },
-      {
-        label: str('mediaNews', lang),
-        children: [
-          { label: str('news', lang), to: path('/media/news') },
-          { label: str('pressReleases', lang), to: path('/media/press-release') },
-          { label: str('statements', lang), to: path('/media/statement') },
-          { label: str('interviews', lang), to: path('/media/interview') },
-          { label: str('speeches', lang), to: path('/media/speech') },
-          { label: str('videos', lang), to: path('/media/videos') },
-          { label: str('podcasts', lang), to: path('/media/podcasts') },
-          { label: str('photoGallery', lang), to: path('/media/gallery') },
-          { label: str('downloads', lang), to: path('/media/downloads') },
-          { label: str('publications', lang), to: path('/publications') },
-          { label: str('externalLinks', lang), to: path('/links') },
-        ],
-      },
-      { label: str('contact', lang), to: path('/contact') },
-    ],
-    [lang, departments, programs, path]
-  );
+  const buildItems = (navLang: Lang): NavItem[] => [
+    { label: str('home', navLang), to: path('/') },
+    {
+      label: str('aboutUs', navLang),
+      children: [
+        { label: str('ideology', navLang), to: path('/who-we-are/ideology') },
+        { label: str('ourValues', navLang), to: path('/who-we-are/our-values') },
+        { label: str('constitution', navLang), to: path('/who-we-are/constitution') },
+        { label: str('ourLegacy', navLang), to: path('/who-we-are/our-legacy') },
+        { label: str('leaders', navLang), to: path('/leaders') },
+      ],
+    },
+    {
+      label: str('departments', navLang),
+      children: [
+        ...departments
+          .map((d) => ({
+            label: tLang(d.title, navLang),
+            to: path(`/departments/${d.slug}`),
+          }))
+          .filter((c) => Boolean(c.label)),
+        { label: str('viewAll', navLang), to: path('/departments') },
+      ],
+    },
+    {
+      label: str('programs', navLang),
+      children: [
+        ...programs
+          .map((p) => ({
+            label: tLang(p.title, navLang),
+            to: path(`/programs/${p.slug}`),
+          }))
+          .filter((c) => Boolean(c.label)),
+        { label: str('viewAll', navLang), to: path('/programs') },
+      ],
+    },
+    { label: str('events', navLang), to: path('/events') },
+    {
+      label: str('mediaNews', navLang),
+      children: [
+        { label: str('news', navLang), to: path('/media/news') },
+        { label: str('pressReleases', navLang), to: path('/media/press-release') },
+        { label: str('statements', navLang), to: path('/media/statement') },
+        { label: str('interviews', navLang), to: path('/media/interview') },
+        { label: str('speeches', navLang), to: path('/media/speech') },
+        { label: str('videos', navLang), to: path('/media/videos') },
+        { label: str('podcasts', navLang), to: path('/media/podcasts') },
+        { label: str('photoGallery', navLang), to: path('/media/gallery') },
+        { label: str('downloads', navLang), to: path('/media/downloads') },
+        { label: str('publications', navLang), to: path('/publications') },
+        { label: str('externalLinks', navLang), to: path('/links') },
+      ],
+    },
+    { label: str('contact', navLang), to: path('/contact') },
+  ];
+
+  const items: NavItem[] = useMemo(() => buildItems(lang), [lang, departments, programs, path]);
+  /* Mobile drawer menu is always shown in English, independent of the site's ML/EN toggle. */
+  const mobileItems: NavItem[] = useMemo(() => buildItems('en'), [departments, programs, path]);
 
   const socials = [
     { href: settings?.social?.facebook, Icon: Facebook, label: 'Facebook' },
@@ -144,6 +145,7 @@ export default function Header() {
   const joinUrl = settings?.joinUrl || path('/contact');
   const joinIsExternal = /^https?:\/\//.test(joinUrl);
   const joinLabel = tLang(settings?.joinLabel, lang) || str('joinUs', lang);
+  const joinLabelMobile = tLang(settings?.joinLabel, 'en') || str('joinUs', 'en');
 
   return (
     <>
@@ -351,7 +353,7 @@ export default function Header() {
         )}
       </header>
 
-      {/* Mobile drawer — portaled above page content; labels follow active lang */}
+      {/* Mobile drawer — portaled above page content; always rendered in English */}
       {mobileOpen &&
         createPortal(
           <div key={lang} className="fixed inset-0 z-[100] xl:hidden">
@@ -363,7 +365,7 @@ export default function Header() {
             <div className="absolute inset-y-0 end-0 z-10 flex w-[88%] max-w-sm animate-fade-in flex-col bg-white shadow-2xl">
               <div className="flex items-center justify-between border-b border-plum-100 px-5 py-4">
                 <span className="font-display text-base font-semibold text-plum-800">
-                  {str('menu', lang)}
+                  {str('menu', 'en')}
                 </span>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center rounded-full bg-plum-50 p-0.5">
@@ -384,7 +386,7 @@ export default function Header() {
                   </div>
                   <button
                     onClick={() => setMobileOpen(false)}
-                    aria-label={str('close', lang)}
+                    aria-label={str('close', 'en')}
                     className="grid h-9 w-9 place-items-center rounded-full hover:bg-magenta-50"
                   >
                     <X size={18} />
@@ -393,9 +395,9 @@ export default function Header() {
               </div>
 
               <div className="flex-1 overflow-y-auto px-4 py-3">
-                {items.map((item) =>
+                {mobileItems.map((item) =>
                   item.children ? (
-                    <details key={`${lang}-${item.to ?? item.label}`} className="group border-b border-plum-100/70">
+                    <details key={`en-${item.to ?? item.label}`} className="group border-b border-plum-100/70">
                       <summary className="flex cursor-pointer list-none items-center justify-between py-3.5 text-[15px] font-medium text-plum-800">
                         {item.label}
                         <ChevronDown size={16} className="opacity-50 transition group-open:rotate-180" />
@@ -416,7 +418,7 @@ export default function Header() {
                     </details>
                   ) : (
                     <Link
-                      key={`${lang}-${item.to}`}
+                      key={`en-${item.to}`}
                       to={item.to!}
                       className="block border-b border-plum-100/70 py-3.5 text-[15px] font-medium text-plum-800 hover:text-magenta-600"
                     >
@@ -432,7 +434,7 @@ export default function Header() {
                   className="flex w-full items-center justify-center gap-2 rounded-full bg-magenta-500 px-5 py-3 text-sm font-medium text-white"
                 >
                   <UserPlus size={16} />
-                  {joinLabel}
+                  {joinLabelMobile}
                 </Link>
               </div>
             </div>
