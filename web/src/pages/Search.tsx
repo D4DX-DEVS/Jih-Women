@@ -50,7 +50,7 @@ export default function Search() {
                 <li key={`${result.kind}-${result.slug}-${i}`}>
                   <Link
                     to={path(result.path)}
-                    className="flex items-center gap-4 px-5 py-4 transition hover:bg-magenta-50"
+                    className="flex min-w-0 items-center gap-4 px-5 py-4 transition hover:bg-magenta-50"
                   >
                     {result.coverImage ? (
                       <img

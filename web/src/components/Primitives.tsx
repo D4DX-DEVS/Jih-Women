@@ -9,7 +9,7 @@ export function Container({
   children: ReactNode;
   className?: string;
 }) {
-  return <div className={`mx-auto w-full max-w-[1200px] px-5 lg:px-8 ${className}`}>{children}</div>;
+  return <div className={`mx-auto w-full min-w-0 max-w-[1200px] px-4 sm:px-5 lg:px-8 ${className}`}>{children}</div>;
 }
 
 export function Section({
@@ -57,12 +57,12 @@ export function SectionHeading({
         align === 'center' ? 'text-center md:text-center' : ''
       }`}
     >
-      <div className={align === 'center' ? 'mx-auto max-w-2xl' : 'max-w-2xl'}>
+      <div className={align === 'center' ? 'mx-auto w-full min-w-0 max-w-2xl' : 'w-full min-w-0 max-w-2xl'}>
         {eyebrow && (
           <div className={`mb-2.5 eyebrow ${invert ? 'text-magenta-300' : ''}`}>{eyebrow}</div>
         )}
         <h2
-          className={`text-[1.6rem] font-semibold leading-tight md:text-[2.1rem] ${
+          className={`w-full min-w-0 text-[1.45rem] font-semibold leading-[1.25] [overflow-wrap:anywhere] [text-wrap:wrap] sm:text-[1.6rem] md:text-[2.1rem] md:leading-tight ${
             invert ? 'text-white' : 'text-plum-800'
           }`}
         >
@@ -194,7 +194,7 @@ export function PageHeader({
             ))}
           </nav>
         )}
-        <h1 className="max-w-3xl text-[1.8rem] font-semibold leading-tight md:text-[2.6rem]">
+        <h1 className="w-full min-w-0 max-w-3xl text-[1.55rem] font-semibold leading-[1.25] [overflow-wrap:anywhere] [text-wrap:wrap] sm:text-[1.8rem] md:text-[2.6rem] md:leading-tight">
           {title}
         </h1>
         <Rule className="mt-5" />
@@ -267,11 +267,13 @@ export function Highlighted({
     <>
       {parts.map((part, i) =>
         part.startsWith('*') && part.endsWith('*') && part.length > 2 ? (
-          <span key={i} className={className}>
+          <span key={i} className={`${className} break-words [overflow-wrap:anywhere]`}>
             {part.slice(1, -1)}
           </span>
         ) : (
-          <span key={i}>{part}</span>
+          <span key={i} className="break-words [overflow-wrap:anywhere]">
+            {part}
+          </span>
         )
       )}
     </>

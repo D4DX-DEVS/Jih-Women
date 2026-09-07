@@ -297,7 +297,7 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
       {showToolbar && (
         <div className="glass flex flex-wrap items-end gap-3 p-3.5">
           {config.searchable !== false && (
-            <div className="min-w-[200px] flex-1">
+            <div className="min-w-0 w-full flex-1 sm:min-w-[200px]">
               <label className="field-label">Search</label>
               <input
                 className="input"
@@ -308,7 +308,7 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
             </div>
           )}
           {config.filters?.map((f) => (
-            <div key={f.param} className="w-[168px]">
+            <div key={f.param} className="w-full min-w-0 sm:w-[168px]">
               <label className="field-label">{f.label}</label>
               <select
                 className="input"

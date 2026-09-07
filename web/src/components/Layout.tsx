@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router';
+import { Outlet, useLocation, useParams } from 'react-router';
 import { SiteProvider } from '../lib/site';
 import Header from './Header';
 import Footer from './Footer';
@@ -12,17 +12,25 @@ function ScrollToTop() {
   return null;
 }
 
-export default function Layout() {
+function Shell() {
+  const { lang } = useParams();
   return (
-    <SiteProvider>
+    <div className="flex min-h-screen min-w-0 flex-col overflow-x-clip">
+      <Header />
+      <main id="main" className="min-w-0 flex-1 overflow-x-clip">
+        <Outlet />
+      </main>
+      <Footer key={lang} />
+    </div>
+  );
+}
+
+export default function Layout() {
+  const { lang } = useParams();
+  return (
+    <SiteProvider key={lang}>
       <ScrollToTop />
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <main id="main" className="flex-1">
-          <Outlet />
-        </main>
-        <Footer />
-      </div>
+      <Shell />
     </SiteProvider>
   );
 }

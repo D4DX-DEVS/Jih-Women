@@ -204,11 +204,11 @@ function Hero({ slides }: { slides: Slide[] }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="relative h-[64vh] min-h-[440px] w-full md:h-[76vh] md:min-h-[560px]">
+      <div className="relative min-h-[640px] w-full md:h-[76vh] md:min-h-[560px]">
         {slides.map((item, i) => (
           <div
             key={item._id}
-            className={`absolute inset-0 transition-opacity duration-[900ms] ${
+            className={`absolute inset-0 overflow-hidden transition-opacity duration-[900ms] ${
               i === index ? 'opacity-100' : 'opacity-0'
             }`}
             aria-hidden={i !== index}
@@ -221,31 +221,39 @@ function Hero({ slides }: { slides: Slide[] }) {
                 src={item.imageUrl}
                 alt=""
                 loading={i === 0 ? 'eager' : 'lazy'}
-                className={`h-full w-full object-cover ${i === index ? 'animate-zoom-slow' : ''}`}
+                className={`h-full w-full object-cover ${i === index ? 'sm:animate-zoom-slow' : ''}`}
               />
             </picture>
           </div>
         ))}
 
         {/* Purple wash, heaviest on the text side */}
-        <div className="absolute inset-0 bg-gradient-to-r from-plum-900 via-plum-900/80 to-plum-900/20" />
-        <div className="absolute inset-0 bg-gradient-to-t from-plum-900/85 via-transparent to-plum-900/40" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-plum-900 via-plum-900/80 to-plum-900/20" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-plum-900/85 via-transparent to-plum-900/40" />
 
-        <Container className="absolute inset-0 flex items-center">
-          <div key={slide._id} className="max-w-2xl animate-fade-up pb-16 text-white md:pb-20">
+        <div className="absolute inset-0 flex w-full min-w-0 items-end md:items-center">
+          <div
+            className="mx-auto flex h-full w-full min-w-0 max-w-[1200px] items-end px-4 pb-28 sm:px-5 md:items-center md:pb-0 lg:px-8"
+          >
+            <div
+              key={slide._id}
+              className={`responsive-copy w-full min-w-0 max-w-full animate-fade-up text-white md:max-w-2xl md:pb-20 ${
+                slides.length > 1 ? 'max-md:px-8' : ''
+              }`}
+            >
             {t(slide.title, lang) && (
-              <h1 className="font-display text-[2rem] font-semibold leading-[1.15] md:text-[3.4rem]">
+              <h1 className="responsive-copy w-full min-w-0 max-w-full text-[2rem] font-semibold leading-[1.15] md:text-[3.4rem]">
                 <Highlighted text={t(slide.title, lang)} />
               </h1>
             )}
             {t(slide.subtitle, lang) && (
-              <p className="mt-5 max-w-xl text-[14.5px] leading-relaxed text-white/80 md:text-base">
+              <p className="responsive-copy mt-5 max-w-full text-[14.5px] leading-relaxed text-white/80 md:max-w-xl md:text-base">
                 {t(slide.subtitle, lang)}
               </p>
             )}
 
             {(primaryUrl || secondaryUrl) && (
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div className="mt-5 flex w-full max-w-full flex-wrap items-center gap-2.5 sm:mt-8 sm:gap-3">
                 {primaryUrl && (
                   <SlideLink url={primaryUrl} variant="primary">
                     {t(slide.linkLabel, lang) || s('discoverMore')}
@@ -259,27 +267,28 @@ function Hero({ slides }: { slides: Slide[] }) {
                 )}
               </div>
             )}
+            </div>
           </div>
-        </Container>
+        </div>
 
         {slides.length > 1 && (
           <>
             <button
               onClick={() => go(index - 1)}
               aria-label="Previous slide"
-              className="absolute start-3 top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-plum-800 shadow-soft transition hover:bg-white md:start-6 md:h-12 md:w-12"
+              className="absolute start-2 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-plum-800 shadow-soft transition hover:bg-white sm:start-3 sm:h-10 sm:w-10 md:start-6 md:h-12 md:w-12"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} />
             </button>
             <button
               onClick={() => go(index + 1)}
               aria-label="Next slide"
-              className="absolute end-3 top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-plum-800 shadow-soft transition hover:bg-white md:end-6 md:h-12 md:w-12"
+              className="absolute end-2 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-plum-800 shadow-soft transition hover:bg-white sm:end-3 sm:h-10 sm:w-10 md:end-6 md:h-12 md:w-12"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </button>
 
-            <div className="absolute inset-x-0 bottom-20 z-10 flex justify-center gap-2 md:bottom-24">
+            <div className="absolute inset-x-0 bottom-20 z-10 flex justify-center gap-2 sm:bottom-24 md:bottom-24">
               {slides.map((item, i) => (
                 <button
                   key={item._id}
@@ -309,8 +318,8 @@ function SlideLink({
 }) {
   const cls =
     variant === 'primary'
-      ? 'inline-flex items-center gap-2 rounded-full bg-magenta-500 px-7 py-3.5 text-sm font-medium text-white shadow-pink transition hover:bg-magenta-600'
-      : 'inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/10 px-7 py-3.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white hover:text-plum-800';
+      ? 'inline-flex max-w-full items-center justify-center gap-2 rounded-full bg-magenta-500 px-5 py-3 text-[13px] font-medium text-white shadow-pink transition hover:bg-magenta-600 sm:px-7 sm:py-3.5 sm:text-sm'
+      : 'inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-white/60 bg-white/10 px-5 py-3 text-[13px] font-medium text-white backdrop-blur transition hover:bg-white hover:text-plum-800 sm:px-7 sm:py-3.5 sm:text-sm';
 
   if (/^https?:\/\//.test(url)) {
     return (
@@ -343,11 +352,11 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
               src={banner.bannerImage}
               alt={t(banner.title, lang)}
               loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              className="mx-auto block h-auto w-full object-contain object-center transition-transform duration-500 group-hover:scale-[1.03] md:h-full md:object-cover md:object-center"
             />
           );
           const cls =
-            'group block overflow-hidden rounded-2xl border border-plum-100 bg-white transition hover:border-magenta-200 hover:shadow-soft aspect-[3/1]';
+            'group flex items-center justify-center overflow-hidden rounded-2xl border border-plum-100 bg-white transition hover:border-magenta-200 hover:shadow-soft md:block md:aspect-[3/1]';
 
           return banner.externalUrl ? (
             <a key={banner._id} href={banner.externalUrl} target="_blank" rel="noreferrer" className={cls}>
@@ -378,14 +387,14 @@ function PresidentCard({ message }: { message: PresidentMessage }) {
 
       <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-12">
         <div className="min-w-0">
-          <h2 className="font-display text-[1.7rem] font-semibold text-magenta-500 md:text-[2.1rem]">
+          <h2 className="responsive-copy font-display text-[1.45rem] font-semibold leading-[1.25] text-magenta-500 sm:text-[1.7rem] md:text-[2.1rem] md:leading-tight">
             {heading}
           </h2>
           <Rule className="mt-4" />
 
           {body && (
             <div
-              className="prose-content prose-justify mt-6 max-h-[19rem] overflow-hidden text-[14.5px] leading-[2]"
+              className="prose-content prose-justify mt-6 max-h-[19rem] overflow-hidden text-start text-[14.5px] leading-[2] md:text-justify"
               dangerouslySetInnerHTML={{ __html: body }}
             />
           )}
@@ -402,7 +411,7 @@ function PresidentCard({ message }: { message: PresidentMessage }) {
         </div>
 
         <div className="relative flex justify-center lg:justify-end">
-          <span className="pointer-events-none absolute -start-6 -top-4 font-display text-[7rem] leading-none text-magenta-200/70 lg:-start-14">
+          <span className="pointer-events-none absolute -start-2 -top-2 font-display text-[4rem] leading-none text-magenta-200/70 sm:-start-6 sm:-top-4 sm:text-[5rem] lg:-start-14 lg:text-[7rem]">
             &ldquo;
           </span>
 
@@ -411,10 +420,10 @@ function PresidentCard({ message }: { message: PresidentMessage }) {
               <img
                 src={message.photo}
                 alt={name}
-                className="h-[290px] w-[240px] rounded-t-[7rem] rounded-b-3xl border-4 border-white object-cover shadow-lift"
+                className="mx-auto h-[290px] w-[240px] max-w-full rounded-t-[7rem] rounded-b-3xl border-4 border-white object-cover shadow-lift"
               />
             ) : (
-              <div className="grid h-[290px] w-[240px] place-items-center rounded-t-[7rem] rounded-b-3xl border-4 border-white bg-plum-100 text-plum-300 shadow-lift">
+              <div className="mx-auto grid h-[290px] w-[240px] max-w-full place-items-center rounded-t-[7rem] rounded-b-3xl border-4 border-white bg-plum-100 text-plum-300 shadow-lift">
                 <Users size={44} />
               </div>
             )}
@@ -442,8 +451,9 @@ function PresidentCard({ message }: { message: PresidentMessage }) {
 // Dividers between cells, recomputed per breakpoint so row starts never carry
 // a leading border and the single-row layout at lg carries no top borders.
 const FOCUS_CELL = [
-  'group block border-plum-100 px-4 py-6 text-center transition',
-  'border-s [&:nth-child(2n+1)]:border-s-0 [&:nth-child(n+3)]:border-t',
+  'group block min-w-0 border-plum-100 px-4 py-6 text-center transition',
+  '[&:not(:first-child)]:border-t',
+  'min-[480px]:[&:not(:first-child)]:border-t-0 min-[480px]:border-s min-[480px]:[&:nth-child(2n+1)]:border-s-0 min-[480px]:[&:nth-child(n+3)]:border-t',
   'md:[&:nth-child(2n+1)]:border-s md:[&:nth-child(3n+1)]:border-s-0',
   'md:[&:nth-child(3)]:border-t-0 md:[&:nth-child(n+4)]:border-t',
   'lg:[&:nth-child(3n+1)]:border-s lg:[&:nth-child(6n+1)]:border-s-0',
@@ -455,7 +465,7 @@ function FocusStrip({ areas }: { areas: FocusArea[] }) {
 
   return (
     <div className="rounded-3xl bg-white p-2 shadow-card md:p-4">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
         {areas.map((area) => {
           const Icon = FOCUS_ICONS[area.icon] ?? GraduationCap;
           const body = (
@@ -505,8 +515,8 @@ function FocusStrip({ areas }: { areas: FocusArea[] }) {
 
 function BandHeading({ label, actionLabel, to }: { label: string; actionLabel: string; to: string }) {
   return (
-    <div className="mb-4 flex items-center justify-between gap-3 border-b border-plum-100 pb-3">
-      <h3 className="text-[12px] font-semibold uppercase tracking-[0.18em] text-magenta-500">
+    <div className="mb-4 flex min-w-0 items-center justify-between gap-3 border-b border-plum-100 pb-3">
+      <h3 className="min-w-0 text-[12px] font-semibold uppercase tracking-[0.18em] text-magenta-500">
         {label}
       </h3>
       <Link
@@ -547,7 +557,7 @@ function InfoBand({
               <li key={post._id}>
                 <Link
                   to={path(`/media/${post.type}/${post.slug}`)}
-                  className="group flex gap-3.5 py-3.5"
+                  className="group flex items-start gap-3.5 py-3.5"
                 >
                   {post.coverImage ? (
                     <img

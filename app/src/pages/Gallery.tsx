@@ -95,7 +95,7 @@ export default function GalleryPage() {
         )}
 
         {!loading && images.length > 0 && (
-          <div className="columns-2 gap-3 sm:columns-3 sm:gap-4 lg:columns-4">
+          <div className="columns-1 gap-3 min-[480px]:columns-2 sm:gap-4 md:columns-3 lg:columns-4">
             {images.map((img, i) => (
               <button
                 key={img._id}

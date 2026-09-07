@@ -82,7 +82,7 @@ export default function Navbar({ registrationEnabled }: Props) {
               <RegistrationForm
                 trigger={
                   <button
-                    className="pill-button inline-flex items-center gap-2 font-semibold text-sm px-5 py-2.5"
+                    className="pill-button hidden lg:inline-flex items-center gap-2 font-semibold text-sm px-5 py-2.5"
                     style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #db2777 100%)', color: '#fff' }}
                   >
                     Register Now

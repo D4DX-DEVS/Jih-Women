@@ -20,6 +20,17 @@ export function t(value: Localized | undefined | null, lang: Lang): string {
   return fallback || '';
 }
 
+/**
+ * Active-language only (no cross-language fallback).
+ * Use for chrome that must never show Malayalam while English is selected
+ * (mobile menu, footer). Empty English stays empty so UI string fallbacks can apply.
+ */
+export function tLang(value: Localized | undefined | null, lang: Lang): string {
+  if (!value) return '';
+  const primary = value[lang];
+  return primary && primary.trim() ? primary : '';
+}
+
 /** True when a bilingual field has content in either language. */
 export function has(value: Localized | undefined | null): boolean {
   return Boolean(value && ((value.ml && value.ml.trim()) || (value.en && value.en.trim())));
@@ -181,6 +192,15 @@ const STRINGS: Dict = {
   visionMission: { ml: 'ദർശനവും ദൗത്യവും', en: 'Our Vision & Mission' },
   readFullMessage: { ml: 'പൂർണ്ണ സന്ദേശം വായിക്കുക', en: 'Read the full message' },
   skipToContent: { ml: 'ഉള്ളടക്കത്തിലേക്ക് പോകുക', en: 'Skip to content' },
+
+  footerWing: { ml: 'വനിതാ വിഭാഗം', en: "Women's Wing" },
+  footerKerala: { ml: 'കേരള', en: 'Kerala' },
+  footerOrgName: { ml: 'ജമാഅത്തെ ഇസ്‌ലാമി ഹിന്ദ്', en: 'Jamaat e Islami Hind' },
+  footerOrgFull: { ml: 'വനിതാ വിഭാഗം കേരള', en: "Women's Wing Kerala" },
+  footerBlurb: {
+    ml: 'പുരോഗമനപരവും നീതിപൂർവകവുമായ ഒരു സമൂഹത്തിനായി മുസ്‌ലിം സ്ത്രീകളുടെ ശാക്തീകരണവും സമഗ്ര വികസനവും ലക്ഷ്യമിടുന്നു.',
+    en: 'Working towards the empowerment and holistic development of Muslim women for a progressive and just society.',
+  },
 };
 
 export function useStrings(lang: Lang) {
