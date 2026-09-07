@@ -164,7 +164,7 @@ export default function Admin() {
             className="sticky top-0 z-40 border-b border-[#e6e8f0] bg-white"
             style={{ height: 'var(--admin-header-h)' }}
           >
-            <div className="mx-auto flex h-full max-w-[1560px] items-center justify-between gap-4 px-4 md:px-6">
+            <div className="mx-auto flex h-full max-w-[1560px] items-center justify-between gap-2 px-3 sm:gap-4 sm:px-4 md:px-6">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="hidden shrink-0 items-center gap-2.5 sm:flex">
                   <img

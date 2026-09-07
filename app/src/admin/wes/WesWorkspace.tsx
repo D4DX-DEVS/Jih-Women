@@ -487,25 +487,50 @@ export default function WesWorkspace({
             <div className="admin-display text-xl font-bold tracking-tight">Registrations &amp; Attendance</div>
             <div className="text-xs text-foreground/50">Women Entrepreneurs Summit</div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-3 md:flex">
             {filters.district && (
-              <button onClick={onExportDistrictExcel} className="pill pill-outline text-sm hidden md:inline-flex" title={`Export ${filters.district} registrations`}>
+              <button onClick={onExportDistrictExcel} className="pill pill-outline text-sm inline-flex" title={`Export ${filters.district} registrations`}>
                 Export {filters.district}
               </button>
             )}
             {hasActiveFilters && (
               <button
                 onClick={onExportFilteredExcel}
-                className="pill pill-outline text-sm hidden md:inline-flex"
+                className="pill pill-outline text-sm inline-flex"
                 title={`Export ${list?.total ?? ''} filtered results`}
               >
                 Export Filtered {list?.total != null ? `(${list.total})` : ''}
               </button>
             )}
-            <button onClick={onExportExcel} className="pill pill-outline text-sm hidden md:inline-flex">
+            <button onClick={onExportExcel} className="pill pill-outline text-sm inline-flex">
               Export Excel
             </button>
           </div>
+
+          <details className="relative md:hidden">
+            <summary className="pill pill-outline text-sm inline-flex cursor-pointer list-none">Export ⋯</summary>
+            <div className="absolute end-0 z-30 mt-2 w-56 rounded-lg border border-[#e6e8f0] bg-white py-1 shadow-lift">
+              {filters.district && (
+                <button
+                  onClick={onExportDistrictExcel}
+                  className="block w-full px-4 py-2 text-start text-sm hover:bg-[#f6f1fb]"
+                >
+                  Export {filters.district}
+                </button>
+              )}
+              {hasActiveFilters && (
+                <button
+                  onClick={onExportFilteredExcel}
+                  className="block w-full px-4 py-2 text-start text-sm hover:bg-[#f6f1fb]"
+                >
+                  Export Filtered {list?.total != null ? `(${list.total})` : ''}
+                </button>
+              )}
+              <button onClick={onExportExcel} className="block w-full px-4 py-2 text-start text-sm hover:bg-[#f6f1fb]">
+                Export Excel
+              </button>
+            </div>
+          </details>
         </div>
         <div className="no-scrollbar max-w-7xl mx-auto px-6 flex gap-1 overflow-x-auto">
           <button
@@ -677,7 +702,7 @@ function StatsGrid({ stats }: { stats: StatsResponse | null }) {
   const totalAttendees = entrepreneurs + infants + children + companions;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-5">
       <div className="glass p-5">
         <div className="text-xs uppercase tracking-wider text-foreground/50">Total Attendees</div>
         <div className="admin-display text-3xl font-bold mt-2">{stats ? totalAttendees : '—'}</div>
@@ -1363,7 +1388,7 @@ function DetailModal({
                         </select>
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <div>
                         <label className={labelCls}>Infants (0–5)</label>
                         <input type="number" className={inputCls} min={0} value={editValues.accompanyingInfants as number} onChange={(e) => setField('accompanyingInfants', Math.max(0, Number(e.target.value)))} />
@@ -2358,7 +2383,7 @@ function CheckInsManager({
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
         {isCheckIn ? (
           <>
             <div className="glass p-5">
@@ -3099,7 +3124,7 @@ function GalleryManager({
       ) : images.length === 0 ? (
         <div className="glass p-8 text-center text-foreground/50 text-sm">No gallery images yet. Upload some above.</div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
           {images.map((img) => (
             <div key={img._id} className="glass overflow-hidden rounded-2xl group">
               <div className="relative aspect-square overflow-hidden">

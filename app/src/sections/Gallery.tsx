@@ -109,7 +109,7 @@ export default function Gallery() {
           {/* Preview grid */}
           <div
             ref={gridRef}
-            className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4"
           >
             {images.map((img) => (
               <button

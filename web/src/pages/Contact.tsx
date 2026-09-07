@@ -87,8 +87,8 @@ export default function Contact() {
       />
       <Section tone="mist">
         <Container>
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
-            <div className="space-y-4">
+          <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:gap-10">
+            <div className="min-w-0 space-y-4">
               {details.map(({ Icon, label, value, href }) => (
                 <div
                   key={label}
@@ -118,8 +118,8 @@ export default function Contact() {
               ))}
             </div>
 
-            <div>
-              <div className="rounded-3xl border border-plum-100 bg-white p-6 shadow-soft md:p-8">
+            <div className="min-w-0">
+              <div className="rounded-3xl border border-plum-100 bg-white p-5 shadow-soft sm:p-6 md:p-8">
                 <h2 className="font-display text-xl font-semibold">{s('contactForm')}</h2>
 
                 {status === 'done' ? (

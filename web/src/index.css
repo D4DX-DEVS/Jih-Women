@@ -10,13 +10,26 @@
   html {
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
+    overflow-x: clip;
   }
 
   body {
     @apply bg-mist text-ink antialiased;
     margin: 0;
     min-width: 320px;
+    overflow-x: clip;
     font-feature-settings: 'liga' 1, 'kern' 1;
+  }
+
+  #root {
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  img,
+  video,
+  svg {
+    max-width: 100%;
   }
 
   /* Malayalam sits lower and needs more leading than Latin to stay legible */
@@ -26,8 +39,16 @@
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
+    overflow-wrap: anywhere;
+  }
+
+  /* text-wrap: balance can overflow with long Malayalam words on narrow screens */
+  h1, h2 {
+    text-wrap: wrap;
+  }
+
+  h3, h4, h5, h6 {
     text-wrap: balance;
-    overflow-wrap: break-word;
   }
 
   /* Editors paste long unbroken strings (URLs, IDs). Without this they run
@@ -152,6 +173,15 @@
         rgba(255, 255, 255, 0.035) 0 2px,
         transparent 2px 22px
       );
+  }
+
+  /* Hero + page headings: Malayalam must wrap on narrow screens */
+  .responsive-copy {
+    min-width: 0;
+    width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    text-wrap: wrap;
   }
 }
 

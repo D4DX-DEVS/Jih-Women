@@ -151,7 +151,7 @@ export function PublicationDetail() {
             </div>
 
             <div className="min-w-0">
-              <dl className="mb-7 grid grid-cols-2 gap-4 rounded-3xl border border-plum-100 bg-white p-5 text-sm shadow-soft sm:grid-cols-3">
+              <dl className="mb-7 grid grid-cols-1 gap-4 rounded-3xl border border-plum-100 bg-white p-5 text-sm shadow-soft min-[480px]:grid-cols-2 sm:grid-cols-3">
                 {t(data.author, lang) && (
                   <div>
                     <dt className="text-[11px] uppercase tracking-wider text-ink-faint">

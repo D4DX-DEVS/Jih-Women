@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router';
 import {
   ChevronDown,
@@ -15,18 +16,18 @@ import {
   Youtube,
 } from 'lucide-react';
 import { useSite } from '../lib/site';
-import { LANGS, t } from '../lib/i18n';
+import { LANGS, str, t, tLang } from '../lib/i18n';
 import type { Lang } from '../lib/types';
 
 /* The header needs more room than the 1200px page grid: seven Malayalam
    nav labels plus the logo and the join button do not fit inside it. */
-const SHELL = 'mx-auto w-full max-w-[1320px] px-5 lg:px-8';
+const SHELL = 'mx-auto w-full min-w-0 max-w-[1320px] px-4 sm:px-5 lg:px-8';
 
 type NavLeaf = { label: string; to: string };
 type NavItem = { label: string; to?: string; children?: NavLeaf[] };
 
 export default function Header() {
-  const { lang, data, path, s } = useSite();
+  const { lang, data, path } = useSite();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -34,11 +35,15 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
 
+  const pageKey = `${location.pathname.replace(/^\/(ml|en)/, '') || '/'}${location.search}`;
+
   useEffect(() => {
+    // Close overlays on real page navigation only — not when switching ML↔EN on the same page,
+    // so the open mobile menu can refresh to the selected language immediately.
     setMobileOpen(false);
     setOpenMenu(null);
     setSearchOpen(false);
-  }, [location.pathname]);
+  }, [pageKey]);
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
@@ -51,51 +56,65 @@ export default function Header() {
   const departments = data?.nav.departments ?? [];
   const programs = data?.nav.programs ?? [];
 
-  const items: NavItem[] = [
-    { label: s('home'), to: path('/') },
+  const buildItems = (navLang: Lang): NavItem[] => [
+    { label: str('home', navLang), to: path('/') },
     {
-      label: s('aboutUs'),
+      label: str('aboutUs', navLang),
       children: [
-        { label: s('ideology'), to: path('/who-we-are/ideology') },
-        { label: s('ourValues'), to: path('/who-we-are/our-values') },
-        { label: s('constitution'), to: path('/who-we-are/constitution') },
-        { label: s('ourLegacy'), to: path('/who-we-are/our-legacy') },
-        { label: s('leaders'), to: path('/leaders') },
+        { label: str('ideology', navLang), to: path('/who-we-are/ideology') },
+        { label: str('ourValues', navLang), to: path('/who-we-are/our-values') },
+        { label: str('constitution', navLang), to: path('/who-we-are/constitution') },
+        { label: str('ourLegacy', navLang), to: path('/who-we-are/our-legacy') },
+        { label: str('leaders', navLang), to: path('/leaders') },
       ],
     },
     {
-      label: s('departments'),
+      label: str('departments', navLang),
       children: [
-        ...departments.map((d) => ({ label: t(d.title, lang), to: path(`/departments/${d.slug}`) })),
-        { label: s('viewAll'), to: path('/departments') },
+        ...departments
+          .map((d) => ({
+            label: tLang(d.title, navLang),
+            to: path(`/departments/${d.slug}`),
+          }))
+          .filter((c) => Boolean(c.label)),
+        { label: str('viewAll', navLang), to: path('/departments') },
       ],
     },
     {
-      label: s('programs'),
+      label: str('programs', navLang),
       children: [
-        ...programs.map((p) => ({ label: t(p.title, lang), to: path(`/programs/${p.slug}`) })),
-        { label: s('viewAll'), to: path('/programs') },
+        ...programs
+          .map((p) => ({
+            label: tLang(p.title, navLang),
+            to: path(`/programs/${p.slug}`),
+          }))
+          .filter((c) => Boolean(c.label)),
+        { label: str('viewAll', navLang), to: path('/programs') },
       ],
     },
-    { label: s('events'), to: path('/events') },
+    { label: str('events', navLang), to: path('/events') },
     {
-      label: s('mediaNews'),
+      label: str('mediaNews', navLang),
       children: [
-        { label: s('news'), to: path('/media/news') },
-        { label: s('pressReleases'), to: path('/media/press-release') },
-        { label: s('statements'), to: path('/media/statement') },
-        { label: s('interviews'), to: path('/media/interview') },
-        { label: s('speeches'), to: path('/media/speech') },
-        { label: s('videos'), to: path('/media/videos') },
-        { label: s('podcasts'), to: path('/media/podcasts') },
-        { label: s('photoGallery'), to: path('/media/gallery') },
-        { label: s('downloads'), to: path('/media/downloads') },
-        { label: s('publications'), to: path('/publications') },
-        { label: s('externalLinks'), to: path('/links') },
+        { label: str('news', navLang), to: path('/media/news') },
+        { label: str('pressReleases', navLang), to: path('/media/press-release') },
+        { label: str('statements', navLang), to: path('/media/statement') },
+        { label: str('interviews', navLang), to: path('/media/interview') },
+        { label: str('speeches', navLang), to: path('/media/speech') },
+        { label: str('videos', navLang), to: path('/media/videos') },
+        { label: str('podcasts', navLang), to: path('/media/podcasts') },
+        { label: str('photoGallery', navLang), to: path('/media/gallery') },
+        { label: str('downloads', navLang), to: path('/media/downloads') },
+        { label: str('publications', navLang), to: path('/publications') },
+        { label: str('externalLinks', navLang), to: path('/links') },
       ],
     },
-    { label: s('contact'), to: path('/contact') },
+    { label: str('contact', navLang), to: path('/contact') },
   ];
+
+  /* Header chrome (desktop nav + mobile drawer) is always shown in English,
+     independent of the site's ML/EN toggle — only page content follows it. */
+  const items: NavItem[] = useMemo(() => buildItems('en'), [departments, programs, path]);
 
   const socials = [
     { href: settings?.social?.facebook, Icon: Facebook, label: 'Facebook' },
@@ -125,7 +144,7 @@ export default function Header() {
 
   const joinUrl = settings?.joinUrl || path('/contact');
   const joinIsExternal = /^https?:\/\//.test(joinUrl);
-  const joinLabel = t(settings?.joinLabel, lang) || s('joinUs');
+  const joinLabel = tLang(settings?.joinLabel, 'en') || str('joinUs', 'en');
 
   return (
     <>
@@ -133,17 +152,17 @@ export default function Header() {
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-[80] focus:rounded-full focus:bg-magenta-500 focus:px-5 focus:py-2 focus:text-sm focus:text-white"
       >
-        {s('skipToContent')}
+        {str('skipToContent', 'en')}
       </a>
 
-      {/* Announcement bar */}
+      {/* Announcement bar — always English, independent of the ML/EN toggle */}
       <div className="bg-plum-800 text-white">
         <div className={SHELL}>
-          <div className="flex h-10 items-center justify-between gap-4 text-[12.5px]">
-            <div className="flex min-w-0 items-center gap-2">
+        <div className="flex h-10 items-center justify-between gap-2 text-[12.5px] sm:gap-4">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
               <Sparkles size={14} className="shrink-0 text-magenta-300" />
               <span className="truncate text-white/80">
-                {t(settings?.topBarText, lang) || t(settings?.tagline, lang)}
+                {t(settings?.topBarText, 'en') || t(settings?.tagline, 'en')}
               </span>
             </div>
 
@@ -164,7 +183,7 @@ export default function Header() {
 
               {socials.length > 0 && (
                 <div className="hidden items-center gap-2 sm:flex">
-                  <span className="text-white/55">{s('followUsShort')}</span>
+                  <span className="text-white/55">{str('followUsShort', 'en')}</span>
                   <div className="flex items-center gap-1.5">
                     {socials.map(({ href, Icon, label }) => (
                       <a
@@ -189,17 +208,17 @@ export default function Header() {
       {/* Main header */}
       <header className="sticky top-0 z-50 border-b border-plum-100 bg-white/95 shadow-[0_1px_16px_-8px_rgba(44,10,77,0.25)] backdrop-blur">
         <div className={SHELL}>
-          <div className="flex h-[74px] items-center justify-between gap-3 lg:h-[84px] xl:gap-5">
+        <div className="flex h-[74px] min-w-0 items-center justify-between gap-2 lg:h-[84px] xl:gap-5">
             <Link
               to={path('/')}
               className="flex shrink-0 items-center"
-              aria-label={t(settings?.siteName, lang) || "Women's Wing Kerala"}
+              aria-label={t(settings?.siteName, 'en') || "Women's Wing Kerala"}
             >
               {/* The bundled mark already carries the full organisation name,
                   so no wordmark text is rendered beside it. */}
               <img
                 src="/logo.png"
-                alt={t(settings?.siteName, lang) || "Women's Wing Kerala"}
+                alt={t(settings?.siteName, 'en') || "Women's Wing Kerala"}
                 className="h-9 w-auto object-contain object-left sm:h-10 lg:h-11"
               />
             </Link>
@@ -270,7 +289,7 @@ export default function Header() {
             <div className="flex shrink-0 items-center gap-2">
               <button
                 onClick={() => setSearchOpen((v) => !v)}
-                aria-label={s('search')}
+                aria-label={str('search', 'en')}
                 className="grid h-10 w-10 place-items-center rounded-full text-ink-muted transition hover:bg-magenta-50 hover:text-magenta-600"
               >
                 <Search size={18} />
@@ -298,7 +317,7 @@ export default function Header() {
 
               <button
                 onClick={() => setMobileOpen(true)}
-                aria-label={s('menu')}
+                aria-label={str('menu', 'en')}
                 className="grid h-10 w-10 place-items-center rounded-full text-plum-800 transition hover:bg-magenta-50 xl:hidden"
               >
                 <Menu size={20} />
@@ -316,13 +335,13 @@ export default function Header() {
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder={s('searchPlaceholder')}
+                  placeholder={str('searchPlaceholder', 'en')}
                   className="w-full bg-transparent text-[15px] outline-none placeholder:text-ink-faint"
                 />
                 <button
                   type="button"
                   onClick={() => setSearchOpen(false)}
-                  aria-label={s('close')}
+                  aria-label={str('close', 'en')}
                   className="text-ink-faint transition hover:text-ink"
                 >
                   <X size={18} />
@@ -333,66 +352,94 @@ export default function Header() {
         )}
       </header>
 
-      {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-[70] xl:hidden">
-          <div className="absolute inset-0 bg-plum-950/50" onClick={() => setMobileOpen(false)} />
-          <div className="absolute inset-y-0 end-0 flex w-[88%] max-w-sm animate-fade-in flex-col bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-plum-100 px-5 py-4">
-              <span className="font-display text-base font-semibold text-plum-800">{s('menu')}</span>
-              <button
-                onClick={() => setMobileOpen(false)}
-                aria-label={s('close')}
-                className="grid h-9 w-9 place-items-center rounded-full hover:bg-magenta-50"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-4 py-3">
-              {items.map((item) =>
-                item.children ? (
-                  <details key={item.label} className="group border-b border-plum-100/70">
-                    <summary className="flex cursor-pointer list-none items-center justify-between py-3.5 text-[15px] font-medium text-plum-800">
-                      {item.label}
-                      <ChevronDown size={16} className="opacity-50 transition group-open:rotate-180" />
-                    </summary>
-                    <div className="pb-3 ps-3">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.to}
-                          to={child.to}
-                          className="block py-2 text-[14px] text-ink-muted hover:text-magenta-600"
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </details>
-                ) : (
-                  <Link
-                    key={item.label}
-                    to={item.to!}
-                    className="block border-b border-plum-100/70 py-3.5 text-[15px] font-medium text-plum-800 hover:text-magenta-600"
+      {/* Mobile drawer — portaled above page content; always rendered in English */}
+      {mobileOpen &&
+        createPortal(
+          <div key={lang} className="fixed inset-0 z-[100] xl:hidden">
+            <div
+              className="absolute inset-0 bg-plum-950/50"
+              onClick={() => setMobileOpen(false)}
+              aria-hidden="true"
+            />
+            <div className="absolute inset-y-0 end-0 z-10 flex w-[88%] max-w-sm animate-fade-in flex-col bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-plum-100 px-5 py-4">
+                <span className="font-display text-base font-semibold text-plum-800">
+                  {str('menu', 'en')}
+                </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center rounded-full bg-plum-50 p-0.5">
+                    {LANGS.map((l) => (
+                      <button
+                        key={l.code}
+                        type="button"
+                        onClick={() => switchLang(l.code)}
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                          lang === l.code
+                            ? 'bg-magenta-500 text-white'
+                            : 'text-plum-800/55 hover:text-plum-800'
+                        }`}
+                      >
+                        {l.short}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setMobileOpen(false)}
+                    aria-label={str('close', 'en')}
+                    className="grid h-9 w-9 place-items-center rounded-full hover:bg-magenta-50"
                   >
-                    {item.label}
-                  </Link>
-                )
-              )}
-            </div>
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
 
-            <div className="border-t border-plum-100 p-4">
-              <Link
-                to={joinUrl}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-magenta-500 px-5 py-3 text-sm font-medium text-white"
-              >
-                <UserPlus size={16} />
-                {joinLabel}
-              </Link>
+              <div className="flex-1 overflow-y-auto px-4 py-3">
+                {items.map((item) =>
+                  item.children ? (
+                    <details key={`en-${item.to ?? item.label}`} className="group border-b border-plum-100/70">
+                      <summary className="flex cursor-pointer list-none items-center justify-between py-3.5 text-[15px] font-medium text-plum-800">
+                        {item.label}
+                        <ChevronDown size={16} className="opacity-50 transition group-open:rotate-180" />
+                      </summary>
+                      <div className="pb-3 ps-3">
+                        {item.children.map((child) =>
+                          child.label ? (
+                            <Link
+                              key={child.to}
+                              to={child.to}
+                              className="block py-2 text-[14px] text-ink-muted hover:text-magenta-600"
+                            >
+                              {child.label}
+                            </Link>
+                          ) : null
+                        )}
+                      </div>
+                    </details>
+                  ) : (
+                    <Link
+                      key={`en-${item.to}`}
+                      to={item.to!}
+                      className="block border-b border-plum-100/70 py-3.5 text-[15px] font-medium text-plum-800 hover:text-magenta-600"
+                    >
+                      {item.label}
+                    </Link>
+                  )
+                )}
+              </div>
+
+              <div className="border-t border-plum-100 p-4">
+                <Link
+                  to={joinUrl}
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-magenta-500 px-5 py-3 text-sm font-medium text-white"
+                >
+                  <UserPlus size={16} />
+                  {joinLabel}
+                </Link>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }

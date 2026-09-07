@@ -1,9 +1,16 @@
 import { createContext, useContext, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
 import { useApi } from './api';
 import { DEFAULT_LANG, isLang, str } from './i18n';
 import type { Lang, NavPayload } from './types';
+
+function resolveLang(pathname: string, paramLang: string | undefined): Lang {
+  if (isLang(paramLang)) return paramLang;
+  const prefix = pathname.split('/').filter(Boolean)[0];
+  if (isLang(prefix)) return prefix;
+  return DEFAULT_LANG;
+}
 
 type SiteContextValue = {
   lang: Lang;
@@ -19,7 +26,8 @@ const SiteContext = createContext<SiteContextValue | null>(null);
 
 export function SiteProvider({ children }: { children: ReactNode }) {
   const params = useParams();
-  const lang: Lang = isLang(params.lang) ? params.lang : DEFAULT_LANG;
+  const { pathname } = useLocation();
+  const lang: Lang = resolveLang(pathname, params.lang);
   const { data, loading } = useApi<NavPayload>('/api/site/bootstrap');
 
   useEffect(() => {
