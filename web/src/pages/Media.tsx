@@ -36,13 +36,13 @@ const POST_TYPES: { type: MediaPostType; key: string }[] = [
 ];
 
 function MediaTabs({ active }: { active: string }) {
-  const { path, s } = useSite();
+  const { path, pageTitle } = useSite();
   const tabs = [
-    ...POST_TYPES.map((p) => ({ key: p.type, label: s(p.key), to: path(`/media/${p.type}`) })),
-    { key: 'videos', label: s('videos'), to: path('/media/videos') },
-    { key: 'podcasts', label: s('podcasts'), to: path('/media/podcasts') },
-    { key: 'gallery', label: s('photoGallery'), to: path('/media/gallery') },
-    { key: 'downloads', label: s('downloads'), to: path('/media/downloads') },
+    ...POST_TYPES.map((p) => ({ key: p.type, label: pageTitle(p.key), to: path(`/media/${p.type}`) })),
+    { key: 'videos', label: pageTitle('videos'), to: path('/media/videos') },
+    { key: 'podcasts', label: pageTitle('podcasts'), to: path('/media/podcasts') },
+    { key: 'gallery', label: pageTitle('photoGallery'), to: path('/media/gallery') },
+    { key: 'downloads', label: pageTitle('downloads'), to: path('/media/downloads') },
   ];
 
   return (
@@ -68,7 +68,7 @@ function MediaTabs({ active }: { active: string }) {
 
 export function MediaList() {
   const { type } = useParams();
-  const { path, s } = useSite();
+  const { path, s, pageTitle } = useSite();
   const [page, setPage] = useState(1);
 
   const known = POST_TYPES.find((p) => p.type === type);
@@ -81,11 +81,11 @@ export function MediaList() {
   return (
     <>
       <PageHeader
-        title={s(known.key)}
+        title={pageTitle(known.key)}
         breadcrumb={[
           { label: s('home'), to: path('/') },
           { label: s('mediaCentre'), to: path('/media/news') },
-          { label: s(known.key) },
+          { label: pageTitle(known.key) },
         ]}
       />
       <Section tone="mist">
@@ -251,14 +251,14 @@ export function MediaDetail() {
 /* ---------------- videos & podcasts ---------------- */
 
 export function VideosPage({ kind }: { kind: 'video' | 'podcast' }) {
-  const { path, s } = useSite();
+  const { path, s, pageTitle } = useSite();
   const [page, setPage] = useState(1);
   const [playing, setPlaying] = useState<VideoItem | null>(null);
   const { data, loading, error, reload } = useApi<Paged<VideoItem>>(
     `/api/site/videos?kind=${kind}&page=${page}&limit=12`
   );
 
-  const label = kind === 'podcast' ? s('podcasts') : s('videos');
+  const label = kind === 'podcast' ? pageTitle('podcasts') : pageTitle('videos');
 
   return (
     <>
@@ -299,7 +299,7 @@ export function VideosPage({ kind }: { kind: 'video' | 'podcast' }) {
 /* ---------------- photo gallery ---------------- */
 
 export function AlbumsIndex() {
-  const { path, s } = useSite();
+  const { path, s, pageTitle } = useSite();
   const [page, setPage] = useState(1);
   const { data, loading, error, reload } = useApi<Paged<Album>>(
     `/api/site/albums?page=${page}&limit=12`
@@ -308,11 +308,11 @@ export function AlbumsIndex() {
   return (
     <>
       <PageHeader
-        title={s('photoGallery')}
+        title={pageTitle('photoGallery')}
         breadcrumb={[
           { label: s('home'), to: path('/') },
           { label: s('mediaCentre'), to: path('/media/news') },
-          { label: s('photoGallery') },
+          { label: pageTitle('photoGallery') },
         ]}
       />
       <Section tone="mist">
@@ -342,7 +342,7 @@ export function AlbumsIndex() {
 
 export function AlbumDetail() {
   const { slug } = useParams();
-  const { lang, path, s } = useSite();
+  const { lang, path, s, pageTitle } = useSite();
   const { data, loading, error, notFound, reload } = useApi<Album>(
     slug ? `/api/site/albums/${slug}` : null
   );
@@ -366,7 +366,7 @@ export function AlbumDetail() {
         image={data.coverImage}
         breadcrumb={[
           { label: s('home'), to: path('/') },
-          { label: s('photoGallery'), to: path('/media/gallery') },
+          { label: pageTitle('photoGallery'), to: path('/media/gallery') },
           { label: t(data.title, lang) },
         ]}
       />
@@ -394,7 +394,7 @@ const DOWNLOAD_CATEGORIES = [
 ];
 
 export function DownloadsPage() {
-  const { path, s } = useSite();
+  const { path, s, pageTitle } = useSite();
   const [category, setCategory] = useState('');
   const { data, loading, error, reload } = useApi<{ items: DownloadItem[] }>(
     `/api/site/downloads${category ? `?category=${category}` : ''}`
@@ -403,11 +403,11 @@ export function DownloadsPage() {
   return (
     <>
       <PageHeader
-        title={s('downloads')}
+        title={pageTitle('downloads')}
         breadcrumb={[
           { label: s('home'), to: path('/') },
           { label: s('mediaCentre'), to: path('/media/news') },
-          { label: s('downloads') },
+          { label: pageTitle('downloads') },
         ]}
       />
       <Section tone="mist">

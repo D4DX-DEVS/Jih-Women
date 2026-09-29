@@ -115,7 +115,7 @@ export default function SessionPosters() {
     <section
       id="sessions"
       ref={sectionRef}
-      className="relative overflow-hidden py-20 sm:py-24 lg:py-32"
+      className="relative overflow-hidden py-12 sm:py-16 lg:py-20"
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
       <div className="pointer-events-none absolute left-1/2 top-16 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-[#ff4cab]/12 blur-3xl" />
@@ -125,7 +125,7 @@ export default function SessionPosters() {
         <div className="poster-reveal mb-8 flex flex-col gap-6 opacity-0 sm:mb-12 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <span className="section-label mb-4 block text-primary">Session Posters</span>
-            <h2 className="font-['Syne'] text-3xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-[56px]">
+            <h2 className="font-['Syne'] text-[1.75rem] font-bold leading-[1.08] tracking-tight text-white sm:text-4xl lg:text-[44px]">
               See the sessions, timings, and speakers at a glance.
             </h2>
             <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/72 lg:text-lg">

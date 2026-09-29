@@ -24,7 +24,7 @@ const KIND_LABEL: Record<string, string> = {
 export default function Search() {
   const [params] = useSearchParams();
   const query = params.get('q') ?? '';
-  const { lang, path, s } = useSite();
+  const { lang, path, s, pageTitle } = useSite();
   const { data, loading, error, reload } = useApi<{ results: SearchResult[] }>(
     query.length >= 2 ? `/api/site/search?q=${encodeURIComponent(query)}` : null
   );
@@ -32,7 +32,7 @@ export default function Search() {
   return (
     <>
       <PageHeader
-        title={s('searchResults')}
+        title={pageTitle('searchResults')}
         description={query ? `"${query}"` : undefined}
         breadcrumb={[{ label: s('home'), to: path('/') }, { label: s('search') }]}
       />

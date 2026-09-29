@@ -9,7 +9,7 @@ import { Button, Container, PageHeader, Section } from '../components/Primitives
 const EMPTY = { name: '', email: '', phone: '', district: '', subject: '', message: '' };
 
 export default function Contact() {
-  const { lang, data, path, s } = useSite();
+  const { lang, data, path, s, pageTitle } = useSite();
   const settings = data?.settings;
   const [form, setForm] = useState(EMPTY);
   const [status, setStatus] = useState<'idle' | 'sending' | 'done'>('idle');
@@ -82,8 +82,8 @@ export default function Contact() {
   return (
     <>
       <PageHeader
-        title={s('contact')}
-        breadcrumb={[{ label: s('home'), to: path('/') }, { label: s('contact') }]}
+        title={pageTitle('contact')}
+        breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('contact') }]}
       />
       <Section tone="mist">
         <Container>

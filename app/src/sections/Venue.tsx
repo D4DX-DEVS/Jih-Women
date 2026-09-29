@@ -63,13 +63,13 @@ export default function Venue() {
     <section
       id="venue"
       ref={sectionRef}
-      className="relative py-6 sm:py-8"
+      className="relative py-2 sm:py-4"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16 lg:py-24">
-        <div className="grid min-h-[60vh] grid-cols-1 overflow-hidden rounded-[1.9rem] border border-white/12 bg-white/[0.06] shadow-[0_24px_70px_rgba(7,2,20,0.24)] backdrop-blur-xl lg:grid-cols-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 lg:py-16">
+        <div className="grid grid-cols-1 overflow-hidden rounded-[1.9rem] border border-white/12 bg-white/[0.06] shadow-[0_24px_70px_rgba(7,2,20,0.24)] backdrop-blur-xl lg:min-h-[440px] lg:grid-cols-2">
           <div
             ref={leftRef}
-            className="relative h-[280px] w-full sm:h-[360px] lg:h-auto"
+            className="relative h-[240px] w-full sm:h-[320px] lg:h-auto"
           >
             <iframe 
               src="https://maps.google.com/maps?q=11.2690035,75.7898538&z=17&ie=UTF8&iwloc=&output=embed" 
@@ -86,13 +86,13 @@ export default function Venue() {
 
           <div
             ref={rightRef}
-            className="flex flex-col justify-center px-5 py-8 text-white sm:px-10 sm:py-12 lg:px-16 lg:py-24"
+            className="flex flex-col justify-center px-5 py-7 text-white sm:px-8 sm:py-10 lg:px-12 lg:py-14"
           >
             <span className="venue-reveal section-label text-primary mb-4 sm:mb-6 opacity-0">
               Venue & Hosting
             </span>
 
-            <h2 className="venue-reveal font-['Syne'] text-3xl sm:text-5xl lg:text-[56px] font-bold text-white leading-[1.05] tracking-tight mb-3 sm:mb-4 opacity-0">
+            <h2 className="venue-reveal font-['Syne'] text-[1.75rem] sm:text-4xl lg:text-[44px] font-bold text-white leading-[1.05] tracking-tight mb-3 sm:mb-4 opacity-0">
               KPM TRIPENTA HOTEL
             </h2>
 

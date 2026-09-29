@@ -31,6 +31,7 @@ const LANG = 'ml';
 const SECTION_PATH: Record<string, string | null> = {
   overview: '',
   'site-settings': '',
+  'site-content': '',
   // Slides, focus areas and campaigns all render on the home page; campaigns
   // additionally have detail pages but no index route of their own.
   sliders: '',

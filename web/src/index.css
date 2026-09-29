@@ -198,4 +198,37 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Wide tracking splits Malayalam conjuncts apart; keep it for Latin only */
+  html[lang='ml'] .eyebrow,
+  html[lang='ml'] .band-label {
+    letter-spacing: 0.01em;
+  }
+
+  /* Starting state for <Reveal>; swapped for animate-fade-up once in view */
+  .reveal-pending {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-pending {
+    opacity: 1;
+  }
+
+  .animate-fade-up,
+  .animate-zoom-slow,
+  .animate-fade-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .card-hover {
+    transition: box-shadow 0.3s ease !important;
+  }
+
+  .card-hover:hover {
+    transform: none !important;
+  }
 }

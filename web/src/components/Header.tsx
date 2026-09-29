@@ -5,18 +5,15 @@ import {
   ChevronDown,
   Facebook,
   Instagram,
-  Mail,
   Menu,
-  MessageCircle,
   Search,
   Sparkles,
   Twitter,
-  UserPlus,
   X,
   Youtube,
 } from 'lucide-react';
 import { useSite } from '../lib/site';
-import { LANGS, str, t, tLang } from '../lib/i18n';
+import { str, t } from '../lib/i18n';
 import type { Lang } from '../lib/types';
 
 /* The header needs more room than the 1200px page grid: seven Malayalam
@@ -53,82 +50,41 @@ export default function Header() {
   }, [mobileOpen]);
 
   const settings = data?.settings;
-  const departments = data?.nav.departments ?? [];
-  const programs = data?.nav.programs ?? [];
 
   const buildItems = (navLang: Lang): NavItem[] => [
     { label: str('home', navLang), to: path('/') },
     {
       label: str('aboutUs', navLang),
       children: [
+        { label: str('history', navLang), to: path('/who-we-are/history') },
         { label: str('ideology', navLang), to: path('/who-we-are/ideology') },
-        { label: str('ourValues', navLang), to: path('/who-we-are/our-values') },
+        { label: str('objectives', navLang), to: path('/who-we-are/objectives') },
         { label: str('constitution', navLang), to: path('/who-we-are/constitution') },
-        { label: str('ourLegacy', navLang), to: path('/who-we-are/our-legacy') },
-        { label: str('leaders', navLang), to: path('/leaders') },
       ],
     },
     {
-      label: str('departments', navLang),
+      label: str('media', navLang),
       children: [
-        ...departments
-          .map((d) => ({
-            label: tLang(d.title, navLang),
-            to: path(`/departments/${d.slug}`),
-          }))
-          .filter((c) => Boolean(c.label)),
-        { label: str('viewAll', navLang), to: path('/departments') },
-      ],
-    },
-    {
-      label: str('programs', navLang),
-      children: [
-        ...programs
-          .map((p) => ({
-            label: tLang(p.title, navLang),
-            to: path(`/programs/${p.slug}`),
-          }))
-          .filter((c) => Boolean(c.label)),
-        { label: str('viewAll', navLang), to: path('/programs') },
-      ],
-    },
-    { label: str('events', navLang), to: path('/events') },
-    {
-      label: str('mediaNews', navLang),
-      children: [
-        { label: str('news', navLang), to: path('/media/news') },
-        { label: str('pressReleases', navLang), to: path('/media/press-release') },
-        { label: str('statements', navLang), to: path('/media/statement') },
-        { label: str('interviews', navLang), to: path('/media/interview') },
-        { label: str('speeches', navLang), to: path('/media/speech') },
         { label: str('videos', navLang), to: path('/media/videos') },
-        { label: str('podcasts', navLang), to: path('/media/podcasts') },
         { label: str('photoGallery', navLang), to: path('/media/gallery') },
         { label: str('downloads', navLang), to: path('/media/downloads') },
         { label: str('publications', navLang), to: path('/publications') },
-        { label: str('externalLinks', navLang), to: path('/links') },
       ],
     },
+    { label: str('leaders', navLang), to: path('/leaders') },
     { label: str('contact', navLang), to: path('/contact') },
   ];
 
   /* Header chrome (desktop nav + mobile drawer) is always shown in English,
      independent of the site's ML/EN toggle — only page content follows it. */
-  const items: NavItem[] = useMemo(() => buildItems('en'), [departments, programs, path]);
+  const items: NavItem[] = useMemo(() => buildItems('en'), [path]);
 
   const socials = [
     { href: settings?.social?.facebook, Icon: Facebook, label: 'Facebook' },
     { href: settings?.social?.instagram, Icon: Instagram, label: 'Instagram' },
     { href: settings?.social?.youtube, Icon: Youtube, label: 'YouTube' },
     { href: settings?.social?.twitter, Icon: Twitter, label: 'X' },
-    { href: settings?.social?.whatsappChannel, Icon: MessageCircle, label: 'WhatsApp' },
-    { href: settings?.email ? `mailto:${settings.email}` : '', Icon: Mail, label: 'Email' },
   ].filter((x) => Boolean(x.href));
-
-  const switchLang = (next: Lang) => {
-    const rest = location.pathname.replace(/^\/(ml|en)/, '');
-    navigate(`/${next}${rest}${location.search}`);
-  };
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,10 +98,6 @@ export default function Header() {
       ? location.pathname === item.to
       : Boolean(item.children?.some((c) => location.pathname === c.to));
 
-  const joinUrl = settings?.joinUrl || path('/contact');
-  const joinIsExternal = /^https?:\/\//.test(joinUrl);
-  const joinLabel = tLang(settings?.joinLabel, 'en') || str('joinUs', 'en');
-
   return (
     <>
       <a
@@ -158,7 +110,7 @@ export default function Header() {
       {/* Announcement bar — always English, independent of the ML/EN toggle */}
       <div className="bg-plum-800 text-white">
         <div className={SHELL}>
-        <div className="flex h-10 items-center justify-between gap-2 text-[12.5px] sm:gap-4">
+        <div className="flex h-8 items-center justify-between gap-2 text-[12px] sm:gap-4">
             <div className="flex min-w-0 flex-1 items-center gap-2">
               <Sparkles size={14} className="shrink-0 text-magenta-300" />
               <span className="truncate text-white/80">
@@ -167,20 +119,6 @@ export default function Header() {
             </div>
 
             <div className="flex shrink-0 items-center gap-3">
-              <div className="flex items-center rounded-full bg-white/10 p-0.5">
-                {LANGS.map((l) => (
-                  <button
-                    key={l.code}
-                    onClick={() => switchLang(l.code)}
-                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
-                      lang === l.code ? 'bg-magenta-500 text-white' : 'text-white/60 hover:text-white'
-                    }`}
-                  >
-                    {l.short}
-                  </button>
-                ))}
-              </div>
-
               {socials.length > 0 && (
                 <div className="hidden items-center gap-2 sm:flex">
                   <span className="text-white/55">{str('followUsShort', 'en')}</span>
@@ -208,7 +146,7 @@ export default function Header() {
       {/* Main header */}
       <header className="sticky top-0 z-50 border-b border-plum-100 bg-white/95 shadow-[0_1px_16px_-8px_rgba(44,10,77,0.25)] backdrop-blur">
         <div className={SHELL}>
-        <div className="flex h-[74px] min-w-0 items-center justify-between gap-2 lg:h-[84px] xl:gap-5">
+        <div className="flex h-14 min-w-0 items-center justify-between gap-2 lg:h-16 xl:gap-5">
             <Link
               to={path('/')}
               className="flex shrink-0 items-center"
@@ -219,7 +157,7 @@ export default function Header() {
               <img
                 src="/logo.png"
                 alt={t(settings?.siteName, 'en') || "Women's Wing Kerala"}
-                className="h-9 w-auto object-contain object-left sm:h-10 lg:h-11"
+                className="h-8 w-auto object-contain object-left lg:h-9"
               />
             </Link>
 
@@ -290,35 +228,15 @@ export default function Header() {
               <button
                 onClick={() => setSearchOpen((v) => !v)}
                 aria-label={str('search', 'en')}
-                className="grid h-10 w-10 place-items-center rounded-full text-ink-muted transition hover:bg-magenta-50 hover:text-magenta-600"
+                className="grid h-9 w-9 place-items-center rounded-full text-ink-muted transition hover:bg-magenta-50 hover:text-magenta-600"
               >
-                <Search size={18} />
+                <Search size={17} />
               </button>
-
-              {joinIsExternal ? (
-                <a
-                  href={joinUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="hidden items-center gap-2 whitespace-nowrap rounded-full bg-magenta-500 px-4 py-2.5 text-[13px] font-medium text-white shadow-pink transition hover:bg-magenta-600 sm:inline-flex lg:px-5"
-                >
-                  <UserPlus size={15} />
-                  {joinLabel}
-                </a>
-              ) : (
-                <Link
-                  to={joinUrl}
-                  className="hidden items-center gap-2 whitespace-nowrap rounded-full bg-magenta-500 px-4 py-2.5 text-[13px] font-medium text-white shadow-pink transition hover:bg-magenta-600 sm:inline-flex lg:px-5"
-                >
-                  <UserPlus size={15} />
-                  {joinLabel}
-                </Link>
-              )}
 
               <button
                 onClick={() => setMobileOpen(true)}
                 aria-label={str('menu', 'en')}
-                className="grid h-10 w-10 place-items-center rounded-full text-plum-800 transition hover:bg-magenta-50 xl:hidden"
+                className="grid h-9 w-9 place-items-center rounded-full text-plum-800 transition hover:bg-magenta-50 xl:hidden"
               >
                 <Menu size={20} />
               </button>
@@ -367,22 +285,6 @@ export default function Header() {
                   {str('menu', 'en')}
                 </span>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center rounded-full bg-plum-50 p-0.5">
-                    {LANGS.map((l) => (
-                      <button
-                        key={l.code}
-                        type="button"
-                        onClick={() => switchLang(l.code)}
-                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
-                          lang === l.code
-                            ? 'bg-magenta-500 text-white'
-                            : 'text-plum-800/55 hover:text-plum-800'
-                        }`}
-                      >
-                        {l.short}
-                      </button>
-                    ))}
-                  </div>
                   <button
                     onClick={() => setMobileOpen(false)}
                     aria-label={str('close', 'en')}
@@ -425,16 +327,6 @@ export default function Header() {
                     </Link>
                   )
                 )}
-              </div>
-
-              <div className="border-t border-plum-100 p-4">
-                <Link
-                  to={joinUrl}
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-magenta-500 px-5 py-3 text-sm font-medium text-white"
-                >
-                  <UserPlus size={16} />
-                  {joinLabel}
-                </Link>
               </div>
             </div>
           </div>,

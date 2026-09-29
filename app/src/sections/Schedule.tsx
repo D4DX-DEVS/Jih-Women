@@ -211,7 +211,7 @@ export default function Schedule() {
     <section
       id="schedule"
       ref={sectionRef}
-      className="relative overflow-hidden py-20 sm:py-24 lg:py-32"
+      className="relative overflow-hidden py-12 sm:py-16 lg:py-20"
     >
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <span
@@ -223,7 +223,7 @@ export default function Schedule() {
 
         <h2
           ref={headingRef}
-          className="font-['Syne'] text-3xl sm:text-5xl lg:text-[56px] font-bold text-white text-center mb-12 sm:mb-16 opacity-0 leading-[1.05] tracking-tight"
+          className="font-['Syne'] text-[1.75rem] sm:text-4xl lg:text-[44px] font-bold text-white text-center mb-8 sm:mb-10 opacity-0 leading-[1.05] tracking-tight"
         >
           A full-day journey built to keep energy, insight, and connection moving.
         </h2>
@@ -310,7 +310,7 @@ export default function Schedule() {
                         }`}
                       >
                         <div
-                          className={`glass-card relative overflow-hidden p-5 sm:p-8 transition-all duration-300 hover:-translate-y-1 ${
+                          className={`glass-card relative overflow-hidden p-5 sm:p-6 transition-all duration-300 hover:-translate-y-1 ${
                             item.isBreak ? 'border-l-2 border-white/20' : ''
                           }`}
                         >

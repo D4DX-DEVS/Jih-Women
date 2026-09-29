@@ -48,14 +48,14 @@ export default function Navbar({ registrationEnabled }: Props) {
     <>
       <nav className="fixed top-0 left-0 w-full z-50 bg-white border-b border-black/[0.08] shadow-[0_2px_20px_rgba(0,0,0,0.07)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-[68px] sm:h-[76px] gap-3">
+          <div className="flex items-center justify-between h-[60px] sm:h-[68px] gap-3">
             {/* Logo */}
             <button
               onClick={() => scrollToSection('hero')}
               className="transition-all hover:opacity-80 shrink-0"
             >
               <div className="flex items-center gap-2.5">
-                <img src="/Wes.png" alt="WES" className="h-14 sm:h-16 lg:h-[70px] w-auto object-contain" />
+                <img src="/Wes.png" alt="WES" className="h-11 sm:h-12 lg:h-14 w-auto object-contain" />
                 <div className="hidden text-left xl:block">
                   <p className="text-[10px] uppercase tracking-[0.22em] text-gray-400">Women Entrepreneurs Summit</p>
                   <p className="text-[13px] font-semibold text-gray-700">Kozhikode · 20 June 2026</p>

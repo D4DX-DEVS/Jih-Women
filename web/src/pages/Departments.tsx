@@ -20,14 +20,14 @@ import NotFound from './NotFound';
 import type { Department } from '../lib/types';
 
 export function DepartmentsIndex() {
-  const { path, s } = useSite();
+  const { path, s, pageTitle } = useSite();
   const { data, loading, error, reload } = useApi<{ items: Department[] }>('/api/site/departments');
 
   return (
     <>
       <PageHeader
-        title={s('departments')}
-        breadcrumb={[{ label: s('home'), to: path('/') }, { label: s('departments') }]}
+        title={pageTitle('departments')}
+        breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('departments') }]}
       />
       <Section tone="mist">
         <Container>
@@ -52,7 +52,7 @@ export function DepartmentsIndex() {
 
 export function DepartmentDetail() {
   const { slug } = useParams();
-  const { lang, path, s } = useSite();
+  const { lang, path, s, pageTitle } = useSite();
   const { data, loading, error, notFound, reload } = useApi<Department>(
     slug ? `/api/site/departments/${slug}` : null
   );
@@ -76,7 +76,7 @@ export function DepartmentDetail() {
         image={data.coverImage}
         breadcrumb={[
           { label: s('home'), to: path('/') },
-          { label: s('departments'), to: path('/departments') },
+          { label: pageTitle('departments'), to: path('/departments') },
           { label: t(data.title, lang) },
         ]}
       />

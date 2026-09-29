@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { useLocation, useParams } from 'react-router';
 import { useApi } from './api';
 import { DEFAULT_LANG, isLang, str } from './i18n';
-import type { Lang, NavPayload } from './types';
+import type { Lang, Localized, NavPayload } from './types';
 
 function resolveLang(pathname: string, paramLang: string | undefined): Lang {
   if (isLang(paramLang)) return paramLang;
@@ -20,7 +20,20 @@ type SiteContextValue = {
   path: (to: string) => string;
   /** UI string lookup in the active language */
   s: (key: string) => string;
+  /** Admin-managed page title; falls back to the built-in UI string of the same key */
+  pageTitle: (key: string) => string;
+  /** Admin-managed section heading block, each field falling back to `defaults` */
+  section: (key: string, defaults?: SectionDefaults) => ResolvedSection;
 };
+
+type SectionDefaults = { label?: string; heading?: string; description?: string };
+type ResolvedSection = { label: string; heading: string; description: string; logo: string };
+
+/* Managed text is read in the active language only — a missing English value
+   uses the built-in English default rather than showing the Malayalam text. */
+function managed(value: Localized | undefined, lang: Lang): string {
+  return value?.[lang]?.trim() ?? '';
+}
 
 const SiteContext = createContext<SiteContextValue | null>(null);
 
@@ -48,6 +61,17 @@ export function SiteProvider({ children }: { children: ReactNode }) {
       loading,
       path: (to: string) => `/${lang}${to.startsWith('/') ? to : `/${to}`}`.replace(/\/$/, '') || `/${lang}`,
       s: (key: string) => str(key, lang),
+      pageTitle: (key: string) =>
+        managed(data?.settings?.content?.pages?.[key]?.title, lang) || str(key, lang),
+      section: (key: string, defaults: SectionDefaults = {}) => {
+        const content = data?.settings?.content?.sections?.[key];
+        return {
+          label: managed(content?.label, lang) || defaults.label || '',
+          heading: managed(content?.heading, lang) || defaults.heading || '',
+          description: managed(content?.description, lang) || defaults.description || '',
+          logo: content?.logo?.trim() || '',
+        };
+      },
     }),
     [lang, data, loading]
   );

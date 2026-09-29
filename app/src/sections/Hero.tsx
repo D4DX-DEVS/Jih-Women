@@ -155,7 +155,7 @@ export default function Hero() {
     <section
       id="hero"
       ref={heroRef}
-      className="relative flex min-h-[100svh] items-center justify-center overflow-hidden gradient-hero"
+      className="relative flex min-h-[88svh] items-center justify-center overflow-hidden gradient-hero"
     >
       {/* Floating Organic Shapes */}
       <img
@@ -209,10 +209,10 @@ export default function Hero() {
       />
 
       {/* Hero Content */}
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-16 pt-24 sm:px-6 sm:pb-20 sm:pt-32 lg:px-8 lg:pb-24">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-12 pt-20 sm:px-6 sm:pb-14 sm:pt-24 lg:px-8 lg:pb-16">
         <div
           ref={topCardRef}
-          className="mx-auto mb-6 max-w-5xl overflow-hidden rounded-[28px] border border-white/20 bg-white/10 p-2 opacity-0 shadow-[0_24px_70px_rgba(6,2,18,0.35)] backdrop-blur-xl sm:mb-8"
+          className="mx-auto mb-6 max-w-4xl overflow-hidden rounded-[28px] border border-white/20 bg-white/10 p-2 opacity-0 shadow-[0_24px_70px_rgba(6,2,18,0.35)] backdrop-blur-xl sm:mb-8"
         >
           <img
             src="/banner.jpeg"
