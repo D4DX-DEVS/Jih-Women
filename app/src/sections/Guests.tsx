@@ -202,7 +202,7 @@ export default function Guests() {
     <section
       id="guests"
       ref={sectionRef}
-      className="relative overflow-hidden py-20 sm:py-24 lg:py-32 gradient-alt"
+      className="relative overflow-hidden py-12 sm:py-16 lg:py-20 gradient-alt"
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
       <div className="pointer-events-none absolute -left-24 top-24 h-72 w-72 rounded-full bg-[#ff4cab]/16 blur-3xl" />
@@ -216,7 +216,7 @@ export default function Guests() {
               Guest Speakers
             </span>
           </div>
-          <h2 className="font-['Syne'] text-3xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-[56px]">
+          <h2 className="font-['Syne'] text-[1.75rem] font-bold leading-[1.08] tracking-tight text-white sm:text-4xl lg:text-[44px]">
             Voices bringing insight, enterprise, and lived experience to WES.
           </h2>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-sm text-white/66 sm:text-base">

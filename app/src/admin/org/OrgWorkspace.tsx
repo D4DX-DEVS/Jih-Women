@@ -19,6 +19,7 @@ import {
   Send,
   Settings,
   Target,
+  Type,
   Users,
   Video,
   X,
@@ -51,7 +52,7 @@ import type { CollectionConfig } from './CollectionManager';
 
 type Stats = Record<string, number>;
 
-type EntryKind = 'collection' | 'overview' | 'settings' | 'contact' | 'rsvps' | 'newsletter';
+type EntryKind = 'collection' | 'overview' | 'settings' | 'content' | 'contact' | 'rsvps' | 'newsletter';
 
 type NavEntry = {
   key: string;
@@ -72,6 +73,7 @@ type NavGroup = { key: string; title: string; entries: NavEntry[] };
 const PINNED: NavEntry[] = [
   { key: 'overview', label: 'Dashboard', kind: 'overview', Icon: LayoutDashboard },
   { key: 'site-settings', label: 'Site Settings', kind: 'settings', Icon: Settings },
+  { key: 'site-content', label: 'Titles & Headings', kind: 'content', Icon: Type },
 ];
 
 const NAV: NavGroup[] = [
@@ -310,6 +312,8 @@ export default function OrgWorkspace({ token, onToast, onLogout }: Props) {
           <Overview stats={stats} onOpen={select} />
         ) : entry.kind === 'settings' ? (
           <SiteSettingsManager token={token} onToast={onToast} onLogout={onLogout} />
+        ) : entry.kind === 'content' ? (
+          <SiteSettingsManager key="content" view="content" token={token} onToast={onToast} onLogout={onLogout} />
         ) : entry.kind === 'contact' ? (
           <ContactInbox token={token} onToast={onToast} onLogout={onLogout} />
         ) : entry.kind === 'rsvps' ? (

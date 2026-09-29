@@ -50,6 +50,7 @@ const STRINGS: Dict = {
   externalLinks: { ml: 'ബാഹ്യ ലിങ്കുകൾ', en: 'External Links' },
   contact: { ml: 'ബന്ധപ്പെടുക', en: 'Contact Us' },
 
+  history: { ml: 'ചരിത്രം', en: 'History' },
   ideology: { ml: 'ആദർശം', en: 'Ideology' },
   ourValues: { ml: 'നമ്മുടെ മൂല്യങ്ങൾ', en: 'Our Values' },
   constitution: { ml: 'ഭരണഘടന', en: 'Constitution' },

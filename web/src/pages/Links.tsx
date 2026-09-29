@@ -10,6 +10,7 @@ import {
   SectionHeading,
 } from '../components/Primitives';
 import { LinkCard } from '../components/Cards';
+import { isExternalUrl } from '../lib/format';
 import type { ExternalLink } from '../lib/types';
 
 const GROUPS: { category: ExternalLink['category']; key: string }[] = [
@@ -19,16 +20,17 @@ const GROUPS: { category: ExternalLink['category']; key: string }[] = [
 ];
 
 export default function Links() {
-  const { path, s } = useSite();
+  const { path, s, pageTitle } = useSite();
   const { data, loading, error, reload } = useApi<{ items: ExternalLink[] }>(
     '/api/site/external-links'
   );
+  const links = (data?.items ?? []).filter((link) => isExternalUrl(link.url));
 
   return (
     <>
       <PageHeader
-        title={s('externalLinks')}
-        breadcrumb={[{ label: s('home'), to: path('/') }, { label: s('externalLinks') }]}
+        title={pageTitle('externalLinks')}
+        breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('externalLinks') }]}
       />
       <Section tone="mist">
         <Container>
@@ -36,11 +38,11 @@ export default function Links() {
             <Loading />
           ) : error ? (
             <ErrorState message={error} onRetry={reload} />
-          ) : !data?.items.length ? (
+          ) : !links.length ? (
             <EmptyState />
           ) : (
             GROUPS.map((group) => {
-              const items = data.items.filter((l) => l.category === group.category);
+              const items = links.filter((l) => l.category === group.category);
               if (!items.length) return null;
               return (
                 <div key={group.category} className="mb-14 last:mb-0">

@@ -8,13 +8,13 @@ import {
   Loading,
   PageHeader,
   Section,
-  SectionHeading,
+  ManagedSectionHeading,
 } from '../components/Primitives';
 import { LeaderCard } from '../components/Cards';
 import type { Leader } from '../lib/types';
 
 export default function Leaders() {
-  const { lang, path, s } = useSite();
+  const { lang, path, s, pageTitle } = useSite();
   const { data, loading, error, reload } = useApi<{ current: Leader[]; past: Leader[] }>(
     '/api/site/leaders'
   );
@@ -25,8 +25,8 @@ export default function Leaders() {
   return (
     <>
       <PageHeader
-        title={s('leaders')}
-        breadcrumb={[{ label: s('home'), to: path('/') }, { label: s('leaders') }]}
+        title={pageTitle('leaders')}
+        breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('leaders') }]}
       />
       <Section tone="mist">
         <Container>
@@ -40,7 +40,7 @@ export default function Leaders() {
             <>
               {data.current.length > 0 && (
                 <>
-                  <SectionHeading eyebrow={s('leaders')} title={s('currentLeadership')} />
+                  <ManagedSectionHeading sectionKey="leadersCurrent" eyebrow={s('leaders')} title={s('currentLeadership')} />
                   <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                     {data.current.map((leader) => (
                       <LeaderCard key={leader._id} leader={leader} />
@@ -51,7 +51,7 @@ export default function Leaders() {
 
               {(posters.length > 0 || pastWithoutPoster.length > 0) && (
                 <div className="mt-16">
-                  <SectionHeading eyebrow={s('leaders')} title={s('pastLeadership')} />
+                  <ManagedSectionHeading sectionKey="leadersPast" eyebrow={s('leaders')} title={s('pastLeadership')} />
 
                   {posters.length > 0 && (
                     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

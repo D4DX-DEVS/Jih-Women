@@ -66,7 +66,7 @@ export default function RegistrationCTA({ registrationEnabled }: Props) {
     <section
       id="register"
       ref={sectionRef}
-      className="relative overflow-hidden py-20 sm:py-24 lg:py-32 gradient-hero"
+      className="relative overflow-hidden py-12 sm:py-16 lg:py-20 gradient-hero"
     >
       <img
         src="/shape-coral.png"
@@ -82,13 +82,13 @@ export default function RegistrationCTA({ registrationEnabled }: Props) {
       />
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-[32px] border border-white/12 bg-white/[0.08] p-6 text-center shadow-[0_24px_70px_rgba(7,2,20,0.24)] backdrop-blur-xl sm:p-8 lg:p-10">
+        <div className="overflow-hidden rounded-[32px] border border-white/12 bg-white/[0.08] p-6 text-center shadow-[0_24px_70px_rgba(7,2,20,0.24)] backdrop-blur-xl sm:p-7 lg:p-8">
 
           {registrationEnabled ? (
             <>
               <h2
                 ref={headingRef}
-                className="font-['Syne'] text-3xl sm:text-5xl lg:text-[64px] font-bold text-white leading-[1.05] tracking-tight mb-4 sm:mb-6 opacity-0"
+                className="font-['Syne'] text-[1.75rem] sm:text-4xl lg:text-[48px] font-bold text-white leading-[1.05] tracking-tight mb-4 sm:mb-6 opacity-0"
               >
                 Register for WES 2026
               </h2>
@@ -144,7 +144,7 @@ export default function RegistrationCTA({ registrationEnabled }: Props) {
             <>
               <h2
                 ref={headingRef}
-                className="font-['Syne'] text-3xl sm:text-5xl lg:text-[64px] font-bold text-white leading-[1.05] tracking-tight mb-4 sm:mb-6 opacity-0"
+                className="font-['Syne'] text-[1.75rem] sm:text-4xl lg:text-[48px] font-bold text-white leading-[1.05] tracking-tight mb-4 sm:mb-6 opacity-0"
               >
                 Registrations are now closed.
               </h2>

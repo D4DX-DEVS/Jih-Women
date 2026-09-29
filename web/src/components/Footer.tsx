@@ -54,8 +54,8 @@ export default function Footer() {
       <div className="leaf-watermark pointer-events-none absolute inset-0" />
       <span className="pointer-events-none absolute -end-28 top-10 h-72 w-72 rounded-full bg-magenta-500/15 blur-3xl" />
 
-      <Container className="relative py-14 md:py-16">
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
+      <Container className="relative py-10 md:py-12">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link
@@ -85,17 +85,17 @@ export default function Footer() {
                 <img
                   src={brandLogo}
                   alt={siteName}
-                  className="h-12 w-auto max-w-[220px] shrink-0 object-contain object-left"
+                  className="h-11 w-auto max-w-[220px] shrink-0 object-contain object-left brightness-0 invert"
                 />
               )}
             </Link>
 
-            <p className="mt-5 text-[13.5px] leading-relaxed">
+            <p className="mt-4 text-[13.5px] leading-relaxed">
               {footerNote}
             </p>
 
             {socials.length > 0 && (
-              <div className="mt-6 flex flex-wrap gap-2">
+              <div className="mt-5 flex flex-wrap gap-2">
                 {socials.map(({ href, Icon, label }) => (
                   <a
                     key={label}
@@ -195,7 +195,7 @@ export default function Footer() {
       </Container>
 
       <div className="relative border-t border-white/10">
-        <Container className="flex flex-col items-center justify-between gap-3 py-5 text-center text-[12.5px] text-white/50 sm:flex-row sm:text-start">
+        <Container className="flex flex-col items-center justify-between gap-3 py-4 text-center text-[12.5px] text-white/50 sm:flex-row sm:text-start">
           <span className="min-w-0">
             © {new Date().getFullYear()} {siteName}. {str('allRightsReserved', 'en')}.
           </span>
@@ -227,7 +227,7 @@ function FooterColumn({ title, children }: { title: string; children: React.Reac
   return (
     <div>
       <FooterHeading>{title}</FooterHeading>
-      <ul className="space-y-2.5 text-[13.5px]">{children}</ul>
+      <ul className="space-y-2 text-[13.5px]">{children}</ul>
     </div>
   );
 }

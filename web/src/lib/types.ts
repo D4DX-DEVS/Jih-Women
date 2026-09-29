@@ -79,6 +79,18 @@ export type SiteSettings = {
     focusAreas: boolean;
     newsletter: boolean;
   };
+  /** Admin-managed page titles and section headings (keys: backend/utils/siteContent.js) */
+  content?: {
+    pages?: Record<string, { title?: Localized } | undefined>;
+    sections?: Record<string, SectionContent | undefined>;
+  };
+};
+
+export type SectionContent = {
+  label?: Localized;
+  heading?: Localized;
+  description?: Localized;
+  logo?: string;
 };
 
 export type FocusArea = {

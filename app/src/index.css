@@ -320,3 +320,25 @@ html.lenis, html.lenis body {
 .lenis.lenis-scrolling iframe {
   pointer-events: none;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-float-slow,
+  .animate-float-fast,
+  .animate-pulse-glow,
+  .animate-pulse-dot {
+    animation: none !important;
+  }
+
+  .pill-button::before {
+    transition: none !important;
+  }
+
+  .glass-card-hover {
+    transition: box-shadow 0.3s ease !important;
+  }
+
+  .glass-card-hover:hover {
+    transform: none !important;
+  }
+}

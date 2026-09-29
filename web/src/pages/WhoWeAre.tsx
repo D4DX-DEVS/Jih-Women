@@ -17,7 +17,7 @@ import NotFound from './NotFound';
 import type { PageDoc } from '../lib/types';
 
 export function WhoWeAreIndex() {
-  const { lang, path, s } = useSite();
+  const { lang, path, s, pageTitle } = useSite();
   const { data, loading, error, reload } = useApi<{ items: PageDoc[] }>(
     '/api/site/pages?section=who-we-are'
   );
@@ -25,8 +25,8 @@ export function WhoWeAreIndex() {
   return (
     <>
       <PageHeader
-        title={s('whoWeAre')}
-        breadcrumb={[{ label: s('home'), to: path('/') }, { label: s('whoWeAre') }]}
+        title={pageTitle('whoWeAre')}
+        breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('whoWeAre') }]}
       />
       <Section tone="mist">
         <Container>
@@ -80,7 +80,7 @@ export function WhoWeAreIndex() {
 
 export function PageDetail() {
   const { slug } = useParams();
-  const { lang, path, s } = useSite();
+  const { lang, path, s, pageTitle } = useSite();
   const { data, loading, error, notFound, reload } = useApi<PageDoc>(
     slug ? `/api/site/pages/${slug}` : null
   );
@@ -104,7 +104,7 @@ export function PageDetail() {
         image={data.heroImage}
         breadcrumb={[
           { label: s('home'), to: path('/') },
-          { label: s('whoWeAre'), to: path('/who-we-are') },
+          { label: pageTitle('whoWeAre'), to: path('/who-we-are') },
           { label: t(data.title, lang) },
         ]}
       />

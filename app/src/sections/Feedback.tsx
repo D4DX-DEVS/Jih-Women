@@ -188,7 +188,7 @@ export default function Feedback() {
     <section
       id="feedback"
       ref={sectionRef}
-      className="relative py-20 sm:py-24 lg:py-32"
+      className="relative py-12 sm:py-16 lg:py-20"
     >
       {/* Background ambient blobs */}
       <div
@@ -222,7 +222,7 @@ export default function Feedback() {
           </span>
           <h2
             ref={headingRef}
-            className="font-['Syne'] text-2xl sm:text-3xl lg:text-[2.4rem] font-bold text-white leading-[1.12] tracking-tight opacity-0"
+            className="font-['Syne'] text-xl sm:text-2xl lg:text-[2.1rem] font-bold text-white leading-[1.12] tracking-tight opacity-0"
           >
             How was WES 2026 for you?
           </h2>
@@ -235,7 +235,7 @@ export default function Feedback() {
         {/* Card */}
         <div
           ref={cardRef}
-          className="overflow-hidden rounded-[32px] border border-white/12 bg-white/[0.06] shadow-[0_24px_70px_rgba(7,2,20,0.28)] backdrop-blur-xl p-6 sm:p-8 lg:p-10 opacity-0"
+          className="overflow-hidden rounded-[32px] border border-white/12 bg-white/[0.06] shadow-[0_24px_70px_rgba(7,2,20,0.28)] backdrop-blur-xl p-6 sm:p-7 lg:p-8 opacity-0"
         >
           {submitted ? (
             /* Success state */

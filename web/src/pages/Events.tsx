@@ -22,7 +22,7 @@ import NotFound from './NotFound';
 import type { OrgEvent, Paged } from '../lib/types';
 
 export function EventsIndex() {
-  const { path, s } = useSite();
+  const { path, s, pageTitle } = useSite();
   const [scope, setScope] = useState<'upcoming' | 'past'>('upcoming');
   const [page, setPage] = useState(1);
   const { data, loading, error, reload } = useApi<Paged<OrgEvent>>(
@@ -37,8 +37,8 @@ export function EventsIndex() {
   return (
     <>
       <PageHeader
-        title={s('events')}
-        breadcrumb={[{ label: s('home'), to: path('/') }, { label: s('events') }]}
+        title={pageTitle('events')}
+        breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('events') }]}
       />
       <Section tone="mist">
         <Container>
@@ -85,7 +85,7 @@ export function EventsIndex() {
 
 export function EventDetail() {
   const { slug } = useParams();
-  const { lang, path, s } = useSite();
+  const { lang, path, s, pageTitle } = useSite();
   const { data, loading, error, notFound, reload } = useApi<OrgEvent>(
     slug ? `/api/site/events/${slug}` : null
   );
@@ -109,7 +109,7 @@ export function EventDetail() {
         image={data.coverImage}
         breadcrumb={[
           { label: s('home'), to: path('/') },
-          { label: s('events'), to: path('/events') },
+          { label: pageTitle('events'), to: path('/events') },
           { label: t(data.title, lang) },
         ]}
       />

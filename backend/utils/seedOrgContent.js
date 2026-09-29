@@ -34,6 +34,20 @@ const PAGES = [
     },
   },
   {
+    slug: 'objectives',
+    section: 'who-we-are',
+    order: 2,
+    title: { ml: 'ലക്ഷ്യങ്ങൾ', en: 'Objectives' },
+    summary: {
+      ml: 'വനിതാ വിഭാഗം ലക്ഷ്യമിടുന്ന പ്രധാന ലക്ഷ്യങ്ങൾ.',
+      en: 'The core objectives the Women\'s Wing works towards.',
+    },
+    body: {
+      ml: '<p>ഇവിടെ ലക്ഷ്യങ്ങൾ സംബന്ധിച്ച ഉള്ളടക്കം അഡ്മിൻ പാനലിൽ നിന്ന് ചേർക്കുക.</p>',
+      en: '<p>Add the objectives content from the admin panel.</p>',
+    },
+  },
+  {
     slug: 'our-values',
     section: 'who-we-are',
     order: 2,
