@@ -60,6 +60,9 @@ export default function ShowcaseOpportunity() {
             stagger: 0.12,
             duration: 0.7,
             ease: 'power3.out',
+            // Let the CSS hover-lift on these cards take over once the entrance settles
+            // instead of leaving an inline transform that would block it.
+            clearProps: 'transform,translate',
             scrollTrigger: {
               trigger: cardsRef.current,
               start: 'top 82%',
@@ -94,7 +97,7 @@ export default function ShowcaseOpportunity() {
   };
 
   return (
-    <section id="showcase" ref={sectionRef} className="relative py-20 sm:py-24 lg:py-28">
+    <section id="showcase" ref={sectionRef} className="relative py-12 sm:py-16 lg:py-20">
       <div className="absolute inset-x-0 top-10 h-40 bg-[radial-gradient(circle_at_top,_rgba(255,125,164,0.2),_transparent_58%)] pointer-events-none" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -102,7 +105,7 @@ export default function ShowcaseOpportunity() {
           <div className="grid gap-8 px-6 py-8 sm:px-8 sm:py-10 lg:grid-cols-[1.05fr,0.95fr] lg:gap-10 lg:px-12 lg:py-12">
             <div ref={introRef} className="opacity-0">
               <span className="section-label mb-4 block text-primary">Exclusive Startup Visibility</span>
-              <h2 className="font-['Syne'] text-3xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-[58px]">
+              <h2 className="font-['Syne'] text-[1.75rem] font-bold leading-[1.08] tracking-tight text-white sm:text-4xl lg:text-[44px]">
                 Showcase your brand inside the summit at no extra cost.
               </h2>
               <p className="mt-5 max-w-2xl text-sm leading-7 text-white/78 sm:text-base">
@@ -128,7 +131,7 @@ export default function ShowcaseOpportunity() {
               {displayOptions.map((option) => (
                 <div
                   key={option.title}
-                  className="glass-card opacity-0 rounded-[28px] border border-white/10 bg-black/10 p-5 sm:p-6"
+                  className="glass-card glass-card-hover opacity-0 rounded-[28px] border border-white/10 bg-black/10 p-5 sm:p-6"
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/12 bg-white/10 text-[#ffd0e8] backdrop-blur-md">
                     <option.icon size={24} />

@@ -442,7 +442,8 @@ router.post('/downloads/:id/hit', async (req, res) => {
 router.get('/external-links', async (_req, res) => {
   try {
     const items = await ExternalLink.find(PUBLISHED).sort({ category: 1, order: 1 }).lean();
-    return res.json({ items });
+    // Records saved before URL validation existed are skipped rather than served broken
+    return res.json({ items: items.filter((link) => ExternalLink.isExternalUrl(link.url)) });
   } catch (err) {
     return fail(res, err, 'We could not load these links. Please try again.');
   }

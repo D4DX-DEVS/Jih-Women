@@ -87,6 +87,9 @@ export default function About() {
             stagger: 0.15,
             duration: 0.8,
             ease: 'power3.out',
+            // Let the CSS hover-lift on these cards take over once the entrance settles
+            // instead of leaving an inline transform that would block it.
+            clearProps: 'transform,translate,scale',
             scrollTrigger: {
               trigger: statsRef.current,
               start: 'top 85%',
@@ -104,10 +107,10 @@ export default function About() {
     <section
       id="about"
       ref={sectionRef}
-      className="relative py-20 sm:py-24 lg:py-32"
+      className="relative py-12 sm:py-16 lg:py-20"
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-[32px] border border-white/12 bg-white/[0.06] p-6 shadow-[0_24px_70px_rgba(7,2,20,0.24)] backdrop-blur-xl sm:p-8 lg:p-10">
+        <div className="overflow-hidden rounded-[32px] border border-white/12 bg-white/[0.06] p-6 shadow-[0_24px_70px_rgba(7,2,20,0.24)] backdrop-blur-xl sm:p-7 lg:p-8">
           {/* Label */}
           <span
             ref={labelRef}
@@ -166,7 +169,7 @@ export default function About() {
             {stats.map((stat) => (
               <div
                 key={stat.number}
-                className="glass-card relative overflow-hidden p-3.5 text-left text-white sm:p-4"
+                className="glass-card glass-card-hover relative overflow-hidden p-3.5 text-left text-white sm:p-4"
               >
                 <div className="mb-2 flex items-center gap-2">
                   <div className="flex-shrink-0 rounded-xl border border-white/12 bg-white/10 p-1.5 text-[#ffd2e8]">

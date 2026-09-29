@@ -76,10 +76,10 @@ export default function Gallery() {
     <section
       id="gallery"
       ref={sectionRef}
-      className="relative py-20 sm:py-24 lg:py-32"
+      className="relative py-12 sm:py-16 lg:py-20"
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-[32px] border border-white/12 bg-white/[0.06] p-6 shadow-[0_24px_70px_rgba(7,2,20,0.24)] backdrop-blur-xl sm:p-8 lg:p-10">
+        <div className="overflow-hidden rounded-[32px] border border-white/12 bg-white/[0.06] p-6 shadow-[0_24px_70px_rgba(7,2,20,0.24)] backdrop-blur-xl sm:p-7 lg:p-8">
 
           {/* Header */}
           <div className="flex items-start justify-between gap-4 mb-6 sm:mb-8 flex-wrap">

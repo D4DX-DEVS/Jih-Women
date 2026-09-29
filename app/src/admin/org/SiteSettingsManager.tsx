@@ -4,6 +4,7 @@ import { apiJson, isAuthError, describeError } from '../shared/api';
 import { SectionCard, Spinner } from '../shared/ui';
 import { sectionPreviewUrl } from './preview';
 import { renderField } from './fields';
+import { PAGE_TITLE_FIELDS, SECTION_GROUPS } from './SiteContentFields';
 import type { Doc, FieldDef } from './fields';
 
 const IDENTITY_FIELDS: FieldDef[] = [
@@ -104,12 +105,14 @@ const SECTION_FIELDS: FieldDef[] = [
 ];
 
 type Props = {
+  /** `content` edits the page titles and section headings stored on the same settings */
+  view?: 'settings' | 'content';
   token: string;
   onToast: (message: string, kind?: 'success' | 'error') => void;
   onLogout: () => void;
 };
 
-export default function SiteSettingsManager({ token, onToast, onLogout }: Props) {
+export default function SiteSettingsManager({ view = 'settings', token, onToast, onLogout }: Props) {
   const [doc, setDoc] = useState<Doc | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -146,7 +149,7 @@ export default function SiteSettingsManager({ token, onToast, onLogout }: Props)
         token,
       });
       setDoc(data);
-      onToast('Site settings saved');
+      onToast(view === 'content' ? 'Titles and headings saved' : 'Site settings saved');
     } catch (err) {
       if (isAuthError(err)) return onLogout();
       onToast(describeError(err, 'Save failed'), 'error');
@@ -163,7 +166,7 @@ export default function SiteSettingsManager({ token, onToast, onLogout }: Props)
     );
   }
 
-  const siteUrl = sectionPreviewUrl('site-settings');
+  const siteUrl = sectionPreviewUrl(view === 'content' ? 'site-content' : 'site-settings');
 
   const ctx = {
     doc,
@@ -176,9 +179,13 @@ export default function SiteSettingsManager({ token, onToast, onLogout }: Props)
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="admin-display text-2xl font-bold">Site Settings</h2>
+          <h2 className="admin-display text-2xl font-bold">
+            {view === 'content' ? 'Titles & Headings' : 'Site Settings'}
+          </h2>
           <p className="text-sm text-foreground/55 mt-1">
-            Identity, contact details, social profiles and home page section visibility.
+            {view === 'content'
+              ? 'Page titles, section headings and section logos. Leave a field blank to use the built-in text.'
+              : 'Identity, contact details, social profiles and home page section visibility.'}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -194,6 +201,25 @@ export default function SiteSettingsManager({ token, onToast, onLogout }: Props)
         </div>
       </div>
 
+      {view === 'content' ? (
+        <>
+          <SectionCard
+            title="Page titles"
+            description="The large title in the banner at the top of each page, also used in its breadcrumb and menu tabs."
+          >
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              {PAGE_TITLE_FIELDS.map((f, i) => renderField(f, ctx, `pt-${i}`))}
+            </div>
+          </SectionCard>
+
+          {SECTION_GROUPS.map((group) => (
+            <SectionCard key={group.key} title={group.title} description={group.description}>
+              <div className="space-y-5">{group.fields.map((f, i) => renderField(f, ctx, `${group.key}-${i}`))}</div>
+            </SectionCard>
+          ))}
+        </>
+      ) : (
+        <>
       <SectionCard title="Identity">
         <div className="space-y-5">{IDENTITY_FIELDS.map((f, i) => renderField(f, ctx, `id-${i}`))}</div>
       </SectionCard>
@@ -221,6 +247,8 @@ export default function SiteSettingsManager({ token, onToast, onLogout }: Props)
           {SECTION_FIELDS.map((f, i) => renderField(f, ctx, `sec-${i}`))}
         </div>
       </SectionCard>
+        </>
+      )}
 
       <div className="flex justify-end">
         <button className="pill pill-primary text-sm" onClick={save} disabled={saving}>

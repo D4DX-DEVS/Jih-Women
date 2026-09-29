@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { localized } = require('./common');
+const { PAGE_CONTENT_KEYS, SECTION_CONTENT_KEYS } = require('../utils/siteContent');
 
 const socialSchema = new mongoose.Schema(
   {
@@ -25,6 +26,29 @@ const presidentMessageSchema = new mongoose.Schema(
   },
   { _id: false }
 );
+
+/** Admin-managed title of a static public page (e.g. Leaders, Contact) */
+const pageContentSchema = new mongoose.Schema(
+  { title: localized({ maxlength: 200 }) },
+  { _id: false }
+);
+
+/** Admin-managed heading block of a page section, with one shared logo */
+const sectionContentSchema = new mongoose.Schema(
+  {
+    label: localized({ maxlength: 120 }),
+    heading: localized({ maxlength: 300 }),
+    description: localized({ maxlength: 2000 }),
+    logo: { type: String, trim: true, default: '' },
+  },
+  { _id: false }
+);
+
+const keyedSchema = (keys, schema) =>
+  new mongoose.Schema(
+    Object.fromEntries(keys.map((key) => [key, { type: schema, default: () => ({}) }])),
+    { _id: false }
+  );
 
 const siteSettingSchema = new mongoose.Schema(
   {
@@ -52,6 +76,13 @@ const siteSettingSchema = new mongoose.Schema(
     social: { type: socialSchema, default: () => ({}) },
 
     footerNote: localized({ maxlength: 1000 }),
+
+    // Page titles and section headings shown on the public site; keys live in
+    // utils/siteContent.js. Empty values fall back to the site's built-in text.
+    content: {
+      pages: { type: keyedSchema(PAGE_CONTENT_KEYS, pageContentSchema), default: () => ({}) },
+      sections: { type: keyedSchema(SECTION_CONTENT_KEYS, sectionContentSchema), default: () => ({}) },
+    },
 
     // Home page section visibility — the FRD marks several sections "hide"
     sections: {

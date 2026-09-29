@@ -58,13 +58,17 @@ function sendMongooseError(res, err, fallback) {
     const fields = {};
     const missing = [];
     const malformed = [];
+    // Custom model validators carry their own editor-facing message
+    const custom = [];
 
     for (const key of Object.keys(err.errors)) {
       const detail = err.errors[key];
       fields[key] = detail.message;
       // Mongoose wraps type failures as CastError inside a ValidationError,
       // and those are a different problem from a blank field.
-      if (detail.name === 'CastError' || detail.kind === 'date' || detail.kind === 'Number') {
+      if (detail.kind === 'user defined') {
+        custom.push(detail.message);
+      } else if (detail.name === 'CastError' || detail.kind === 'date' || detail.kind === 'Number') {
         malformed.push(humanFieldName(key));
       } else {
         missing.push(humanFieldName(key));
@@ -86,6 +90,8 @@ function sendMongooseError(res, err, fallback) {
           : `Please check ${listNames(malformed)} — those values do not look right.`
       );
     }
+
+    parts.push(...custom);
 
     return res.status(400).json({ error: parts.join(' ') || 'Please check the details you entered.', fields });
   }

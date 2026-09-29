@@ -768,7 +768,7 @@ export const EXTERNAL_LINKS: CollectionConfig = {
   fields: [
     { kind: 'localized', path: 'title', label: 'Title', required: true },
     { kind: 'localized', path: 'description', label: 'Description', multiline: true, rows: 2 },
-    { kind: 'text', path: 'url', label: 'URL', placeholder: 'https://…', required: true },
+    { kind: 'text', path: 'url', label: 'URL', placeholder: 'https://…', required: true, hint: 'Full web address, e.g. https://www.youtube.com/@channel. Opens in a new tab.' },
     { kind: 'asset', path: 'logoUrl', label: 'Logo', folder: 'links', recommend: '256px on the long edge. Transparent PNG or SVG — letterboxed into a 48px square, so a wide wordmark is fine.' },
     { kind: 'select', path: 'category', label: 'Category', options: [
       { value: 'official-portal', label: 'Official portal' },

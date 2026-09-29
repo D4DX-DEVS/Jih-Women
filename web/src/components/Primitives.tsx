@@ -30,10 +30,40 @@ export function Section({
     plum: 'bg-plum-800 text-white',
   };
   return (
-    <section id={id} className={`py-14 md:py-20 ${tones[tone]} ${className}`}>
+    <section id={id} className={`py-10 md:py-14 ${tones[tone]} ${className}`}>
       {children}
     </section>
   );
+}
+
+/**
+ * SectionHeading whose label, heading, description and logo come from the
+ * admin-managed section content (Titles & Headings), falling back to the
+ * built-in text passed in when a value is empty.
+ */
+export function ManagedSectionHeading({
+  sectionKey,
+  eyebrow,
+  title,
+  description,
+  ...rest
+}: Parameters<typeof SectionHeading>[0] & { sectionKey: string }) {
+  const { section } = useSite();
+  const content = section(sectionKey, { label: eyebrow, heading: title, description });
+  return (
+    <SectionHeading
+      {...rest}
+      eyebrow={content.label || undefined}
+      title={content.heading}
+      description={content.description || undefined}
+      logo={content.logo || undefined}
+    />
+  );
+}
+
+/** A section's single admin-managed logo, sized to sit beside its heading. */
+export function SectionLogo({ src }: { src: string }) {
+  return <img src={src} alt="" aria-hidden="true" className="h-7 w-auto max-w-[120px] shrink-0 object-contain" />;
 }
 
 export function SectionHeading({
@@ -41,11 +71,14 @@ export function SectionHeading({
   title,
   description,
   action,
+  logo,
   align = 'start',
   invert = false,
 }: {
   eyebrow?: string;
   title: string;
+  /** Admin-managed section logo; shown before the eyebrow when set */
+  logo?: string;
   description?: string;
   action?: ReactNode;
   align?: 'start' | 'center';
@@ -53,16 +86,25 @@ export function SectionHeading({
 }) {
   return (
     <div
-      className={`mb-8 flex flex-col gap-4 md:mb-11 md:flex-row md:items-end md:justify-between ${
+      className={`mb-6 flex flex-col gap-3 md:mb-8 md:flex-row md:items-end md:justify-between ${
         align === 'center' ? 'text-center md:text-center' : ''
       }`}
     >
       <div className={align === 'center' ? 'mx-auto w-full min-w-0 max-w-2xl' : 'w-full min-w-0 max-w-2xl'}>
-        {eyebrow && (
-          <div className={`mb-2.5 eyebrow ${invert ? 'text-magenta-300' : ''}`}>{eyebrow}</div>
+        {(eyebrow || logo) && (
+          <div
+            className={`mb-2 flex items-center gap-2 eyebrow ${align === 'center' ? 'justify-center' : ''} ${
+              invert ? 'text-magenta-300' : ''
+            }`}
+          >
+            {logo && <SectionLogo src={logo} />}
+            {eyebrow && <span className="h-px w-5 shrink-0 bg-current opacity-70" />}
+            {eyebrow}
+            {eyebrow && align === 'center' && <span className="h-px w-5 shrink-0 bg-current opacity-70" />}
+          </div>
         )}
         <h2
-          className={`w-full min-w-0 text-[1.45rem] font-semibold leading-[1.25] [overflow-wrap:anywhere] [text-wrap:wrap] sm:text-[1.6rem] md:text-[2.1rem] md:leading-tight ${
+          className={`w-full min-w-0 text-[1.3rem] font-semibold leading-[1.25] [overflow-wrap:anywhere] [text-wrap:wrap] sm:text-[1.45rem] md:text-[1.75rem] md:leading-tight ${
             invert ? 'text-white' : 'text-plum-800'
           }`}
         >
@@ -70,7 +112,7 @@ export function SectionHeading({
         </h2>
         {description && (
           <p
-            className={`mt-3 text-[15px] leading-relaxed ${
+            className={`mt-2 text-[14.5px] leading-relaxed ${
               invert ? 'text-white/70' : 'text-ink-muted'
             }`}
           >
@@ -110,7 +152,7 @@ export function Button({
   className?: string;
 }) {
   const base =
-    'inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all disabled:opacity-55 disabled:pointer-events-none';
+    'inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all active:scale-[0.97] disabled:opacity-55 disabled:pointer-events-none';
   const sizes = {
     sm: 'px-4 py-2 text-[13px]',
     md: 'px-6 py-3 text-sm',

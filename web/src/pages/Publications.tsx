@@ -29,7 +29,7 @@ const TYPES = [
 ];
 
 export function PublicationsIndex() {
-  const { path, s } = useSite();
+  const { path, s, pageTitle } = useSite();
   const [type, setType] = useState('');
   const [page, setPage] = useState(1);
   const { data, loading, error, reload } = useApi<Paged<Publication>>(
@@ -39,8 +39,8 @@ export function PublicationsIndex() {
   return (
     <>
       <PageHeader
-        title={s('publications')}
-        breadcrumb={[{ label: s('home'), to: path('/') }, { label: s('publications') }]}
+        title={pageTitle('publications')}
+        breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('publications') }]}
       />
       <Section tone="mist">
         <Container>
@@ -87,7 +87,7 @@ export function PublicationsIndex() {
 
 export function PublicationDetail() {
   const { slug } = useParams();
-  const { lang, path, s } = useSite();
+  const { lang, path, s, pageTitle } = useSite();
   const { data, loading, error, notFound, reload } = useApi<Publication>(
     slug ? `/api/site/publications/${slug}` : null
   );
@@ -109,7 +109,7 @@ export function PublicationDetail() {
         title={t(data.title, lang)}
         breadcrumb={[
           { label: s('home'), to: path('/') },
-          { label: s('publications'), to: path('/publications') },
+          { label: pageTitle('publications'), to: path('/publications') },
           { label: t(data.title, lang) },
         ]}
       />

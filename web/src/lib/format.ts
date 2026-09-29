@@ -71,3 +71,13 @@ export function whatsappHref(number: string): string {
   const withCode = digits.length === 10 ? `91${digits}` : digits;
   return `https://wa.me/${withCode}`;
 }
+
+/** True for an absolute http(s) URL — anything else must not be rendered as an outbound link. */
+export function isExternalUrl(value: string | undefined): boolean {
+  try {
+    const url = new URL(value ?? '');
+    return (url.protocol === 'http:' || url.protocol === 'https:') && Boolean(url.hostname);
+  } catch {
+    return false;
+  }
+}

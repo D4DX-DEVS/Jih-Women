@@ -90,7 +90,7 @@ export default function Highlights() {
     <section
       id="highlights"
       ref={sectionRef}
-      className="relative py-20 sm:py-24 lg:py-32 gradient-alt"
+      className="relative py-12 sm:py-16 lg:py-20 gradient-alt"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-10 sm:gap-12 lg:grid-cols-12 lg:gap-16">
@@ -99,7 +99,7 @@ export default function Highlights() {
             className="lg:col-span-4 lg:sticky lg:top-32 lg:self-start opacity-0"
           >
             <span className="section-label text-primary block mb-4 sm:mb-6">Session Themes</span>
-            <h2 className="font-['Syne'] text-3xl sm:text-5xl lg:text-[56px] font-bold text-white leading-[1.05] tracking-tight mb-5 sm:mb-6">
+            <h2 className="font-['Syne'] text-[1.75rem] sm:text-4xl lg:text-[44px] font-bold text-white leading-[1.05] tracking-tight mb-5 sm:mb-6">
               A curated learning flow for women building the next chapter of their work.
             </h2>
             <p className="text-base lg:text-lg text-white/76 leading-relaxed font-light">
@@ -126,7 +126,7 @@ export default function Highlights() {
                 className="glass-card relative flex cursor-default flex-col items-start gap-4 overflow-hidden p-5 transition-all duration-300 hover:-translate-y-1 sm:flex-row sm:gap-6 sm:p-8"
               >
                 <div className="absolute top-0 right-0 h-32 w-32 rounded-full bg-white/10 blur-2xl -mr-16 -mt-16 transition-all duration-500" />
-                <div className="relative z-10 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border border-white/12 bg-white/10 text-[#ffd0e8] backdrop-blur-md transition-all duration-300 sm:h-16 sm:w-16">
+                <div className="relative z-10 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border border-white/12 bg-white/10 text-[#ffd0e8] backdrop-blur-md transition-all duration-300 sm:h-14 sm:w-14">
                   <item.icon size={28} />
                 </div>
                 <div className="relative z-10">

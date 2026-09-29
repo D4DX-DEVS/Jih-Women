@@ -14,6 +14,7 @@ import {
   PageHeader,
   RichText,
   Section,
+  ManagedSectionHeading,
   SectionHeading,
 } from '../components/Primitives';
 import { GalleryGrid, ProgramCard } from '../components/Cards';
@@ -21,7 +22,7 @@ import NotFound from './NotFound';
 import type { Program } from '../lib/types';
 
 export function ProgramsIndex() {
-  const { path, s } = useSite();
+  const { path, s, pageTitle } = useSite();
   const { data, loading, error, reload } = useApi<{ items: Program[] }>('/api/site/programs');
 
   const major = data?.items.filter((p) => p.isMajor) ?? [];
@@ -30,8 +31,8 @@ export function ProgramsIndex() {
   return (
     <>
       <PageHeader
-        title={s('programs')}
-        breadcrumb={[{ label: s('home'), to: path('/') }, { label: s('programs') }]}
+        title={pageTitle('programs')}
+        breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('programs') }]}
       />
       <Section tone="mist">
         <Container>
@@ -45,7 +46,7 @@ export function ProgramsIndex() {
             <>
               {major.length > 0 && (
                 <>
-                  <SectionHeading eyebrow={s('programs')} title={s('majorProgrammes')} />
+                  <ManagedSectionHeading sectionKey="programsMajor" eyebrow={s('programs')} title={s('majorProgrammes')} />
                   <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {major.map((p) => (
                       <ProgramCard key={p._id} program={p} />
@@ -55,7 +56,7 @@ export function ProgramsIndex() {
               )}
               {others.length > 0 && (
                 <div className="mt-14">
-                  <SectionHeading eyebrow={s('programs')} title={s('otherProgrammes')} />
+                  <ManagedSectionHeading sectionKey="programsOther" eyebrow={s('programs')} title={s('otherProgrammes')} />
                   <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {others.map((p) => (
                       <ProgramCard key={p._id} program={p} />
@@ -73,7 +74,7 @@ export function ProgramsIndex() {
 
 export function ProgramDetail() {
   const { slug } = useParams();
-  const { lang, path, s } = useSite();
+  const { lang, path, s, pageTitle } = useSite();
   const { data, loading, error, notFound, reload } = useApi<Program>(
     slug ? `/api/site/programs/${slug}` : null
   );
@@ -98,7 +99,7 @@ export function ProgramDetail() {
         image={data.coverImage}
         breadcrumb={[
           { label: s('home'), to: path('/') },
-          { label: s('programs'), to: path('/programs') },
+          { label: pageTitle('programs'), to: path('/programs') },
           { label: t(data.title, lang) },
         ]}
       />
