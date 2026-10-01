@@ -58,6 +58,22 @@ const img = (path: string, label = ''): ColumnDef => ({
     ),
 });
 
+/** A logo, shown whole (not cropped) in a wider box so wide marks stay legible. */
+const logo = (path: string, label = 'Logo'): ColumnDef => ({
+  label,
+  className: 'w-[112px]',
+  render: (row) =>
+    row[path] ? (
+      <span className="flex h-12 w-24 items-center justify-center rounded-lg border border-[#e6e8f0] bg-white p-1.5">
+        <img src={row[path] as string} alt="" className="h-auto max-h-full w-auto max-w-full object-contain" />
+      </span>
+    ) : (
+      <div className="grid h-12 w-24 place-items-center rounded-lg border border-dashed border-[#d3d7e4] text-[9px] text-foreground/30">
+        —
+      </div>
+    ),
+});
+
 const flag = (path: string, label: string): ColumnDef => ({
   label,
   className: 'w-[92px]',
@@ -302,45 +318,33 @@ export const PROGRAMS: CollectionConfig = {
     { value: 'true', label: 'Major programme' },
     { value: 'false', label: 'Other' },
   ] }],
-  columns: [img('coverImage'), loc('title', 'Programme'), str('slug', 'Slug'), flag('isMajor', 'Major'), flag('bannerImage', 'Banner')],
+  columns: [logo('logoUrl'), loc('title', 'Programme'), str('slug', 'Slug'), flag('isMajor', 'Major')],
+  /* The form edits and sends only name, description and logo. Everything else stored
+     on a programme (slug, cover/banner images, objectives, schedule, gallery, videos,
+     downloads, external link, type, order) is left as it is; a new programme gets the
+     model defaults (published, major, order 0, slug from the name). The backend
+     accepts the same fields, plus the list's Published toggle. */
+  editable: ['title', 'overview', 'logoUrl'],
+  modalSize: 'lg',
   blank: () => ({
     title: emptyLocalized(),
-    tagline: emptyLocalized(),
     overview: emptyLocalized(),
-    externalLabel: emptyLocalized(),
-    slug: '',
-    objectives: [],
-    schedule: [],
-    coverImage: '',
     logoUrl: '',
-    bannerImage: '',
-    gallery: [],
-    videos: [],
-    downloads: [],
-    isMajor: true,
-    externalUrl: '',
-    order: 0,
-    published: true,
   }),
-  /* Name, description and three images only. Fields no longer on the form (slug,
-     objectives, schedule, gallery, videos, downloads, external link, type, order,
-     published) keep their saved values: editing sends the whole record back, and a
-     new programme takes the defaults from blank() above. */
   fields: [
     { kind: 'heading', label: 'Programme information' },
     { kind: 'localized', path: 'title', label: 'Programme name', required: true, onlyLang: 'ml' },
     { kind: 'rich', path: 'overview', label: 'Description' },
     { kind: 'heading', label: 'Media' },
-    { kind: 'asset', path: 'coverImage', label: 'Cover image', folder: 'programs', recommend: '1600×900px (16:9). Shown whole (never cropped) on the programme card on the Programs page.' },
     {
       kind: 'asset',
-      path: 'bannerImage',
-      label: 'Banner image',
+      path: 'logoUrl',
+      label: 'Logo',
       folder: 'programs',
-      hint: 'Programmes with a banner appear in the logo strip under the home page slider (the strip shows the logo when there is one).',
-      recommend: '1800×600px (3:1).',
+      fit: 'contain',
+      hint: 'Shown on the programme page, its card on the Programs page and the logo strip on the home page.',
+      recommend: 'At least 240px tall, width proportional. Transparent PNG or SVG — shown uncropped.',
     },
-    { kind: 'asset', path: 'logoUrl', label: 'Logo', folder: 'programs', recommend: 'At least 240px tall, width proportional. Transparent PNG or SVG — shown uncropped.' },
   ],
 };
 

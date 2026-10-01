@@ -181,8 +181,18 @@ export default function Footer() {
             </Link>
             {/* Below xl "Powered by" wraps to its own line, so the divider would dangle */}
             <span className="hidden opacity-30 xl:inline">|</span>
-            <span className="basis-full text-center sm:text-end xl:basis-auto">
-              Powered by <span className="font-medium text-white/70">D4DX Innovations LLP</span>
+            <span className="flex basis-full items-center justify-center gap-1.5 sm:justify-end xl:basis-auto">
+              Powered by
+              <a
+                href="https://d4dx.co/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="-my-2 inline-flex items-center gap-1.5 py-2 font-medium text-white/70 transition hover:text-white"
+              >
+                {/* D4DX mark (white, from d4dx.co), sized to the text */}
+                <img src="/d4dx-mark.png" alt="" className="h-3.5 w-auto shrink-0 object-contain" />
+                D4DX Innovations LLP
+              </a>
             </span>
           </div>
         </Container>

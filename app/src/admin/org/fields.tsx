@@ -23,7 +23,7 @@ export type FieldDef =
   | { kind: 'date'; path: string; label: string; hint?: string; required?: boolean }
   | { kind: 'select'; path: string; label: string; options: { value: string; label: string }[]; hint?: string; required?: boolean }
   | { kind: 'toggle'; path: string; label: string; description?: string }
-  | { kind: 'asset'; path: string; label: string; folder: string; accept?: string; preview?: 'image' | 'file'; hint?: string; recommend?: string; required?: boolean }
+  | { kind: 'asset'; path: string; label: string; folder: string; accept?: string; preview?: 'image' | 'file'; fit?: 'cover' | 'contain'; hint?: string; recommend?: string; required?: boolean }
   | { kind: 'gallery'; path: string; label: string; folder: string; hint?: string; recommend?: string }
   | { kind: 'attachments'; path: string; label: string; folder: string; hint?: string; recommend?: string }
   | { kind: 'bullets'; path: string; label: string; hint?: string }
@@ -200,6 +200,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
           token={token}
           accept={def.accept}
           preview={def.preview}
+          fit={def.fit}
           onError={onError}
           value={(getPath(doc, def.path) as string) ?? ''}
           onChange={(url) => set(def.path, url)}
