@@ -106,6 +106,8 @@ export type ProgramBanner = {
   slug: string;
   title: Localized;
   bannerImage: string;
+  /** The programme's own logo (as on its page); preferred over the banner in the logo strip */
+  logoUrl?: string;
   externalUrl: string;
 };
 
@@ -261,6 +263,9 @@ export type VideoItem = {
   title: Localized;
   description: Localized;
   youtubeUrl: string;
+  /** Derived by the backend from youtubeUrl */
+  youtubeId?: string;
+  embedUrl?: string;
   audioUrl: string;
   thumbnailUrl: string;
   durationLabel: string;

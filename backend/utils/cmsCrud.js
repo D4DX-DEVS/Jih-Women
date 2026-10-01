@@ -124,6 +124,8 @@ function sendMongooseError(res, err, fallback) {
  * @param {string[]} cfg.filters       Query params passed straight through as equality filters
  * @param {object}   cfg.sort          Default sort
  * @param {string[]} cfg.sortable      Paths allowed in ?sortBy
+ * @param {string[]} [cfg.writable]    When set, create/update only accept these top-level
+ *                                     fields; other stored fields are left untouched
  */
 function buildCrud({
   Model,
@@ -132,8 +134,13 @@ function buildCrud({
   filters = [],
   sort = { order: 1, createdAt: -1 },
   sortable = ['order', 'createdAt', 'updatedAt', 'publishedAt', 'startDate'],
+  writable,
 }) {
   const router = express.Router();
+
+  /** The request body limited to `writable` fields (the whole body when unset). */
+  const writableBody = (body = {}) =>
+    writable ? Object.fromEntries(writable.filter((k) => k in body).map((k) => [k, body[k]])) : { ...body };
 
   function buildQuery(req) {
     const query = {};
@@ -203,7 +210,7 @@ function buildCrud({
 
   router.post('/', async (req, res) => {
     try {
-      const doc = await Model.create(req.body || {});
+      const doc = await Model.create(writableBody(req.body || {}));
       return res.status(201).json(doc.toObject());
     } catch (err) {
       return sendMongooseError(res, err, `We could not create the ${name.toLowerCase()}. Please try again.`);
@@ -215,7 +222,7 @@ function buildCrud({
       const doc = await Model.findById(req.params.id);
       if (!doc) return res.status(404).json({ error: `That ${name.toLowerCase()} no longer exists. It may have been deleted.` });
 
-      const payload = { ...(req.body || {}) };
+      const payload = writableBody(req.body || {});
       delete payload._id;
       delete payload.createdAt;
       delete payload.updatedAt;

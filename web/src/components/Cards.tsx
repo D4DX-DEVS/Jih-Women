@@ -34,7 +34,7 @@ function Placeholder({ className = '' }: { className?: string }) {
 /* ---------------- posts ---------------- */
 
 export function PostCard({ post, compact = false }: { post: MediaPost; compact?: boolean }) {
-  const { lang, path, s } = useSite();
+  const { lang, path, h } = useSite();
   const to = path(`/media/${post.type}/${post.slug}`);
 
   if (compact) {
@@ -80,19 +80,21 @@ export function PostCard({ post, compact = false }: { post: MediaPost; compact?:
         <Placeholder className="aspect-[16/10]" />
       )}
       <div className="flex flex-1 flex-col p-5">
+        {/* Dates read in English on every card; the title and preview stay in the site language */}
         <div className="text-[11px] font-medium uppercase tracking-wider text-magenta-500">
-          {formatDate(post.publishedAt, lang)}
+          {formatDate(post.publishedAt, 'en')}
         </div>
         <h3 className="mt-2 line-clamp-2 font-display text-lg font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600">
           {t(post.title, lang)}
         </h3>
+        {/* A short preview only; the full story is on the detail page */}
         {t(post.excerpt, lang) && (
-          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-muted">
+          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-muted">
             {t(post.excerpt, lang)}
           </p>
         )}
-        <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-magenta-600">
-          {s('readMore')}
+        <span className="mt-auto inline-flex items-center gap-1.5 pt-4 text-[13px] font-semibold text-magenta-600">
+          {h('readMore')}
           <ArrowUpRight size={15} />
         </span>
       </div>
@@ -218,28 +220,31 @@ export function DepartmentCard({ department }: { department: Pick<Department, '_
   );
 }
 
-export function ProgramCard({ program }: { program: Pick<Program, '_id' | 'slug' | 'title' | 'tagline' | 'coverImage' | 'logoUrl' | 'externalUrl' | 'externalLabel'> }) {
+export function ProgramCard({ program }: { program: Pick<Program, '_id' | 'slug' | 'title' | 'tagline' | 'logoUrl' | 'externalUrl' | 'externalLabel'> }) {
   const { lang, path, s } = useSite();
   return (
     <Link
       to={path(`/programs/${program.slug}`)}
       className="card-hover group relative flex flex-col overflow-hidden rounded-3xl border border-plum-100 bg-white shadow-soft"
     >
-      {program.coverImage ? (
-        <div className="aspect-[16/9] overflow-hidden">
+      {program.logoUrl ? (
+        /* The programme's logo (its only managed image), whole and centred; multiply
+           lets white or near-white logo backgrounds melt into the card */
+        <div className="flex aspect-[16/9] items-center justify-center overflow-hidden border-b border-plum-100/70 bg-white p-6 sm:p-8">
           <img
-            src={program.coverImage}
+            src={program.logoUrl}
             alt=""
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-auto max-h-full w-auto max-w-full object-contain mix-blend-multiply brightness-[1.04] transition-transform duration-500 group-hover:scale-[1.04]"
           />
         </div>
       ) : (
         <Placeholder className="aspect-[16/9]" />
       )}
       <div className="flex flex-1 flex-col p-6">
-        <h3 className="font-display text-lg font-semibold text-plum-800 transition group-hover:text-magenta-600">
-          {t(program.title, lang)}
+        {/* Programme names and labels are always English; the tagline follows the site language */}
+        <h3 className="font-display text-[1.05rem] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 md:text-[1.1rem]">
+          {t(program.title, 'en')}
         </h3>
         {t(program.tagline, lang) && (
           <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-muted">
@@ -247,7 +252,7 @@ export function ProgramCard({ program }: { program: Pick<Program, '_id' | 'slug'
           </p>
         )}
         <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-magenta-600">
-          {program.externalUrl ? t(program.externalLabel, lang) || s('visitWebsite') : s('viewDetails')}
+          {program.externalUrl ? t(program.externalLabel, 'en') || s('visitWebsite') : s('viewDetails')}
           <ArrowUpRight size={15} />
         </span>
       </div>
@@ -260,23 +265,26 @@ export function ProgramCard({ program }: { program: Pick<Program, '_id' | 'slug'
 export function LeaderCard({ leader }: { leader: Leader }) {
   const { lang } = useSite();
   return (
-    <div className="group overflow-hidden rounded-3xl border border-plum-100 bg-white shadow-soft">
+    <div className="group overflow-hidden rounded-2xl border border-plum-100 bg-white shadow-soft">
       {leader.photo ? (
         <div className="aspect-[4/5] overflow-hidden bg-mist-deep">
           <img
             src={leader.photo}
             alt={t(leader.name, lang)}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            /* Portrait frame; anchored to the top so faces stay in view when a photo isn't 4:5 */
+            className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
           />
         </div>
       ) : (
         <Placeholder className="aspect-[4/5]" />
       )}
-      <div className="p-5 text-center">
-        <h3 className="font-display text-[16px] font-semibold leading-snug text-plum-800">{t(leader.name, lang)}</h3>
+      <div className="p-3 text-center sm:p-4">
+        <h3 className="font-display text-[14px] font-semibold leading-snug text-plum-800 [overflow-wrap:anywhere] sm:text-[15px]">
+          {t(leader.name, lang)}
+        </h3>
         {t(leader.designation, lang) && (
-          <p className="mt-1 text-[13px] text-ink-muted">{t(leader.designation, lang)}</p>
+          <p className="mt-1 text-[12px] leading-snug text-ink-muted sm:text-[13px]">{t(leader.designation, lang)}</p>
         )}
         {leader.termLabel && (
           <p className="mt-2 text-[11px] uppercase tracking-wider text-magenta-500">{leader.termLabel}</p>
@@ -333,8 +341,8 @@ export function VideoCard({ item, onPlay }: { item: VideoItem; onPlay?: (item: V
 }
 
 export function VideoPlayerModal({ item, onClose }: { item: VideoItem; onClose: () => void }) {
-  const { lang } = useSite();
-  const id = youtubeId(item.youtubeUrl);
+  const { lang, s } = useSite();
+  const id = item.youtubeId || youtubeId(item.youtubeUrl);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -373,7 +381,7 @@ export function VideoPlayerModal({ item, onClose }: { item: VideoItem; onClose: 
             )}
           </div>
         ) : (
-          <div className="rounded-2xl bg-white p-8 text-center text-sm text-ink-muted">—</div>
+          <div className="rounded-2xl bg-white p-8 text-center text-sm text-ink-muted">{s('videoUnavailable')}</div>
         )}
       </div>
     </div>
@@ -488,7 +496,7 @@ export function GalleryGrid({ items }: { items: MediaItem[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
         {items.map((item, i) => (
           <button
             key={i}

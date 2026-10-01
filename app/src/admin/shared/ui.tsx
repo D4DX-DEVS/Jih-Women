@@ -277,6 +277,7 @@ export function BilingualInput({
   required = false,
   placeholder,
   hint,
+  onlyLang,
 }: {
   label: string;
   value: Localized | undefined;
@@ -286,12 +287,15 @@ export function BilingualInput({
   required?: boolean;
   placeholder?: string;
   hint?: string;
+  /** Show a single language's input; the other language's stored value is kept untouched */
+  onlyLang?: (typeof LANGUAGES)[number]['code'];
 }) {
   const current = value ?? emptyLocalized();
+  const langs = onlyLang ? LANGUAGES.filter((l) => l.code === onlyLang) : LANGUAGES;
   return (
     <Field label={label} required={required} hint={hint}>
-      <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
-        {LANGUAGES.map((lang) => (
+      <div className={`grid grid-cols-1 gap-2.5 ${langs.length > 1 ? 'md:grid-cols-2' : ''}`}>
+        {langs.map((lang) => (
           <div key={lang.code}>
             <div className="field-lang">
               {lang.label}
@@ -462,6 +466,7 @@ export function AssetPicker({
   recommend,
   onError,
   preview = 'image',
+  fit = 'cover',
   required = false,
 }: {
   label: string;
@@ -475,6 +480,8 @@ export function AssetPicker({
   recommend?: ReactNode;
   onError?: (message: string) => void;
   preview?: 'image' | 'file';
+  /** `contain` previews the whole image in a wider box (logos); `cover` crops a square */
+  fit?: 'cover' | 'contain';
 }) {
   const [busy, setBusy] = useState(false);
   const inputId = useId();
@@ -500,7 +507,9 @@ export function AssetPicker({
             <img
               src={value}
               alt=""
-              className="h-20 w-20 rounded-lg border border-[#e6e8f0] bg-white object-cover"
+              className={`h-20 rounded-lg border border-[#e6e8f0] bg-white ${
+                fit === 'contain' ? 'w-36 object-contain p-2' : 'w-20 object-cover'
+              }`}
             />
           ) : (
             <a

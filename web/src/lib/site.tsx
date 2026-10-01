@@ -18,11 +18,15 @@ type SiteContextValue = {
   loading: boolean;
   /** Prefixes a path with the active language, e.g. path('/events') → '/ml/events' */
   path: (to: string) => string;
-  /** UI string lookup in the active language */
+  /** UI string (button, label, heading, message). UI chrome is always English;
+      only the admin-managed content follows the ML/EN toggle. */
   s: (key: string) => string;
-  /** Admin-managed page title; falls back to the built-in UI string of the same key */
+  /** UI string for a heading; headings always read in English, whatever the language */
+  h: (key: string) => string;
+  /** Admin-managed page title (English); falls back to the built-in UI string of the same key */
   pageTitle: (key: string) => string;
-  /** Admin-managed section heading block, each field falling back to `defaults` */
+  /** Admin-managed section heading block, each field falling back to `defaults`.
+      Label and heading are English; the description follows the active language. */
   section: (key: string, defaults?: SectionDefaults) => ResolvedSection;
 };
 
@@ -60,14 +64,15 @@ export function SiteProvider({ children }: { children: ReactNode }) {
       data,
       loading,
       path: (to: string) => `/${lang}${to.startsWith('/') ? to : `/${to}`}`.replace(/\/$/, '') || `/${lang}`,
-      s: (key: string) => str(key, lang),
+      s: (key: string) => str(key, 'en'),
+      h: (key: string) => str(key, 'en'),
       pageTitle: (key: string) =>
-        managed(data?.settings?.content?.pages?.[key]?.title, lang) || str(key, lang),
+        managed(data?.settings?.content?.pages?.[key]?.title, 'en') || str(key, 'en'),
       section: (key: string, defaults: SectionDefaults = {}) => {
         const content = data?.settings?.content?.sections?.[key];
         return {
-          label: managed(content?.label, lang) || defaults.label || '',
-          heading: managed(content?.heading, lang) || defaults.heading || '',
+          label: managed(content?.label, 'en') || defaults.label || '',
+          heading: managed(content?.heading, 'en') || defaults.heading || '',
           description: managed(content?.description, lang) || defaults.description || '',
           logo: content?.logo?.trim() || '',
         };

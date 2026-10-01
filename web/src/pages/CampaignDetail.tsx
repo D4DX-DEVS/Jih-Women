@@ -20,7 +20,7 @@ import type { Campaign } from '../lib/types';
 
 export default function CampaignDetail() {
   const { slug } = useParams();
-  const { lang, path, s } = useSite();
+  const { lang, path, s, h } = useSite();
   const { data, loading, error, notFound, reload } = useApi<Campaign>(
     slug ? `/api/site/campaigns/${slug}` : null
   );
@@ -78,7 +78,7 @@ export default function CampaignDetail() {
 
           {data.downloads?.length > 0 && (
             <div className="mt-10 rounded-3xl border border-plum-100 bg-white p-6 shadow-soft">
-              <h3 className="mb-4 font-display text-base font-semibold">{s('downloads')}</h3>
+              <h3 className="mb-4 font-display text-base font-semibold">{h('downloads')}</h3>
               <ul className="space-y-2">
                 {data.downloads.map((file, i) => (
                   <li key={i}>
@@ -106,7 +106,7 @@ export default function CampaignDetail() {
 
           {data.gallery?.length > 0 && (
             <div className="mt-10">
-              <SectionHeading eyebrow={s('media')} title={s('gallery')} />
+              <SectionHeading eyebrow={h('media')} title={h('gallery')} />
               <GalleryGrid items={data.gallery} />
             </div>
           )}

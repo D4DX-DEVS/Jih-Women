@@ -33,6 +33,20 @@ export type CollectionConfig = {
   searchable?: boolean;
   reorderable?: boolean;
   limit?: number;
+  /** Top-level fields the form saves. When set, only these are sent on create/edit;
+      anything else stored on the record is left untouched. */
+  editable?: string[];
+  /** Width of the add/edit modal (default `xl`) */
+  modalSize?: 'md' | 'lg' | 'xl';
+  /** Collection-specific panel shown above the list (e.g. the YouTube channel import) */
+  extra?: (props: CollectionExtraProps) => ReactNode;
+};
+
+export type CollectionExtraProps = {
+  token: string;
+  onToast: (message: string, kind?: 'success' | 'error') => void;
+  onLogout: () => void;
+  reload: () => Promise<void>;
 };
 
 type Props = {
@@ -191,7 +205,9 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
     setFormError(null);
     try {
       const id = editing._id as string | undefined;
-      const payload = { ...editing };
+      const payload: Doc = config.editable
+        ? Object.fromEntries(config.editable.filter((k) => k in editing).map((k) => [k, editing[k]]))
+        : { ...editing };
       delete payload._id;
       delete payload.createdAt;
       delete payload.updatedAt;
@@ -293,6 +309,8 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
           </button>
         </div>
       </div>
+
+      {config.extra?.({ token, onToast, onLogout, reload: load })}
 
       {showToolbar && (
         <div className="glass flex flex-wrap items-end gap-3 p-3.5">
@@ -466,7 +484,7 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
               : `New ${config.singular.toLowerCase()}`
           }
           subtitle={config.description}
-          size="xl"
+          size={config.modalSize ?? 'xl'}
           onClose={() => setEditing(null)}
           footer={
             <>

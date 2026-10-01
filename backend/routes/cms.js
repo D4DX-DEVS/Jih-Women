@@ -6,6 +6,7 @@ const sharp = require('sharp');
 const { requireAdmin } = require('../middleware/auth');
 const { buildCrud, sendMongooseError } = require('../utils/cmsCrud');
 const { cmsUpload, uploadBuffer, deleteFile, keyFromUrl } = require('../config/spaces');
+const { extractVideoId, isChannelUrl, fetchVideoDetails, fetchChannelVideos } = require('../utils/youtube');
 
 const { getSiteSetting } = require('../models/SiteSetting');
 const Slider = require('../models/Slider');
@@ -198,6 +199,8 @@ router.use(
     name: 'Programme',
     searchPaths: ['title.ml', 'title.en', 'slug'],
     filters: ['published', 'isMajor'],
+    // The admin form edits only these; `published` is the list's Published/Draft toggle
+    writable: ['title', 'overview', 'logoUrl', 'published'],
   })
 );
 
@@ -232,6 +235,118 @@ router.use(
     sort: { publishedAt: -1 },
   })
 );
+
+/* ---------------- YouTube: fill details from the link ---------------- */
+
+const isBlank = (v) => !v || !String(v).trim();
+
+/**
+ * Before a video is created or saved, looks its YouTube link up and fills any
+ * field the editor left blank (title, description, thumbnail, duration). A
+ * private, deleted or non-embeddable video is refused with a clear message;
+ * if YouTube cannot be reached the save goes ahead with what was typed.
+ */
+async function enrichYouTubeVideo(req, res, next) {
+  const body = req.body || {};
+  if (body.kind === 'podcast' || isBlank(body.youtubeUrl)) return next();
+  const id = extractVideoId(body.youtubeUrl);
+  if (!id) return next(); // the model rejects the link with an editor-facing message
+
+  let info;
+  try {
+    info = await fetchVideoDetails(id);
+  } catch {
+    return next();
+  }
+  if (info.status === 'unavailable') return res.status(400).json({ error: info.reason, fields: { youtubeUrl: info.reason } });
+  if (info.status !== 'ok') return next();
+
+  body.title = { ml: '', en: '', ...(body.title || {}) };
+  body.description = { ml: '', en: '', ...(body.description || {}) };
+  // YouTube text is stored as-is (never translated) in the Malayalam slot, the site's default language
+  if (isBlank(body.title.ml) && isBlank(body.title.en)) body.title.ml = info.title.slice(0, 400);
+  if (isBlank(body.description.ml) && isBlank(body.description.en)) body.description.ml = info.description.slice(0, 5000);
+  if (isBlank(body.thumbnailUrl)) body.thumbnailUrl = info.thumbnailUrl;
+  if (isBlank(body.durationLabel)) body.durationLabel = info.durationLabel;
+  // A new video takes YouTube's upload date unless the editor picked a different
+  // day (the admin form pre-fills today's date)
+  if (req.method === 'POST' && info.publishedAt) {
+    const typed = body.publishedAt ? new Date(body.publishedAt) : null;
+    const isToday = typed && !Number.isNaN(typed.getTime()) && typed.toDateString() === new Date().toDateString();
+    if (!typed || isToday) body.publishedAt = info.publishedAt;
+  }
+  req.body = body;
+  return next();
+}
+
+router.post('/videos', enrichYouTubeVideo);
+router.patch('/videos/:id', enrichYouTubeVideo);
+
+/**
+ * Adds a YouTube channel's newest uploads to the library. Videos already in the
+ * library (same YouTube id) are skipped, so it is safe to run again later to
+ * pick up new uploads. Imported videos are published but not featured; the
+ * editor chooses which ones appear on the home page.
+ */
+router.post('/videos/import-channel', async (req, res) => {
+  const url = String(req.body?.url || '').trim();
+  if (!isChannelUrl(url)) {
+    return res.status(400).json({
+      error: 'Please paste a YouTube channel link, for example https://www.youtube.com/@channelname/videos',
+    });
+  }
+
+  let listed;
+  try {
+    listed = await fetchChannelVideos(url);
+  } catch {
+    return res.status(502).json({ error: 'We could not read that YouTube channel. Check the link and try again.' });
+  }
+  if (!listed.length) return res.json({ added: 0, skipped: 0, failed: 0, found: 0 });
+
+  const existing = new Set(
+    (await VideoItem.find({ youtubeId: { $in: listed.map((v) => v.youtubeId) } }).select('youtubeId').lean()).map(
+      (v) => v.youtubeId
+    )
+  );
+  const fresh = listed.filter((v) => !existing.has(v.youtubeId));
+
+  let added = 0;
+  let failed = 0;
+  // A few at a time keeps YouTube from rate-limiting the lookups
+  for (let i = 0; i < fresh.length; i += 4) {
+    const batch = fresh.slice(i, i + 4);
+    const results = await Promise.all(batch.map((v) => fetchVideoDetails(v.youtubeId)));
+    for (let j = 0; j < batch.length; j++) {
+      const item = batch[j];
+      const info = results[j];
+      if (info.status === 'unavailable') {
+        failed++;
+        continue;
+      }
+      const ok = info.status === 'ok';
+      try {
+        await VideoItem.create({
+          kind: 'video',
+          youtubeUrl: item.youtubeId,
+          title: { ml: ((ok && info.title) || item.title || item.youtubeId).slice(0, 400), en: '' },
+          description: { ml: ok ? info.description.slice(0, 5000) : '', en: '' },
+          thumbnailUrl: ok ? info.thumbnailUrl : `https://i.ytimg.com/vi/${item.youtubeId}/mqdefault.jpg`,
+          durationLabel: (ok && info.durationLabel) || item.durationLabel,
+          publishedAt: (ok && info.publishedAt) || undefined,
+          featured: false,
+          published: true,
+        });
+        added++;
+      } catch (err) {
+        console.error('[cms] channel import:', item.youtubeId, err.message);
+        failed++;
+      }
+    }
+  }
+
+  return res.json({ found: listed.length, added, skipped: existing.size, failed });
+});
 
 router.use(
   '/videos',
