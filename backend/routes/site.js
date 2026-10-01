@@ -97,7 +97,11 @@ router.get('/home', async (_req, res) => {
       Publication.find(PUBLISHED).sort({ order: 1, publishedAt: -1 }).limit(6).lean(),
       FocusArea.find(PUBLISHED).sort({ order: 1 }).limit(8).lean(),
       // $ne alone also matches documents where the field is absent
-      Program.find({ ...PUBLISHED, bannerImage: { $exists: true, $nin: ['', null] } })
+      // Programmes with a logo (or an older banner) appear in the home logo strip
+      Program.find({
+        ...PUBLISHED,
+        $or: [{ logoUrl: { $exists: true, $nin: ['', null] } }, { bannerImage: { $exists: true, $nin: ['', null] } }],
+      })
         .select('title slug bannerImage logoUrl externalUrl order')
         .sort({ order: 1 })
         .limit(6)
@@ -515,7 +519,7 @@ router.get('/search', async (req, res) => {
       OrgEvent.find(match(['title.ml', 'title.en', 'summary.ml', 'summary.en']))
         .select('title slug coverImage startDate').limit(8).lean(),
       Page.find(match(['title.ml', 'title.en'])).select('title slug section').limit(8).lean(),
-      Program.find(match(['title.ml', 'title.en'])).select('title slug coverImage').limit(8).lean(),
+      Program.find(match(['title.ml', 'title.en'])).select('title slug coverImage logoUrl').limit(8).lean(),
       Department.find(match(['title.ml', 'title.en'])).select('title slug coverImage').limit(8).lean(),
     ]);
 
@@ -524,7 +528,8 @@ router.get('/search', async (req, res) => {
       ...pubs.map((d) => ({ kind: 'publication', path: `/publications/${d.slug}`, ...d })),
       ...events.map((d) => ({ kind: 'event', path: `/events/${d.slug}`, ...d })),
       ...pages.map((d) => ({ kind: 'page', path: `/who-we-are/${d.slug}`, ...d })),
-      ...programs.map((d) => ({ kind: 'program', path: `/programs/${d.slug}`, ...d })),
+      // Programmes are represented by their logo (the only image their form manages)
+      ...programs.map((d) => ({ kind: 'program', path: `/programs/${d.slug}`, ...d, coverImage: d.logoUrl || d.coverImage })),
       ...departments.map((d) => ({ kind: 'department', path: `/departments/${d.slug}`, ...d })),
     ];
 

@@ -220,21 +220,22 @@ export function DepartmentCard({ department }: { department: Pick<Department, '_
   );
 }
 
-export function ProgramCard({ program }: { program: Pick<Program, '_id' | 'slug' | 'title' | 'tagline' | 'coverImage' | 'logoUrl' | 'externalUrl' | 'externalLabel'> }) {
+export function ProgramCard({ program }: { program: Pick<Program, '_id' | 'slug' | 'title' | 'tagline' | 'logoUrl' | 'externalUrl' | 'externalLabel'> }) {
   const { lang, path, s } = useSite();
   return (
     <Link
       to={path(`/programs/${program.slug}`)}
       className="card-hover group relative flex flex-col overflow-hidden rounded-3xl border border-plum-100 bg-white shadow-soft"
     >
-      {program.coverImage ? (
-        /* Covers are mostly logos and banners: contain them so no lettering is cut off */
-        <div className="aspect-[16/9] overflow-hidden border-b border-plum-100/70 bg-mist p-3">
+      {program.logoUrl ? (
+        /* The programme's logo (its only managed image), whole and centred; multiply
+           lets white or near-white logo backgrounds melt into the card */
+        <div className="flex aspect-[16/9] items-center justify-center overflow-hidden border-b border-plum-100/70 bg-white p-6 sm:p-8">
           <img
-            src={program.coverImage}
+            src={program.logoUrl}
             alt=""
             loading="lazy"
-            className="h-full w-full rounded-xl object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+            className="h-auto max-h-full w-auto max-w-full object-contain mix-blend-multiply brightness-[1.04] transition-transform duration-500 group-hover:scale-[1.04]"
           />
         </div>
       ) : (

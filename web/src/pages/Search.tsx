@@ -57,7 +57,10 @@ export default function Search() {
                         src={result.coverImage}
                         alt=""
                         loading="lazy"
-                        className="h-14 w-16 shrink-0 rounded-xl object-cover"
+                        className={`h-14 w-16 shrink-0 rounded-xl ${
+                          // programme results show a logo: keep it whole
+                          result.kind === 'program' ? 'border border-plum-100 bg-white object-contain p-1.5' : 'object-cover'
+                        }`}
                       />
                     ) : (
                       <span className="h-14 w-16 shrink-0 rounded-xl bg-magenta-50" />

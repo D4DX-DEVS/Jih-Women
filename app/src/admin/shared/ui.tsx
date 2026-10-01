@@ -466,6 +466,7 @@ export function AssetPicker({
   recommend,
   onError,
   preview = 'image',
+  fit = 'cover',
   required = false,
 }: {
   label: string;
@@ -479,6 +480,8 @@ export function AssetPicker({
   recommend?: ReactNode;
   onError?: (message: string) => void;
   preview?: 'image' | 'file';
+  /** `contain` previews the whole image in a wider box (logos); `cover` crops a square */
+  fit?: 'cover' | 'contain';
 }) {
   const [busy, setBusy] = useState(false);
   const inputId = useId();
@@ -504,7 +507,9 @@ export function AssetPicker({
             <img
               src={value}
               alt=""
-              className="h-20 w-20 rounded-lg border border-[#e6e8f0] bg-white object-cover"
+              className={`h-20 rounded-lg border border-[#e6e8f0] bg-white ${
+                fit === 'contain' ? 'w-36 object-contain p-2' : 'w-20 object-cover'
+              }`}
             />
           ) : (
             <a
