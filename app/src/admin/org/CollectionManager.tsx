@@ -33,6 +33,15 @@ export type CollectionConfig = {
   searchable?: boolean;
   reorderable?: boolean;
   limit?: number;
+  /** Collection-specific panel shown above the list (e.g. the YouTube channel import) */
+  extra?: (props: CollectionExtraProps) => ReactNode;
+};
+
+export type CollectionExtraProps = {
+  token: string;
+  onToast: (message: string, kind?: 'success' | 'error') => void;
+  onLogout: () => void;
+  reload: () => Promise<void>;
 };
 
 type Props = {
@@ -293,6 +302,8 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
           </button>
         </div>
       </div>
+
+      {config.extra?.({ token, onToast, onLogout, reload: load })}
 
       {showToolbar && (
         <div className="glass flex flex-wrap items-end gap-3 p-3.5">

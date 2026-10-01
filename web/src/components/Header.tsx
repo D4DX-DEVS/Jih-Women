@@ -1,27 +1,41 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router';
 import {
+  BookOpen,
   ChevronDown,
+  ChevronRight,
+  Download,
   Facebook,
+  History as HistoryIcon,
+  Home,
+  Images,
   Instagram,
+  Lightbulb,
   Menu,
+  Phone,
+  ScrollText,
   Search,
   Sparkles,
+  Target,
   Twitter,
+  Users,
+  Video,
   X,
   Youtube,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useSite } from '../lib/site';
 import { str, t } from '../lib/i18n';
 import type { Lang } from '../lib/types';
+import { CONTAINER_CLASS } from './Primitives';
 
-/* The header needs more room than the 1200px page grid: seven Malayalam
-   nav labels plus the logo and the join button do not fit inside it. */
-const SHELL = 'mx-auto w-full min-w-0 max-w-[1320px] px-4 sm:px-5 lg:px-8';
+/* Same width and padding as every page section, so the edges line up */
+const SHELL = CONTAINER_CLASS;
 
-type NavLeaf = { label: string; to: string };
-type NavItem = { label: string; to?: string; children?: NavLeaf[] };
+/** `icon` is shown in the mobile menu only; the desktop nav is text. */
+type NavLeaf = { label: string; to: string; icon?: LucideIcon };
+type NavItem = { label: string; to?: string; icon?: LucideIcon; children?: NavLeaf[] };
 
 export default function Header() {
   const { lang, data, path } = useSite();
@@ -31,6 +45,12 @@ export default function Header() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the header search as it expands
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus();
+  }, [searchOpen]);
 
   const pageKey = `${location.pathname.replace(/^\/(ml|en)/, '') || '/'}${location.search}`;
 
@@ -52,32 +72,45 @@ export default function Header() {
   const settings = data?.settings;
 
   const buildItems = (navLang: Lang): NavItem[] => [
-    { label: str('home', navLang), to: path('/') },
+    { label: str('home', navLang), to: path('/'), icon: Home },
     {
       label: str('aboutUs', navLang),
       children: [
-        { label: str('history', navLang), to: path('/who-we-are/history') },
-        { label: str('ideology', navLang), to: path('/who-we-are/ideology') },
-        { label: str('objectives', navLang), to: path('/who-we-are/objectives') },
-        { label: str('constitution', navLang), to: path('/who-we-are/constitution') },
+        { label: str('history', navLang), to: path('/who-we-are/history'), icon: HistoryIcon },
+        { label: str('ideology', navLang), to: path('/who-we-are/ideology'), icon: Lightbulb },
+        { label: str('objectives', navLang), to: path('/who-we-are/objectives'), icon: Target },
+        { label: str('constitution', navLang), to: path('/who-we-are/constitution'), icon: ScrollText },
       ],
     },
     {
       label: str('media', navLang),
       children: [
-        { label: str('videos', navLang), to: path('/media/videos') },
-        { label: str('photoGallery', navLang), to: path('/media/gallery') },
-        { label: str('downloads', navLang), to: path('/media/downloads') },
-        { label: str('publications', navLang), to: path('/publications') },
+        { label: str('videos', navLang), to: path('/media/videos'), icon: Video },
+        { label: str('photoGallery', navLang), to: path('/media/gallery'), icon: Images },
+        { label: str('downloads', navLang), to: path('/media/downloads'), icon: Download },
+        { label: str('publications', navLang), to: path('/publications'), icon: BookOpen },
       ],
     },
-    { label: str('leaders', navLang), to: path('/leaders') },
-    { label: str('contact', navLang), to: path('/contact') },
+    { label: str('leaders', navLang), to: path('/leaders'), icon: Users },
+    { label: str('contact', navLang), to: path('/contact'), icon: Phone },
   ];
 
   /* Header chrome (desktop nav + mobile drawer) is always shown in English,
      independent of the site's ML/EN toggle — only page content follows it. */
   const items: NavItem[] = useMemo(() => buildItems('en'), [path]);
+
+  /* Mobile menu categories, derived from the same items: every standalone link
+     goes under "Main", and each dropdown becomes a category of its own. */
+  const menuGroups = useMemo(
+    () => [
+      {
+        label: str('menuMain', 'en'),
+        links: items.filter((i) => i.to).map((i) => ({ label: i.label, to: i.to!, icon: i.icon })),
+      },
+      ...items.filter((i) => i.children?.length).map((i) => ({ label: i.label, links: i.children! })),
+    ],
+    [items]
+  );
 
   const socials = [
     { href: settings?.social?.facebook, Icon: Facebook, label: 'Facebook' },
@@ -92,6 +125,9 @@ export default function Header() {
     navigate(`${path('/search')}?q=${encodeURIComponent(query.trim())}`);
     setQuery('');
   };
+
+  /* Programme pages use a shorter header bar and logo */
+  const compact = /^\/(ml|en)\/programs(\/|$)/.test(location.pathname);
 
   const isActive = (item: NavItem) =>
     item.to
@@ -122,7 +158,8 @@ export default function Header() {
               {socials.length > 0 && (
                 <div className="hidden items-center gap-2 sm:flex">
                   <span className="text-white/55">{str('followUsShort', 'en')}</span>
-                  <div className="flex items-center gap-1.5">
+                  {/* Each link is a 32px touch area around the same 24px circle */}
+                  <div className="flex items-center">
                     {socials.map(({ href, Icon, label }) => (
                       <a
                         key={label}
@@ -130,9 +167,11 @@ export default function Header() {
                         target="_blank"
                         rel="noreferrer"
                         aria-label={label}
-                        className="grid h-6 w-6 place-items-center rounded-full bg-magenta-500 text-white transition hover:bg-magenta-400"
+                        className="group grid h-8 w-8 place-items-center"
                       >
-                        <Icon size={12} />
+                        <span className="grid h-6 w-6 place-items-center rounded-full bg-magenta-500 text-white transition group-hover:bg-magenta-400">
+                          <Icon size={12} />
+                        </span>
                       </a>
                     ))}
                   </div>
@@ -146,7 +185,12 @@ export default function Header() {
       {/* Main header */}
       <header className="sticky top-0 z-50 border-b border-plum-100 bg-white/95 shadow-[0_1px_16px_-8px_rgba(44,10,77,0.25)] backdrop-blur">
         <div className={SHELL}>
-        <div className="flex h-14 min-w-0 items-center justify-between gap-2 lg:h-16 xl:gap-5">
+        {/* Logo on the left; navigation and search grouped on the right */}
+        <div
+          className={`flex min-w-0 items-center justify-between gap-2 xl:gap-6 ${
+            compact ? 'h-14 lg:h-16' : 'h-16 lg:h-20'
+          }`}
+        >
             <Link
               to={path('/')}
               className="flex shrink-0 items-center"
@@ -157,117 +201,127 @@ export default function Header() {
               <img
                 src="/logo.png"
                 alt={t(settings?.siteName, 'en') || "Women's Wing Kerala"}
-                className="h-8 w-auto object-contain object-left lg:h-9"
+                className={`w-auto max-w-[60vw] object-contain object-left ${compact ? 'h-10 lg:h-12' : 'h-12 lg:h-16'}`}
               />
             </Link>
 
-            <nav className="hidden min-w-0 flex-1 items-center justify-center xl:flex">
-              {items.map((item) => {
-                const active = isActive(item);
-                if (!item.children) {
+            <div className="flex min-w-0 items-center justify-end gap-2 xl:gap-4">
+              <nav className="hidden items-center xl:flex 2xl:gap-1">
+                {items.map((item) => {
+                  const active = isActive(item);
+                  const expanded = openMenu === item.label;
+                  /* Active item keeps the solid underline; others grow a soft one on hover */
+                  const underline = `pointer-events-none absolute inset-x-3.5 -bottom-0.5 h-0.5 origin-center rounded-full transition-transform duration-300 ${
+                    active ? 'scale-x-100 bg-magenta-500' : 'scale-x-0 bg-magenta-300 group-hover:scale-x-100'
+                  }`;
+                  const itemCls = `group relative flex items-center gap-1 whitespace-nowrap px-3.5 py-2 text-[14px] font-medium transition-colors ${
+                    active || expanded ? 'text-magenta-500' : 'text-ink/75 hover:text-magenta-500'
+                  }`;
+                  if (!item.children) {
+                    return (
+                      <Link key={item.label} to={item.to!} className={itemCls} aria-current={active ? 'page' : undefined}>
+                        {item.label}
+                        <span className={underline} />
+                      </Link>
+                    );
+                  }
                   return (
-                    <Link
+                    <div
                       key={item.label}
-                      to={item.to!}
-                      className={`relative whitespace-nowrap px-1.5 py-2 text-[12.5px] font-medium transition 2xl:px-3 2xl:text-[13.5px] ${
-                        active ? 'text-magenta-500' : 'text-ink/75 hover:text-magenta-500'
-                      }`}
+                      className="relative"
+                      onMouseEnter={() => setOpenMenu(item.label)}
+                      onMouseLeave={() => setOpenMenu(null)}
                     >
-                      {item.label}
-                      {active && (
-                        <span className="absolute inset-x-1.5 -bottom-0.5 h-0.5 rounded-full bg-magenta-500 2xl:inset-x-3" />
+                      <button className={itemCls} aria-expanded={expanded} aria-haspopup="true">
+                        {item.label}
+                        <ChevronDown
+                          size={13}
+                          className={`shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
+                        />
+                        <span className={underline} />
+                      </button>
+                      {expanded && (
+                        <div className="no-scrollbar absolute start-0 top-full z-50 max-h-[70vh] w-[248px] overflow-y-auto rounded-2xl border border-plum-100 bg-white pb-2 shadow-lift">
+                          <span className="sticky top-0 block h-1 w-full bg-gradient-to-r from-magenta-500 to-plum-500" />
+                          {item.children.map((child) => (
+                            <Link
+                              key={child.to}
+                              to={child.to}
+                              className="block px-4 py-2.5 text-[13px] text-ink/70 transition hover:bg-magenta-50 hover:text-magenta-600"
+                            >
+                              {child.label}
+                            </Link>
+                          ))}
+                        </div>
                       )}
-                    </Link>
+                    </div>
                   );
-                }
-                return (
-                  <div
-                    key={item.label}
-                    className="relative"
-                    onMouseEnter={() => setOpenMenu(item.label)}
-                    onMouseLeave={() => setOpenMenu(null)}
-                  >
-                    <button
-                      className={`relative flex items-center gap-0.5 whitespace-nowrap px-1.5 py-2 text-[12.5px] font-medium transition 2xl:gap-1 2xl:px-3 2xl:text-[13.5px] ${
-                        active || openMenu === item.label
-                          ? 'text-magenta-500'
-                          : 'text-ink/75 hover:text-magenta-500'
-                      }`}
-                    >
-                      {item.label}
-                      <ChevronDown
-                        size={13}
-                        className={`shrink-0 transition-transform ${
-                          openMenu === item.label ? 'rotate-180' : ''
-                        }`}
-                      />
-                      {active && (
-                        <span className="absolute inset-x-1.5 -bottom-0.5 h-0.5 rounded-full bg-magenta-500 2xl:inset-x-3" />
-                      )}
-                    </button>
-                    {openMenu === item.label && (
-                      <div className="no-scrollbar absolute start-0 top-full z-50 max-h-[70vh] w-[248px] overflow-y-auto rounded-2xl border border-plum-100 bg-white pb-2 shadow-lift">
-                        <span className="sticky top-0 block h-1 w-full bg-gradient-to-r from-magenta-500 to-plum-500" />
-                        {item.children.map((child) => (
-                          <Link
-                            key={child.to}
-                            to={child.to}
-                            className="block px-4 py-2.5 text-[13px] text-ink/70 transition hover:bg-magenta-50 hover:text-magenta-600"
-                          >
-                            {child.label}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </nav>
+                })}
+              </nav>
 
-            <div className="flex shrink-0 items-center gap-2">
-              <button
-                onClick={() => setSearchOpen((v) => !v)}
-                aria-label={str('search', 'en')}
-                className="grid h-9 w-9 place-items-center rounded-full text-ink-muted transition hover:bg-magenta-50 hover:text-magenta-600"
-              >
-                <Search size={17} />
-              </button>
+              {/* Search: the icon expands sideways into a field in place, with no panel
+                  below and no change in header height. On xl it grows within the row (the
+                  nav slides left); on smaller screens it overlays the header row leftwards
+                  from the icon, so nothing else moves. */}
+              <div className="relative h-10 w-10 shrink-0 xl:w-auto">
+                <form
+                  onSubmit={submitSearch}
+                  role="search"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') setSearchOpen(false);
+                  }}
+                  className={`absolute end-0 top-0 z-20 flex h-10 items-center overflow-hidden rounded-full border transition-[width,background-color,border-color,box-shadow] duration-300 ease-out xl:static ${
+                    searchOpen
+                      ? 'w-[min(calc(100vw-5rem),22rem)] border-plum-100 bg-white shadow-soft focus-within:border-magenta-200 focus-within:ring-2 focus-within:ring-magenta-100 xl:w-64'
+                      : 'w-10 border-transparent bg-magenta-50 hover:bg-magenta-100/70'
+                  }`}
+                >
+                  <button
+                    type={searchOpen ? 'submit' : 'button'}
+                    onClick={searchOpen ? undefined : () => setSearchOpen(true)}
+                    aria-label={str('search', 'en')}
+                    aria-expanded={searchOpen}
+                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors ${
+                      searchOpen ? 'text-ink-faint hover:text-magenta-600' : 'text-magenta-600'
+                    }`}
+                  >
+                    <Search size={17} />
+                  </button>
+                  <input
+                    ref={searchInputRef}
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={`${str('search', 'en')}...`}
+                    aria-label={str('search', 'en')}
+                    tabIndex={searchOpen ? 0 : -1}
+                    className={`min-w-0 flex-1 bg-transparent text-[14px] text-ink outline-none transition-opacity duration-200 placeholder:text-ink-faint [&::-webkit-search-cancel-button]:hidden ${
+                      searchOpen ? 'opacity-100 delay-100' : 'pointer-events-none opacity-0'
+                    }`}
+                  />
+                  {searchOpen && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchOpen(false)}
+                      aria-label={str('close', 'en')}
+                      className="me-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-faint transition hover:bg-magenta-50 hover:text-magenta-600"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </form>
+              </div>
 
               <button
                 onClick={() => setMobileOpen(true)}
                 aria-label={str('menu', 'en')}
-                className="grid h-9 w-9 place-items-center rounded-full text-plum-800 transition hover:bg-magenta-50 xl:hidden"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-plum-800 transition hover:bg-magenta-50 xl:hidden"
               >
                 <Menu size={20} />
               </button>
             </div>
           </div>
         </div>
-
-        {searchOpen && (
-          <div className="border-t border-plum-100 bg-white">
-            <div className={SHELL}>
-              <form onSubmit={submitSearch} className="flex items-center gap-3 py-4">
-                <Search size={18} className="shrink-0 text-ink-faint" />
-                <input
-                  autoFocus
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={str('searchPlaceholder', 'en')}
-                  className="w-full bg-transparent text-[15px] outline-none placeholder:text-ink-faint"
-                />
-                <button
-                  type="button"
-                  onClick={() => setSearchOpen(false)}
-                  aria-label={str('close', 'en')}
-                  className="text-ink-faint transition hover:text-ink"
-                >
-                  <X size={18} />
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
       </header>
 
       {/* Mobile drawer — portaled above page content; always rendered in English */}
@@ -279,55 +333,99 @@ export default function Header() {
               onClick={() => setMobileOpen(false)}
               aria-hidden="true"
             />
-            <div className="absolute inset-y-0 end-0 z-10 flex w-[88%] max-w-sm animate-fade-in flex-col bg-white shadow-2xl">
-              <div className="flex items-center justify-between border-b border-plum-100 px-5 py-4">
-                <span className="font-display text-base font-semibold text-plum-800">
-                  {str('menu', 'en')}
-                </span>
-                <div className="flex items-center gap-2">
+            <div className="absolute inset-y-0 end-0 z-10 flex w-[88%] max-w-sm animate-fade-in flex-col bg-mist shadow-2xl">
+              {/* Compact top: the organisation mark, close and site search */}
+              <div className="shrink-0 border-b border-plum-100 bg-white px-4 pb-3 pt-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Link
+                    to={path('/')}
+                    className="min-w-0"
+                    aria-label={t(settings?.siteName, 'en') || str('home', 'en')}
+                  >
+                    <img src="/logo.png" alt="" className="h-10 w-auto max-w-full object-contain object-left" />
+                  </Link>
                   <button
                     onClick={() => setMobileOpen(false)}
                     aria-label={str('close', 'en')}
-                    className="grid h-9 w-9 place-items-center rounded-full hover:bg-magenta-50"
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-plum-50 text-plum-800 transition hover:bg-magenta-50 hover:text-magenta-600"
                   >
                     <X size={18} />
                   </button>
                 </div>
+                <form
+                  onSubmit={submitSearch}
+                  role="search"
+                  className="mt-3 flex h-10 items-center gap-2 rounded-xl border border-plum-100 bg-mist px-3 focus-within:border-magenta-300"
+                >
+                  <Search size={16} className="shrink-0 text-ink-faint" />
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={str('searchPlaceholder', 'en')}
+                    aria-label={str('search', 'en')}
+                    className="min-w-0 flex-1 bg-transparent text-[14px] text-ink outline-none placeholder:text-ink-faint"
+                  />
+                </form>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 py-3">
-                {items.map((item) =>
-                  item.children ? (
-                    <details key={`en-${item.to ?? item.label}`} className="group border-b border-plum-100/70">
-                      <summary className="flex cursor-pointer list-none items-center justify-between py-3.5 text-[15px] font-medium text-plum-800">
-                        {item.label}
-                        <ChevronDown size={16} className="opacity-50 transition group-open:rotate-180" />
-                      </summary>
-                      <div className="pb-3 ps-3">
-                        {item.children.map((child) =>
-                          child.label ? (
+              {/* Categorised listing: standalone links under "Main", then each
+                  dropdown from the nav as its own category */}
+              <nav aria-label={str('menu', 'en')} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+                {menuGroups.map((group) => (
+                  <section key={group.label} className="mb-5 last:mb-0">
+                    <h3 className="mb-2 px-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                      {group.label}
+                    </h3>
+                    <ul className="divide-y divide-plum-100/70 overflow-hidden rounded-2xl border border-plum-100 bg-white">
+                      {group.links.map(({ label, to, icon: Icon }) => {
+                        const active = location.pathname === to;
+                        return (
+                          <li key={to}>
                             <Link
-                              key={child.to}
-                              to={child.to}
-                              className="block py-2 text-[14px] text-ink-muted hover:text-magenta-600"
+                              to={to}
+                              // also closes when tapping the page already open (no route change)
+                              onClick={() => setMobileOpen(false)}
+                              aria-current={active ? 'page' : undefined}
+                              className={`flex min-h-[50px] items-center gap-3 px-3.5 py-2 text-[14.5px] font-medium transition ${
+                                active ? 'bg-magenta-50/70 text-magenta-600' : 'text-plum-800 hover:bg-magenta-50/50'
+                              }`}
                             >
-                              {child.label}
+                              {Icon && (
+                                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-magenta-50 text-magenta-600">
+                                  <Icon size={16} />
+                                </span>
+                              )}
+                              <span className="min-w-0 flex-1 leading-snug">{label}</span>
+                              <ChevronRight size={16} className="shrink-0 text-ink-faint" />
                             </Link>
-                          ) : null
-                        )}
-                      </div>
-                    </details>
-                  ) : (
-                    <Link
-                      key={`en-${item.to}`}
-                      to={item.to!}
-                      className="block border-b border-plum-100/70 py-3.5 text-[15px] font-medium text-plum-800 hover:text-magenta-600"
-                    >
-                      {item.label}
-                    </Link>
-                  )
-                )}
-              </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                ))}
+              </nav>
+
+              {socials.length > 0 && (
+                <div className="flex shrink-0 items-center justify-between gap-3 border-t border-plum-100 bg-white px-4 py-3">
+                  <span className="text-[12px] text-ink-muted">{str('followUsShort', 'en')}</span>
+                  <div className="flex items-center gap-2">
+                    {socials.map(({ href, Icon, label }) => (
+                      <a
+                        key={label}
+                        href={href}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={label}
+                        className="grid h-9 w-9 place-items-center rounded-full bg-magenta-50 text-magenta-600 transition hover:bg-magenta-500 hover:text-white"
+                      >
+                        <Icon size={15} />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>,
           document.body

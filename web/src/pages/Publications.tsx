@@ -39,10 +39,11 @@ export function PublicationsIndex() {
   return (
     <>
       <PageHeader
+        compact
         title={pageTitle('publications')}
         breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('publications') }]}
       />
-      <Section tone="mist">
+      <Section tone="mist" className="pt-6 md:pt-9">
         <Container>
           <div className="mb-8 flex flex-wrap gap-2">
             {TYPES.map((item) => (
@@ -106,6 +107,7 @@ export function PublicationDetail() {
   return (
     <>
       <PageHeader
+        compact
         title={t(data.title, lang)}
         breadcrumb={[
           { label: s('home'), to: path('/') },
@@ -113,7 +115,7 @@ export function PublicationDetail() {
           { label: t(data.title, lang) },
         ]}
       />
-      <Section tone="mist">
+      <Section tone="mist" className="pt-6 md:pt-9">
         <Container>
           <div className="grid gap-10 lg:grid-cols-[280px_minmax(0,1fr)]">
             <div>

@@ -52,7 +52,7 @@ export function DepartmentsIndex() {
 
 export function DepartmentDetail() {
   const { slug } = useParams();
-  const { lang, path, s, pageTitle } = useSite();
+  const { lang, path, s, pageTitle, h } = useSite();
   const { data, loading, error, notFound, reload } = useApi<Department>(
     slug ? `/api/site/departments/${slug}` : null
   );
@@ -87,14 +87,14 @@ export function DepartmentDetail() {
             <div className="min-w-0">
               {t(data.about, lang) && (
                 <>
-                  <SectionHeading eyebrow={s('about')} title={s('about')} />
+                  <SectionHeading eyebrow={h('about')} title={h('about')} />
                   <RichText html={t(data.about, lang)} />
                 </>
               )}
 
               {data.objectives?.length > 0 && (
                 <div className="mt-12">
-                  <SectionHeading eyebrow={s('objectives')} title={s('objectives')} />
+                  <SectionHeading eyebrow={h('objectives')} title={h('objectives')} />
                   <ul className="space-y-3">
                     {data.objectives.map((o, i) => (
                       <li
@@ -115,7 +115,7 @@ export function DepartmentDetail() {
 
               {data.activities?.length > 0 && (
                 <div className="mt-12">
-                  <SectionHeading eyebrow={s('activities')} title={s('activities')} />
+                  <SectionHeading eyebrow={h('activities')} title={h('activities')} />
                   <div className="grid gap-5 sm:grid-cols-2">
                     {data.activities.map((a, i) => (
                       <div
@@ -141,7 +141,7 @@ export function DepartmentDetail() {
 
               {data.leadership?.length > 0 && (
                 <div className="mt-12">
-                  <SectionHeading eyebrow={s('leadership')} title={s('leadership')} />
+                  <SectionHeading eyebrow={h('leadership')} title={h('leadership')} />
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {data.leadership.map((person, i) => (
                       <div
@@ -176,14 +176,14 @@ export function DepartmentDetail() {
 
               {data.posters?.length > 0 && (
                 <div className="mt-12">
-                  <SectionHeading eyebrow={s('media')} title={s('posters')} />
+                  <SectionHeading eyebrow={h('media')} title={h('posters')} />
                   <GalleryGrid items={data.posters} />
                 </div>
               )}
 
               {data.gallery?.length > 0 && (
                 <div className="mt-12">
-                  <SectionHeading eyebrow={s('media')} title={s('gallery')} />
+                  <SectionHeading eyebrow={h('media')} title={h('gallery')} />
                   <GalleryGrid items={data.gallery} />
                 </div>
               )}
@@ -205,7 +205,7 @@ export function DepartmentDetail() {
 
               {data.downloads?.length > 0 && (
                 <div className="rounded-3xl border border-plum-100 bg-white p-5 shadow-soft">
-                  <h3 className="mb-3 font-display text-base font-semibold">{s('downloads')}</h3>
+                  <h3 className="mb-3 font-display text-base font-semibold">{h('downloads')}</h3>
                   <ul className="space-y-2">
                     {data.downloads.map((file, i) => (
                       <li key={i}>

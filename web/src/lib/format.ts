@@ -1,12 +1,15 @@
 import type { Lang } from './types';
 
-const LOCALES: Record<Lang, string> = { ml: 'ml-IN', en: 'en-IN' };
+/* Dates always read in English ("17 August 2026"), whatever the site language;
+   only the content itself follows the ML/EN toggle. The language argument is
+   kept so callers need no changes. */
+const DATE_LOCALE = 'en-IN';
 
-export function formatDate(value: string | undefined, lang: Lang): string {
+export function formatDate(value: string | undefined, _lang?: Lang): string {
   if (!value) return '';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '';
-  return new Intl.DateTimeFormat(LOCALES[lang], {
+  return new Intl.DateTimeFormat(DATE_LOCALE, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -21,13 +24,13 @@ export function formatDateRange(start?: string, end?: string, lang: Lang = 'ml')
   return `${from} – ${to}`;
 }
 
-export function formatDay(value: string | undefined, lang: Lang) {
+export function formatDay(value: string | undefined, _lang?: Lang) {
   if (!value) return { day: '', month: '' };
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return { day: '', month: '' };
   return {
-    day: new Intl.DateTimeFormat(LOCALES[lang], { day: '2-digit' }).format(d),
-    month: new Intl.DateTimeFormat(LOCALES[lang], { month: 'short' }).format(d),
+    day: new Intl.DateTimeFormat(DATE_LOCALE, { day: '2-digit' }).format(d),
+    month: new Intl.DateTimeFormat(DATE_LOCALE, { month: 'short' }).format(d),
   };
 }
 
@@ -47,7 +50,7 @@ export function formatBytes(bytes: number): string {
 export function youtubeId(url: string): string | null {
   if (!url) return null;
   const patterns = [
-    /(?:youtube\.com\/watch\?v=)([\w-]{11})/,
+    /(?:youtube\.com\/watch\?(?:.*&)?v=)([\w-]{11})/,
     /(?:youtu\.be\/)([\w-]{11})/,
     /(?:youtube\.com\/embed\/)([\w-]{11})/,
     /(?:youtube\.com\/shorts\/)([\w-]{11})/,

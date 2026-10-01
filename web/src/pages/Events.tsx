@@ -85,7 +85,7 @@ export function EventsIndex() {
 
 export function EventDetail() {
   const { slug } = useParams();
-  const { lang, path, s, pageTitle } = useSite();
+  const { lang, path, s, pageTitle, h } = useSite();
   const { data, loading, error, notFound, reload } = useApi<OrgEvent>(
     slug ? `/api/site/events/${slug}` : null
   );
@@ -130,7 +130,7 @@ export function EventDetail() {
 
               {data.speakers?.length > 0 && (
                 <div className="mt-12">
-                  <SectionHeading eyebrow={s('events')} title={s('speakers')} />
+                  <SectionHeading eyebrow={h('events')} title={h('speakers')} />
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {data.speakers.map((person, i) => (
                       <div
@@ -165,7 +165,7 @@ export function EventDetail() {
 
               {data.gallery?.length > 0 && (
                 <div className="mt-12">
-                  <SectionHeading eyebrow={s('media')} title={s('gallery')} />
+                  <SectionHeading eyebrow={h('media')} title={h('gallery')} />
                   <GalleryGrid items={data.gallery} />
                 </div>
               )}
@@ -232,7 +232,7 @@ export function EventDetail() {
 
               {data.downloads?.length > 0 && (
                 <div className="rounded-3xl border border-plum-100 bg-white p-5 shadow-soft">
-                  <h3 className="mb-3 font-display text-base font-semibold">{s('downloads')}</h3>
+                  <h3 className="mb-3 font-display text-base font-semibold">{h('downloads')}</h3>
                   <ul className="space-y-2">
                     {data.downloads.map((file, i) => (
                       <li key={i}>
@@ -266,7 +266,7 @@ export function EventDetail() {
 }
 
 function EventRegistrationForm({ slug }: { slug: string }) {
-  const { s } = useSite();
+  const { s, h } = useSite();
   const [form, setForm] = useState({ name: '', phone: '', email: '', district: '', place: '', notes: '' });
   const [status, setStatus] = useState<'idle' | 'sending' | 'done'>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -310,7 +310,7 @@ function EventRegistrationForm({ slug }: { slug: string }) {
 
   return (
     <form onSubmit={submit} className="rounded-3xl border border-plum-100 bg-white p-6 shadow-soft">
-      <h3 className="mb-4 font-display text-base font-semibold">{s('register')}</h3>
+      <h3 className="mb-4 font-display text-base font-semibold">{h('register')}</h3>
       <div className="space-y-3">
         {field('name', s('yourName'), true)}
         {field('phone', s('yourPhone'), true, 'tel')}

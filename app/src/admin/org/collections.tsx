@@ -3,6 +3,7 @@ import { emptyLocalized } from '../shared/types';
 import type { Localized } from '../shared/types';
 import type { CollectionConfig, ColumnDef } from './CollectionManager';
 import type { Doc } from './fields';
+import YouTubeChannelImport from './YouTubeChannelImport';
 
 /* ---------------- column helpers ---------------- */
 
@@ -321,61 +322,25 @@ export const PROGRAMS: CollectionConfig = {
     order: 0,
     published: true,
   }),
+  /* Name, description and three images only. Fields no longer on the form (slug,
+     objectives, schedule, gallery, videos, downloads, external link, type, order,
+     published) keep their saved values: editing sends the whole record back, and a
+     new programme takes the defaults from blank() above. */
   fields: [
-    { kind: 'localized', path: 'title', label: 'Programme name', required: true },
-    slugField,
-    { kind: 'localized', path: 'tagline', label: 'Tagline', multiline: true, rows: 2 },
-    { kind: 'rich', path: 'overview', label: 'Overview' },
-    { kind: 'heading', label: 'Objectives' },
-    { kind: 'bullets', path: 'objectives', label: 'Objectives' },
-    { kind: 'heading', label: 'Schedule' },
-    {
-      kind: 'object-list',
-      path: 'schedule',
-      label: 'Schedule',
-      addLabel: 'Add session',
-      blank: () => ({ time: '', title: emptyLocalized(), description: emptyLocalized() }),
-      fields: [
-        { kind: 'text', path: 'time', label: 'Time', placeholder: '10:00 AM' },
-        { kind: 'localized', path: 'title', label: 'Session' },
-        { kind: 'localized', path: 'description', label: 'Description', multiline: true, rows: 2 },
-      ],
-    },
-    { kind: 'heading', label: 'Media & files' },
-    { kind: 'row', fields: [
-      { kind: 'asset', path: 'coverImage', label: 'Cover image', folder: 'programs', recommend: '1920×1080px (16:9). Also used as the full-width page banner, where the left third is darkened — keep the subject centred.' },
-      { kind: 'asset', path: 'logoUrl', label: 'Logo', folder: 'programs', recommend: 'At least 240px tall, width proportional. Transparent PNG or SVG — shown uncropped on white.' },
-    ] },
+    { kind: 'heading', label: 'Programme information' },
+    { kind: 'localized', path: 'title', label: 'Programme name', required: true, onlyLang: 'ml' },
+    { kind: 'rich', path: 'overview', label: 'Description' },
+    { kind: 'heading', label: 'Media' },
+    { kind: 'asset', path: 'coverImage', label: 'Cover image', folder: 'programs', recommend: '1600×900px (16:9). Shown whole (never cropped) on the programme card on the Programs page.' },
     {
       kind: 'asset',
       path: 'bannerImage',
-      label: 'Home page banner',
+      label: 'Banner image',
       folder: 'programs',
-      hint: 'Wide artwork (about 3:1). Programmes with a banner appear in the strip under the home page slider.',
-      recommend:
-        '1800×600px (3:1). Cropped to fill, so keep any text inside the middle 80%.',
+      hint: 'Programmes with a banner appear in the logo strip under the home page slider (the strip shows the logo when there is one).',
+      recommend: '1800×600px (3:1).',
     },
-    { kind: 'gallery', path: 'gallery', label: 'Gallery', folder: 'programs', recommend: '1600px on the long edge, any shape. Grid tiles crop to a square so keep the subject centred; the lightbox shows the full frame. Video: MP4 (H.264), 1080p.' },
-    {
-      kind: 'object-list',
-      path: 'videos',
-      label: 'Videos',
-      addLabel: 'Add video',
-      blank: () => ({ title: emptyLocalized(), youtubeUrl: '' }),
-      fields: [
-        { kind: 'localized', path: 'title', label: 'Title' },
-        { kind: 'text', path: 'youtubeUrl', label: 'YouTube URL', placeholder: 'https://youtube.com/watch?v=…' },
-      ],
-    },
-    { kind: 'attachments', path: 'downloads', label: 'Downloads', folder: 'programs', recommend: 'PDF preferred; DOC, DOCX, XLS and XLSX are also accepted. The file size is shown to visitors, so compress scans before uploading.' },
-    { kind: 'heading', label: 'Settings', hint: 'A programme with its own website links out instead of showing a local page.' },
-    { kind: 'text', path: 'externalUrl', label: 'External website URL' },
-    { kind: 'localized', path: 'externalLabel', label: 'External link label' },
-    { kind: 'row', fields: [
-      { kind: 'toggle', path: 'isMajor', label: 'Major programme' },
-      orderField,
-    ] },
-    publishedField,
+    { kind: 'asset', path: 'logoUrl', label: 'Logo', folder: 'programs', recommend: 'At least 240px tall, width proportional. Transparent PNG or SVG — shown uncropped.' },
   ],
 };
 
@@ -551,8 +516,9 @@ export const VIDEOS: CollectionConfig = {
   endpoint: '/api/admin/cms/videos',
   label: 'Videos & Podcasts',
   singular: 'Item',
-  description: 'Embedded YouTube videos and podcast episodes.',
+  description: 'YouTube videos (played inside the website) and podcast episodes. Up to three featured videos show on the home page, in this order.',
   reorderable: true,
+  extra: (props) => <YouTubeChannelImport {...props} />,
   filters: [{ param: 'kind', label: 'Kind', options: [
     { value: 'video', label: 'Video' },
     { value: 'podcast', label: 'Podcast' },
@@ -579,9 +545,9 @@ export const VIDEOS: CollectionConfig = {
       ] },
       { kind: 'date', path: 'publishedAt', label: 'Publish date' },
     ] },
-    { kind: 'localized', path: 'title', label: 'Title', required: true },
+    { kind: 'text', path: 'youtubeUrl', label: 'YouTube video link', placeholder: 'https://www.youtube.com/watch?v=…', hint: 'For videos. Paste a watch, youtu.be or shorts link. On save, any blank title, description, thumbnail or duration below is filled in from YouTube.' },
+    { kind: 'localized', path: 'title', label: 'Title', hint: 'Leave blank on a YouTube video to use its YouTube title. Required for podcasts.' },
     { kind: 'localized', path: 'description', label: 'Description', multiline: true, rows: 3 },
-    { kind: 'text', path: 'youtubeUrl', label: 'YouTube URL', hint: 'Used for videos. Paste the full watch or youtu.be link.' },
     { kind: 'asset', path: 'audioUrl', label: 'Audio file', folder: 'podcasts', accept: '.mp3,.wav,.m4a,audio/mpeg,audio/wav,audio/x-m4a,audio/mp4', preview: 'file', hint: 'Used for podcast episodes.', recommend: 'MP3, WAV or M4A only — other audio formats are rejected on upload. About 128 kbps for speech, 192 kbps for music.' },
     { kind: 'asset', path: 'thumbnailUrl', label: 'Thumbnail', folder: 'videos', hint: 'Optional — YouTube thumbnails are used automatically when blank.', recommend: '1280×720px (16:9). Leave the centre clear — a round play button sits over it.' },
     { kind: 'row', fields: [
