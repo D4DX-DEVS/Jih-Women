@@ -71,8 +71,10 @@ export function SiteProvider({ children }: { children: ReactNode }) {
       section: (key: string, defaults: SectionDefaults = {}) => {
         const content = data?.settings?.content?.sections?.[key];
         return {
-          label: managed(content?.label, 'en') || defaults.label || '',
-          heading: managed(content?.heading, 'en') || defaults.heading || '',
+          // Labels are English; a label entered only in Malayalam is shown as written
+          label: managed(content?.label, 'en') || managed(content?.label, 'ml') || defaults.label || '',
+          // Headings are English; a heading entered only in Malayalam is shown as written
+          heading: managed(content?.heading, 'en') || managed(content?.heading, 'ml') || defaults.heading || '',
           description: managed(content?.description, lang) || defaults.description || '',
           logo: content?.logo?.trim() || '',
         };

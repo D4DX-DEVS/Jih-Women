@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import { Download } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useSite } from '../lib/site';
+import { t } from '../lib/i18n';
+import { formatBytes } from '../lib/format';
+import type { Attachment, Lang } from '../lib/types';
 
 /**
  * The site's one content width: top bar, header, page banners, page content and
@@ -107,9 +112,11 @@ export function SectionHeading({
             }`}
           >
             {logo && <SectionLogo src={logo} />}
-            {eyebrow && <span className="h-px w-5 shrink-0 bg-current opacity-70" />}
-            {eyebrow}
-            {eyebrow && align === 'center' && <span className="h-px w-5 shrink-0 bg-current opacity-70" />}
+            {eyebrow && <span className={invert ? 'h-px w-5 shrink-0 bg-current opacity-70' : 'brand-rule-start w-7'} />}
+            {eyebrow && <span className={invert ? 'text-brand-gradient-light' : 'text-brand-gradient'}>{eyebrow}</span>}
+            {eyebrow && align === 'center' && (
+              <span className={invert ? 'h-px w-5 shrink-0 bg-plum-300 opacity-70' : 'brand-rule-end w-7'} />
+            )}
           </div>
         )}
         <h2
@@ -119,7 +126,7 @@ export function SectionHeading({
               : 'text-[1.3rem] sm:text-[1.45rem] md:text-[1.75rem]'
           } ${invert ? 'text-white' : 'text-plum-800'}`}
         >
-          {title}
+          <GradientText light={invert}>{title}</GradientText>
         </h2>
         {description && (
           <p
@@ -134,6 +141,16 @@ export function SectionHeading({
       {action && <div className="shrink-0">{action}</div>}
     </div>
   );
+}
+
+/**
+ * Heading text in the site's multi-colour heading style (the brand gradient with its
+ * slow shimmer — the same treatment as the section labels). Wraps only the words, so
+ * the full colour sweep shows on short headings and every wrapped line keeps it.
+ * `light` is the version for dark backgrounds (banners, photo overlays).
+ */
+export function GradientText({ children, light = false }: { children: ReactNode; light?: boolean }) {
+  return <span className={light ? 'text-brand-gradient-light' : 'text-brand-gradient'}>{children}</span>;
 }
 
 /** Small magenta rule used under headings in the reference design. */
@@ -234,9 +251,10 @@ export function PageHeader({
       />
       <span className="absolute -end-24 -top-24 h-64 w-64 rounded-full bg-magenta-500/25 blur-3xl" />
 
-      <Container className={`relative ${compact ? 'py-5 sm:py-6 md:py-7' : 'py-12 md:py-16'}`}>
+      <Container className={`relative ${compact ? 'py-5 sm:py-6 md:py-7' : 'py-8 sm:py-10 md:py-16'}`}>
         {breadcrumb && breadcrumb.length > 0 && (
-          <nav className={`${compact ? 'mb-2' : 'mb-4'} flex flex-wrap items-center gap-2 text-xs text-white/55`}>
+          /* Tablet and desktop only: phones go straight to the title (no gap left behind) */
+          <nav className={`${compact ? 'mb-2' : 'mb-4'} hidden flex-wrap items-center gap-2 text-xs text-white/55 md:flex`}>
             {breadcrumb.map((crumb, i) => (
               <span key={i} className="flex items-center gap-2">
                 {i > 0 && <span className="opacity-40">/</span>}
@@ -260,7 +278,8 @@ export function PageHeader({
               : 'text-[1.55rem] [text-wrap:wrap] sm:text-[1.8rem] md:text-[2.6rem]'
           }`}
         >
-          {title}
+          {/* The banner is dark, so the title uses the light version of the heading style */}
+          <GradientText light>{title}</GradientText>
         </h1>
         <Rule className={compact ? 'mt-3' : 'mt-5'} />
         {description && (
@@ -379,6 +398,147 @@ export function Pagination({
       >
         {s('next')}
       </button>
+    </div>
+  );
+}
+
+/* ───────────────────────── detail-page content card ───────────────────────── */
+
+/**
+ * The one content card of a detail page: everything the page has to say sits in
+ * here, split into `PanelSection`s by dividers rather than separate boxes. A thin
+ * brand-gradient bar runs along the top; an optional side column (logo, facts,
+ * downloads, actions) is set off by a divider line and a slightly tinted background.
+ */
+export function ContentPanel({
+  children,
+  aside,
+  asideStart = false,
+  className = '',
+}: {
+  children: ReactNode;
+  aside?: ReactNode;
+  /** Put the side column before the content on wide screens (e.g. a book cover) */
+  asideStart?: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl border border-plum-100 bg-gradient-to-b from-white to-[#fbf8fd] shadow-soft ${className}`}
+    >
+      <span className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-magenta-500 via-magenta-400 to-plum-500" aria-hidden="true" />
+      <span
+        className="pointer-events-none absolute -end-20 -top-20 h-56 w-56 rounded-full bg-magenta-100/40 blur-3xl"
+        aria-hidden="true"
+      />
+      <div
+        className={`relative grid ${
+          aside ? (asideStart ? 'lg:grid-cols-[280px_minmax(0,1fr)]' : 'lg:grid-cols-[minmax(0,1fr)_280px]') : ''
+        }`}
+      >
+        <div className={`min-w-0 p-5 pt-6 sm:p-7 sm:pt-8 md:p-9 md:pt-10 ${aside && asideStart ? 'lg:order-2' : ''}`}>
+          {children}
+        </div>
+        {aside && (
+          <aside
+            className={`min-w-0 border-t border-plum-100 bg-plum-50/40 p-5 sm:p-7 lg:border-t-0 ${
+              asideStart ? 'lg:order-1 lg:border-e' : 'lg:border-s'
+            }`}
+          >
+            <div className="space-y-6 lg:sticky lg:top-24">{aside}</div>
+          </aside>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One part of a `ContentPanel`: an icon chip and heading, then its content. Sections
+ * after the first are separated by a divider line.
+ */
+export function PanelSection({
+  title,
+  icon: Icon,
+  badge,
+  children,
+  className = '',
+}: {
+  title?: string;
+  icon?: LucideIcon;
+  /** A short number/label shown in the chip instead of an icon (e.g. "01") */
+  badge?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`border-t border-plum-100/80 pt-7 first:border-t-0 first:pt-0 [&+&]:mt-7 md:pt-8 md:[&+&]:mt-8 ${className}`}>
+      {title && (
+        <header className="mb-4 flex min-w-0 items-center gap-3">
+          <span className="grid h-9 min-w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-magenta-50 to-plum-50 px-1.5 text-[12.5px] font-semibold text-magenta-600 ring-1 ring-inset ring-magenta-100">
+            {badge ? badge : Icon ? <Icon size={17} strokeWidth={2.1} /> : <span className="h-1.5 w-1.5 rounded-full bg-magenta-500" />}
+          </span>
+          <h2 className="user-text min-w-0 font-display text-[1.1rem] font-semibold leading-snug text-plum-800 md:text-[1.25rem]">
+            <GradientText>{title}</GradientText>
+          </h2>
+        </header>
+      )}
+      {children}
+    </section>
+  );
+}
+
+/** A small heading for the side column of a `ContentPanel`. */
+export function PanelAsideHeading({ children }: { children: ReactNode }) {
+  return (
+    <h3 className="mb-3 flex items-center gap-2 font-sans text-[11.5px] font-semibold uppercase tracking-[0.14em] text-plum-700">
+      <span className="h-px w-4 bg-magenta-400" aria-hidden="true" />
+      <GradientText>{children}</GradientText>
+    </h3>
+  );
+}
+
+/** Downloadable files as a plain list (no box of its own). */
+export function DownloadList({ files, lang }: { files: Attachment[]; lang: Lang }) {
+  return (
+    <ul className="divide-y divide-plum-100/80">
+      {files.map((file, i) => (
+        <li key={i}>
+          <a
+            href={file.url}
+            target="_blank"
+            rel="noreferrer"
+            className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-2.5 text-sm transition hover:bg-magenta-50/70"
+          >
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-magenta-50 text-magenta-600 transition group-hover:bg-magenta-500 group-hover:text-white">
+              <Download size={15} />
+            </span>
+            <span className="min-w-0 flex-1 truncate font-medium text-ink/85">
+              {t(file.title, lang) || file.url.split('/').pop()}
+            </span>
+            {file.sizeBytes > 0 && <span className="shrink-0 text-[11px] text-ink-faint">{formatBytes(file.sizeBytes)}</span>}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** A person (leader, speaker) as an avatar + name row, without a box of its own. */
+export function PersonRow({ name, role, photo }: { name: string; role?: string; photo?: string }) {
+  return (
+    <div className="flex min-w-0 items-center gap-3.5">
+      {photo ? (
+        <img src={photo} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-white shadow-soft" />
+      ) : (
+        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-gradient-to-br from-magenta-50 to-plum-50 font-display text-lg font-semibold text-magenta-600 ring-2 ring-white">
+          {(name || '?').charAt(0)}
+        </span>
+      )}
+      <div className="min-w-0">
+        <div className="truncate font-display text-[15px] font-semibold text-plum-800">{name}</div>
+        {role && <div className="truncate text-[13px] text-ink-muted">{role}</div>}
+      </div>
     </div>
   );
 }

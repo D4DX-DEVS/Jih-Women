@@ -13,6 +13,7 @@ const EventRegistration = require('../models/EventRegistration');
 const MediaPost = require('../models/MediaPost');
 const { MEDIA_POST_TYPES } = require('../models/MediaPost');
 const VideoItem = require('../models/VideoItem');
+const { relatedVideosFor } = require('../utils/relatedVideos');
 const Publication = require('../models/Publication');
 const Album = require('../models/Album');
 const DownloadItem = require('../models/DownloadItem');
@@ -50,7 +51,7 @@ router.get('/bootstrap', async (_req, res) => {
     const [settings, departments, programs] = await Promise.all([
       getSiteSetting(),
       Department.find(PUBLISHED).select('title slug order').sort({ order: 1 }).lean(),
-      Program.find(PUBLISHED).select('title slug order isMajor externalUrl').sort({ order: 1 }).lean(),
+      Program.find(PUBLISHED).select('title slug logoUrl order isMajor externalUrl').sort({ order: 1 }).lean(),
     ]);
 
     return res.json({
@@ -63,21 +64,59 @@ router.get('/bootstrap', async (_req, res) => {
 });
 
 // ── Home page payload ────────────────────────────────────────────────────────
+const HOME_VIDEOS = 3;
+const HOME_PHOTOS = 9;
+
+/** The latest published videos (newest publish date first) for the home Featured Video row. */
+function homeVideos() {
+  return VideoItem.find({ ...PUBLISHED, kind: 'video' })
+    .sort({ publishedAt: -1, createdAt: -1 })
+    .limit(HOME_VIDEOS)
+    .lean();
+}
+
+/**
+ * Photos for the home Photo Gallery: photo-album images first, then programme gallery
+ * images (programmes with the most photos first). Seeded demo graphics (/org/demo/)
+ * are left out so only real uploads appear.
+ */
+async function homePhotos() {
+  const [albums, programs] = await Promise.all([
+    Album.find({ ...PUBLISHED, 'items.0': { $exists: true } })
+      .select('items')
+      .sort({ order: 1, eventDate: -1 })
+      .lean(),
+    Program.find({ ...PUBLISHED, 'gallery.0': { $exists: true } })
+      .select('gallery')
+      .lean(),
+  ]);
+  programs.sort((a, b) => b.gallery.length - a.gallery.length);
+  // Take album photos in turn (1st of each album, then 2nd of each, …) so every
+  // album is represented even when only a few tiles are shown
+  const longest = Math.max(0, ...albums.map((a) => a.items.length));
+  const albumPhotos = Array.from({ length: longest }, (_, i) => albums.map((a) => a.items[i])).flat().filter(Boolean);
+  return [...albumPhotos, ...programs.flatMap((p) => p.gallery)]
+    .filter((item) => item.kind !== 'video' && item.url && !item.url.includes('/org/demo/'))
+    .slice(0, HOME_PHOTOS);
+}
+
 router.get('/home', async (_req, res) => {
   try {
     const now = new Date();
     const [
       settings, sliders, campaigns, updates, upcomingEvents,
       featuredArticles, featuredVideos, publications,
-      focusAreas, programBanners,
+      focusAreas, programBanners, galleryPhotos,
     ] = await Promise.all([
       getSiteSetting(),
       Slider.find(PUBLISHED).sort({ order: 1, createdAt: -1 }).lean(),
       Campaign.find(PUBLISHED).sort({ order: 1, startDate: -1 }).limit(6).lean(),
-      MediaPost.find({ ...PUBLISHED, type: 'news' })
+      // Latest News carousel: every News & Statements post (news, press releases,
+      // statements, interviews, speeches), newest first
+      MediaPost.find(PUBLISHED)
         .select('-body')
         .sort({ publishedAt: -1 })
-        .limit(6)
+        .limit(9)
         .lean(),
       OrgEvent.find({ ...PUBLISHED, startDate: { $gte: now } })
         .select('-description')
@@ -89,11 +128,7 @@ router.get('/home', async (_req, res) => {
         .sort({ publishedAt: -1 })
         .limit(4)
         .lean(),
-      // Home shows up to three featured videos; the rest stay on the videos page
-      VideoItem.find({ ...PUBLISHED, kind: 'video', featured: true })
-        .sort({ order: 1, publishedAt: -1 })
-        .limit(3)
-        .lean(),
+      homeVideos(),
       Publication.find(PUBLISHED).sort({ order: 1, publishedAt: -1 }).limit(6).lean(),
       FocusArea.find(PUBLISHED).sort({ order: 1 }).limit(8).lean(),
       // $ne alone also matches documents where the field is absent
@@ -106,6 +141,7 @@ router.get('/home', async (_req, res) => {
         .sort({ order: 1 })
         .limit(6)
         .lean(),
+      homePhotos(),
     ]);
 
     return res.json({
@@ -119,6 +155,7 @@ router.get('/home', async (_req, res) => {
       publications,
       focusAreas,
       programBanners,
+      galleryPhotos,
     });
   } catch (err) {
     return fail(res, err, 'We could not load the home page. Please refresh and try again.');
@@ -216,7 +253,9 @@ router.get('/programs/:slug', async (req, res) => {
   try {
     const doc = await Program.findOne({ ...PUBLISHED, slug: req.params.slug }).lean();
     if (!doc) return res.status(404).json({ error: 'This programme is not available.' });
-    return res.json(doc);
+    // Videos whose titles name this programme (see utils/relatedVideos)
+    const relatedVideos = await relatedVideosFor(VideoItem, doc, { published: PUBLISHED });
+    return res.json({ ...doc, relatedVideos });
   } catch (err) {
     return fail(res, err, 'We could not open this programme. Please try again.');
   }

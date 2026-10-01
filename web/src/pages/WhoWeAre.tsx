@@ -3,16 +3,19 @@ import { ArrowRight, Download } from 'lucide-react';
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
-import { formatBytes } from '../lib/format';
 import {
   Container,
+  ContentPanel,
+  DownloadList,
   EmptyState,
   ErrorState,
+  GradientText,
   Loading,
   PageHeader,
+  PanelSection,
   Section,
 } from '../components/Primitives';
-import ContentCards from '../components/ContentCards';
+import ContentSections from '../components/ContentCards';
 import NotFound from './NotFound';
 import type { PageDoc } from '../lib/types';
 
@@ -57,7 +60,7 @@ export function WhoWeAreIndex() {
                   )}
                   <div className="p-6">
                     <h2 className="font-display text-xl font-semibold transition group-hover:text-magenta-600">
-                      {t(page.title, 'en')}
+                      <GradientText>{t(page.title, 'en')}</GradientText>
                     </h2>
                     {t(page.summary, lang) && (
                       <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-muted">
@@ -112,35 +115,15 @@ export function PageDetail() {
       />
       <Section tone="mist" className="pt-6 md:pt-9">
         <Container>
-          <ContentCards html={t(data.body, lang)} />
-
-          {data.downloads?.length > 0 && (
-            <div className="mt-5 rounded-2xl border border-plum-100 bg-white p-5 shadow-soft sm:p-6 md:p-7">
-              <h3 className="mb-4 font-display text-lg font-semibold">{h('downloads')}</h3>
-              <ul className="space-y-2">
-                {data.downloads.map((file, i) => (
-                  <li key={i}>
-                    <a
-                      href={file.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="group flex items-center gap-3 rounded-2xl border border-plum-100 px-4 py-3 transition hover:border-magenta-300"
-                    >
-                      <Download size={17} className="shrink-0 text-magenta-600" />
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                        {t(file.title, lang) || file.url.split('/').pop()}
-                      </span>
-                      {file.sizeBytes > 0 && (
-                        <span className="shrink-0 text-xs text-ink-faint">
-                          {formatBytes(file.sizeBytes)}
-                        </span>
-                      )}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {/* One content card: the page's own sections, then its downloads */}
+          <ContentPanel>
+            <ContentSections html={t(data.body, lang)} />
+            {data.downloads?.length > 0 && (
+              <PanelSection title={h('downloads')} icon={Download}>
+                <DownloadList files={data.downloads} lang={lang} />
+              </PanelSection>
+            )}
+          </ContentPanel>
         </Container>
       </Section>
     </>

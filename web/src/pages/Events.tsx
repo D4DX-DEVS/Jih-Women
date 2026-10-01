@@ -1,21 +1,31 @@
 import { useState } from 'react';
 import { useParams } from 'react-router';
-import { Calendar, Clock, Download, MapPin } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  Images,
+  MapPin,
+  Mic,
+} from 'lucide-react';
 import { useApi, apiPost } from '../lib/api';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
-import { formatBytes, formatDateRange } from '../lib/format';
+import { formatDateRange } from '../lib/format';
 import {
   Button,
   Container,
+  ContentPanel,
+  DownloadList,
   EmptyState,
   ErrorState,
   Loading,
   PageHeader,
   Pagination,
+  PanelAsideHeading,
+  PanelSection,
+  PersonRow,
   RichText,
   Section,
-  SectionHeading,
 } from '../components/Primitives';
 import { EventCard, GalleryGrid } from '../components/Cards';
 import NotFound from './NotFound';
@@ -116,82 +126,24 @@ export function EventDetail() {
 
       <Section tone="mist">
         <Container>
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="min-w-0">
-              {data.posterImage && (
-                <img
-                  src={data.posterImage}
-                  alt=""
-                  className="mb-8 w-full rounded-3xl border border-plum-100 shadow-soft"
-                />
-              )}
-
-              <RichText html={t(data.description, lang)} />
-
-              {data.speakers?.length > 0 && (
-                <div className="mt-12">
-                  <SectionHeading eyebrow={h('events')} title={h('speakers')} />
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {data.speakers.map((person, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-4 rounded-2xl border border-plum-100 bg-white p-4 shadow-soft"
-                      >
-                        {person.photo ? (
-                          <img
-                            src={person.photo}
-                            alt=""
-                            loading="lazy"
-                            className="h-14 w-14 rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="grid h-14 w-14 place-items-center rounded-full bg-magenta-50 font-display font-semibold text-magenta-600">
-                            {(t(person.name, lang) || '?').charAt(0)}
-                          </span>
-                        )}
-                        <div className="min-w-0">
-                          <div className="truncate font-display text-[15px] font-semibold">
-                            {t(person.name, lang)}
-                          </div>
-                          <div className="truncate text-[13px] text-ink-muted">
-                            {t(person.designation, lang)}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {data.gallery?.length > 0 && (
-                <div className="mt-12">
-                  <SectionHeading eyebrow={h('media')} title={h('gallery')} />
-                  <GalleryGrid items={data.gallery} />
-                </div>
-              )}
-            </div>
-
-            <aside className="space-y-5">
-              <div className="rounded-3xl border border-plum-100 bg-white p-6 shadow-soft">
+          {/* One content card: poster, description, speakers and photos as sections;
+              date, time, venue, registration and downloads in the side column */}
+          <ContentPanel
+            aside={
+              <>
                 <dl className="space-y-4 text-sm">
                   <div className="flex gap-3">
                     <Calendar size={17} className="mt-0.5 shrink-0 text-magenta-500" />
                     <div>
-                      <dt className="text-[11px] uppercase tracking-wider text-ink-faint">
-                        {s('date')}
-                      </dt>
-                      <dd className="mt-0.5 font-medium">
-                        {formatDateRange(data.startDate, data.endDate, lang)}
-                      </dd>
+                      <dt className="text-[11px] uppercase tracking-wider text-ink-faint">{s('date')}</dt>
+                      <dd className="mt-0.5 font-medium">{formatDateRange(data.startDate, data.endDate, lang)}</dd>
                     </div>
                   </div>
                   {data.timeLabel && (
                     <div className="flex gap-3">
                       <Clock size={17} className="mt-0.5 shrink-0 text-magenta-500" />
                       <div>
-                        <dt className="text-[11px] uppercase tracking-wider text-ink-faint">
-                          {s('time')}
-                        </dt>
+                        <dt className="text-[11px] uppercase tracking-wider text-ink-faint">{s('time')}</dt>
                         <dd className="mt-0.5 font-medium">{data.timeLabel}</dd>
                       </div>
                     </div>
@@ -200,9 +152,7 @@ export function EventDetail() {
                     <div className="flex gap-3">
                       <MapPin size={17} className="mt-0.5 shrink-0 text-magenta-500" />
                       <div>
-                        <dt className="text-[11px] uppercase tracking-wider text-ink-faint">
-                          {s('venue')}
-                        </dt>
+                        <dt className="text-[11px] uppercase tracking-wider text-ink-faint">{s('venue')}</dt>
                         <dd className="mt-0.5 font-medium">{t(data.venue, lang)}</dd>
                         {data.mapUrl && (
                           <a
@@ -220,45 +170,47 @@ export function EventDetail() {
                 </dl>
 
                 {data.registrationUrl && (
-                  <Button href={data.registrationUrl} variant="primary" className="mt-6 w-full">
+                  <Button href={data.registrationUrl} variant="primary" className="w-full">
                     {s('registerNow')}
                   </Button>
                 )}
-              </div>
 
-              {data.registrationEnabled && !data.registrationUrl && (
-                <EventRegistrationForm slug={data.slug} />
-              )}
+                {data.registrationEnabled && !data.registrationUrl && <EventRegistrationForm slug={data.slug} />}
 
-              {data.downloads?.length > 0 && (
-                <div className="rounded-3xl border border-plum-100 bg-white p-5 shadow-soft">
-                  <h3 className="mb-3 font-display text-base font-semibold">{h('downloads')}</h3>
-                  <ul className="space-y-2">
-                    {data.downloads.map((file, i) => (
-                      <li key={i}>
-                        <a
-                          href={file.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition hover:bg-magenta-50"
-                        >
-                          <Download size={15} className="shrink-0 text-magenta-600" />
-                          <span className="min-w-0 flex-1 truncate">
-                            {t(file.title, lang) || file.url.split('/').pop()}
-                          </span>
-                          {file.sizeBytes > 0 && (
-                            <span className="shrink-0 text-[11px] text-ink-faint">
-                              {formatBytes(file.sizeBytes)}
-                            </span>
-                          )}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
+                {data.downloads?.length > 0 && (
+                  <div>
+                    <PanelAsideHeading>{h('downloads')}</PanelAsideHeading>
+                    <DownloadList files={data.downloads} lang={lang} />
+                  </div>
+                )}
+              </>
+            }
+          >
+            {(data.posterImage || t(data.description, lang)) && (
+              <PanelSection>
+                {data.posterImage && (
+                  <img src={data.posterImage} alt="" className="mb-7 w-full rounded-xl" />
+                )}
+                <RichText html={t(data.description, lang)} />
+              </PanelSection>
+            )}
+
+            {data.speakers?.length > 0 && (
+              <PanelSection title={h('speakers')} icon={Mic}>
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {data.speakers.map((person, i) => (
+                    <PersonRow key={i} name={t(person.name, lang)} role={t(person.designation, lang)} photo={person.photo} />
+                  ))}
                 </div>
-              )}
-            </aside>
-          </div>
+              </PanelSection>
+            )}
+
+            {data.gallery?.length > 0 && (
+              <PanelSection title={h('gallery')} icon={Images}>
+                <GalleryGrid items={data.gallery} />
+              </PanelSection>
+            )}
+          </ContentPanel>
         </Container>
       </Section>
     </>
@@ -286,9 +238,9 @@ function EventRegistrationForm({ slug }: { slug: string }) {
 
   if (status === 'done') {
     return (
-      <div className="rounded-3xl border border-magenta-200 bg-magenta-50 p-6 text-center">
-        <p className="text-sm font-medium text-plum-800">{s('registrationSent')}</p>
-      </div>
+      <p className="rounded-xl bg-magenta-50 px-4 py-3 text-center text-sm font-medium text-plum-800">
+        {s('registrationSent')}
+      </p>
     );
   }
 
@@ -309,8 +261,8 @@ function EventRegistrationForm({ slug }: { slug: string }) {
   );
 
   return (
-    <form onSubmit={submit} className="rounded-3xl border border-plum-100 bg-white p-6 shadow-soft">
-      <h3 className="mb-4 font-display text-base font-semibold">{h('register')}</h3>
+    <form onSubmit={submit}>
+      <PanelAsideHeading>{h('register')}</PanelAsideHeading>
       <div className="space-y-3">
         {field('name', s('yourName'), true)}
         {field('phone', s('yourPhone'), true, 'tel')}

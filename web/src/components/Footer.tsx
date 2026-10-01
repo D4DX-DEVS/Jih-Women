@@ -4,21 +4,30 @@ import {
   Instagram,
   Mail,
   MapPin,
-  MessageCircle,
   Phone,
   Twitter,
   Youtube,
 } from 'lucide-react';
 import { useSite } from '../lib/site';
 import { str, tLang } from '../lib/i18n';
-import { whatsappHref } from '../lib/format';
 import { OFFICE_ADDRESS, OFFICE_EMAIL, OFFICE_PHONE, telHref } from '../lib/contact';
 import { Container } from './Primitives';
 
 export default function Footer() {
   const { data, path } = useSite();
   const settings = data?.settings;
-  const departments = data?.nav.departments ?? [];
+  /* Footer lists only these programmes (names and links still come from the site data) */
+  const FOOTER_PROGRAMS = ['for-her', 'thamheedul-mar-a', 'proficia'];
+  const programs = FOOTER_PROGRAMS.map((slug) => (data?.nav.programs ?? []).find((p) => p.slug === slug)).filter(
+    (p): p is NonNullable<typeof p> => Boolean(p)
+  );
+  /* Listed after the programmes, as plain links like them */
+  const mediaLinks = [
+    { label: str('videos', 'en'), to: path('/media/videos') },
+    { label: 'Photos', to: path('/media/gallery') },
+  ];
+  /* The footer shows the office address with "Hira Centre, P. B No: 833" on one line */
+  const footerAddress = OFFICE_ADDRESS.replace(/Hira Centre,\s*\n\s*/, 'Hira Centre, ');
 
   const socials = [
     { href: settings?.social?.facebook, Icon: Facebook, label: 'Facebook' },
@@ -44,13 +53,12 @@ export default function Footer() {
       <div className="leaf-watermark pointer-events-none absolute inset-0" />
       <span className="pointer-events-none absolute -end-28 top-10 h-72 w-72 rounded-full bg-magenta-500/15 blur-3xl" />
 
-      <Container className="relative py-7 md:py-8">
-        {/* Phones: brand, then Quick Links beside Departments, then Contact.
-            Tablet: brand across the top (logo and icons side by side), three columns below.
-            Desktop: four columns. */}
+      <Container className="relative py-4 md:py-8">
+        {/* Phones: a compact footer — logo and social icons in one row; the link columns
+            are hidden. Tablet: brand across the top, three columns below. Desktop: four columns. */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-6 md:grid-cols-[0.8fr_1fr_1.4fr] md:gap-x-8 lg:grid-cols-[1.2fr_0.7fr_1fr_1.4fr]">
           {/* Brand */}
-          <div className="col-span-2 flex flex-col gap-4 md:col-span-3 md:flex-row md:items-center md:justify-between lg:col-span-1 lg:flex-col lg:items-start lg:justify-start">
+          <div className="col-span-2 flex flex-row flex-wrap items-center justify-between gap-3 md:col-span-3 md:gap-4 lg:col-span-1 lg:flex-col lg:items-start lg:justify-start">
             <Link
               to={path('/')}
               className="flex items-center gap-3"
@@ -78,13 +86,13 @@ export default function Footer() {
                 <img
                   src={brandLogo}
                   alt={siteName}
-                  className="h-auto max-h-11 w-auto max-w-[min(100%,220px)] object-contain object-left brightness-0 invert"
+                  className="h-auto max-h-8 w-auto max-w-[min(100%,170px)] object-contain object-left brightness-0 invert md:max-h-11 md:max-w-[min(100%,220px)]"
                 />
               )}
             </Link>
 
             {socials.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5 md:gap-2" data-back-to-top-avoid>
                 {socials.map(({ href, Icon, label }) => (
                   <a
                     key={label}
@@ -92,16 +100,16 @@ export default function Footer() {
                     target="_blank"
                     rel="noreferrer"
                     aria-label={label}
-                    className="grid h-9 w-9 place-items-center rounded-full bg-white/10 transition hover:bg-magenta-500 hover:text-white"
+                    className="grid h-8 w-8 place-items-center rounded-full bg-white/10 transition hover:bg-magenta-500 hover:text-white md:h-9 md:w-9"
                   >
-                    <Icon size={15} />
+                    <Icon size={14} />
                   </a>
                 ))}
               </div>
             )}
           </div>
 
-          <FooterColumn title={str('quickLinks', 'en')}>
+          <FooterColumn title={str('quickLinks', 'en')} className="hidden md:block">
             {quickLinks.map((l) => (
               <li key={l.to}>
                 <Link to={l.to} className="inline-block -my-1.5 py-1.5 transition hover:text-magenta-300">
@@ -111,14 +119,14 @@ export default function Footer() {
             ))}
           </FooterColumn>
 
-          <FooterColumn title={str('departments', 'en')}>
-            {departments.length > 0 ? (
-              departments.map((d) => {
-                const title = tLang(d.title, 'en');
+          <FooterColumn title={str('programs', 'en')} className="hidden md:block">
+            {programs.length > 0 ? (
+              programs.map((program) => {
+                const title = tLang(program.title, 'en');
                 if (!title) return null;
                 return (
-                  <li key={d._id}>
-                    <Link to={path(`/departments/${d.slug}`)} className="inline-block -my-1.5 py-1.5 transition hover:text-magenta-300">
+                  <li key={program._id}>
+                    <Link to={path(`/programs/${program.slug}`)} className="inline-block -my-1.5 py-1.5 transition hover:text-magenta-300">
                       {title}
                     </Link>
                   </li>
@@ -126,28 +134,24 @@ export default function Footer() {
               })
             ) : (
               <li>
-                <Link to={path('/departments')} className="inline-block -my-1.5 py-1.5 transition hover:text-magenta-300">
-                  {str('departments', 'en')}
+                <Link to={path('/programs')} className="inline-block -my-1.5 py-1.5 transition hover:text-magenta-300">
+                  {str('programs', 'en')}
                 </Link>
               </li>
             )}
+            {mediaLinks.map((l) => (
+              <li key={l.to}>
+                <Link to={l.to} className="inline-block -my-1.5 py-1.5 transition hover:text-magenta-300">
+                  {l.label}
+                </Link>
+              </li>
+            ))}
           </FooterColumn>
 
-          <FooterColumn title={str('contact', 'en')} className="col-span-2 md:col-span-1">
+          <FooterColumn title={str('contact', 'en')} className="hidden md:col-span-1 md:block">
             <li className="flex gap-3">
               <Phone size={15} className="mt-1 shrink-0 text-magenta-300" />
               <a href={telHref(OFFICE_PHONE)} className="inline-block -my-1.5 py-1.5 transition hover:text-magenta-300">
-                {OFFICE_PHONE}
-              </a>
-            </li>
-            <li className="flex gap-3">
-              <MessageCircle size={15} className="mt-1 shrink-0 text-magenta-300" />
-              <a
-                href={whatsappHref(OFFICE_PHONE)}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-block -my-1.5 py-1.5 transition hover:text-magenta-300"
-              >
                 {OFFICE_PHONE}
               </a>
             </li>
@@ -159,29 +163,22 @@ export default function Footer() {
             </li>
             <li className="flex gap-3">
               <MapPin size={15} className="mt-1 shrink-0 text-magenta-300" />
-              <span className="whitespace-pre-line leading-relaxed">{OFFICE_ADDRESS}</span>
+              <span className="whitespace-pre-line leading-relaxed">{footerAddress}</span>
             </li>
           </FooterColumn>
 
         </div>
       </Container>
 
-      <div className="relative border-t border-white/10">
-        <Container className="flex flex-col items-center justify-between gap-2 py-3 text-center text-[12.5px] text-white/50 sm:flex-row sm:text-start">
-          <span className="min-w-0">
+      {/* data-back-to-top-avoid: the back-to-top button lifts above this bar when it is on screen */}
+      <div className="relative border-t border-white/10" data-back-to-top-avoid>
+        <Container className="flex flex-col items-center justify-between gap-1 py-2.5 text-center text-[11.5px] text-white/50 sm:flex-row sm:text-start md:gap-2 md:py-3 md:text-[12.5px]">
+          {/* Copyright on the left, "Powered by" on the right */}
+          <span className="hidden min-w-0 md:inline">
             © {new Date().getFullYear()} {siteName}. {str('allRightsReserved', 'en')}.
           </span>
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-            <Link to={path('/who-we-are')} className="-my-2 inline-block py-2 transition hover:text-white">
-              {str('privacyPolicy', 'en')}
-            </Link>
-            <span className="opacity-30">|</span>
-            <Link to={path('/who-we-are')} className="-my-2 inline-block py-2 transition hover:text-white">
-              {str('termsConditions', 'en')}
-            </Link>
-            {/* Below xl "Powered by" wraps to its own line, so the divider would dangle */}
-            <span className="hidden opacity-30 xl:inline">|</span>
-            <span className="flex basis-full items-center justify-center gap-1.5 sm:justify-end xl:basis-auto">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-0.5 md:gap-x-5 md:gap-y-2">
+            <span className="flex items-center justify-center gap-1.5 sm:justify-end">
               Powered by
               <a
                 href="https://d4dx.co/"

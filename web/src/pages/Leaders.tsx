@@ -5,9 +5,10 @@ import {
   Container,
   EmptyState,
   ErrorState,
+  GradientText,
   Loading,
-  Section,
   ManagedSectionHeading,
+  Section,
 } from '../components/Primitives';
 import { LeaderCard } from '../components/Cards';
 import type { Leader } from '../lib/types';
@@ -67,7 +68,7 @@ export default function Leaders() {
                             />
                             <figcaption className="p-3 text-center">
                               <div className="font-display text-[14px] font-semibold">
-                                {t(leader.name, lang)}
+                                <GradientText>{t(leader.name, lang)}</GradientText>
                               </div>
                               {leader.termLabel && (
                                 <div className="mt-1 text-[12px] uppercase tracking-wider text-magenta-500">
@@ -86,7 +87,7 @@ export default function Leaders() {
                           <li key={leader._id} className="flex items-center justify-between gap-4 px-5 py-4">
                             <div className="min-w-0">
                               <div className="font-display text-[15px] font-semibold">
-                                {t(leader.name, lang)}
+                                <GradientText>{t(leader.name, lang)}</GradientText>
                               </div>
                               {t(leader.designation, lang) && (
                                 <div className="text-[13px] text-ink-muted">

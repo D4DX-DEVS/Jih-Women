@@ -1,19 +1,30 @@
 import { useParams } from 'react-router';
-import { Download, ExternalLink as ExternalLinkIcon } from 'lucide-react';
+import {
+  ExternalLink as ExternalLinkIcon,
+  Images,
+  Info,
+  Sparkles,
+  Target,
+  Users,
+} from 'lucide-react';
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
-import { formatBytes } from '../lib/format';
 import {
   Button,
   Container,
+  ContentPanel,
+  DownloadList,
   EmptyState,
   ErrorState,
+  GradientText,
   Loading,
   PageHeader,
+  PanelAsideHeading,
+  PanelSection,
+  PersonRow,
   RichText,
   Section,
-  SectionHeading,
 } from '../components/Primitives';
 import { DepartmentCard, GalleryGrid } from '../components/Cards';
 import NotFound from './NotFound';
@@ -26,6 +37,8 @@ export function DepartmentsIndex() {
   return (
     <>
       <PageHeader
+        compact
+        titleSize="md"
         title={pageTitle('departments')}
         breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('departments') }]}
       />
@@ -68,170 +81,126 @@ export function DepartmentDetail() {
   }
   if (!data) return null;
 
+  // Headings and labels are always English (t() falls back to Malayalam when no
+  // English value has been entered); body text follows the site language.
+  const title = t(data.title, 'en');
+
   return (
     <>
+      {/* Compact banner like the programme pages, and no cover image behind it: the
+          covers carry large lettering that read as stray text behind the title */}
       <PageHeader
-        title={t(data.title, lang)}
+        compact
+        titleSize="md"
+        title={title}
         description={t(data.tagline, lang)}
-        image={data.coverImage}
         breadcrumb={[
           { label: s('home'), to: path('/') },
           { label: pageTitle('departments'), to: path('/departments') },
-          { label: t(data.title, lang) },
+          { label: title },
         ]}
       />
 
       <Section tone="mist">
         <Container>
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
-            <div className="min-w-0">
-              {t(data.about, lang) && (
+          {/* One content card: about, objectives, activities, people and media as
+              sections; logo, website link and downloads in the side column */}
+          <ContentPanel
+            aside={
+              data.logoUrl || data.externalUrl || data.downloads?.length > 0 ? (
                 <>
-                  <SectionHeading eyebrow={h('about')} title={h('about')} />
-                  <RichText html={t(data.about, lang)} />
+                  {data.logoUrl && (
+                    <div className="flex h-20 items-center justify-center">
+                      <img src={data.logoUrl} alt="" className="h-auto max-h-full w-auto max-w-[180px] object-contain mix-blend-multiply" />
+                    </div>
+                  )}
+                  {data.externalUrl && (
+                    <Button href={data.externalUrl} variant="outline" size="sm" className="w-full">
+                      {s('visitWebsite')}
+                      <ExternalLinkIcon size={14} />
+                    </Button>
+                  )}
+                  {data.downloads?.length > 0 && (
+                    <div>
+                      <PanelAsideHeading>{h('downloads')}</PanelAsideHeading>
+                      <DownloadList files={data.downloads} lang="en" />
+                    </div>
+                  )}
                 </>
-              )}
+              ) : undefined
+            }
+          >
+            {t(data.about, lang) && (
+              <PanelSection title={h('about')} icon={Info}>
+                <RichText html={t(data.about, lang)} />
+              </PanelSection>
+            )}
 
-              {data.objectives?.length > 0 && (
-                <div className="mt-12">
-                  <SectionHeading eyebrow={h('objectives')} title={h('objectives')} />
-                  <ul className="space-y-3">
+            {data.objectives?.length > 0 && (
+              <PanelSection title={h('objectives')} icon={Target}>
+                <ol className="divide-y divide-plum-100/80">
                     {data.objectives.map((o, i) => (
-                      <li
-                        key={i}
-                        className="flex gap-3 rounded-2xl border border-plum-100 bg-white p-4 shadow-soft"
-                      >
-                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-magenta-50 text-[13px] font-semibold text-magenta-600">
+                      <li key={i} className="flex gap-3.5 py-3 first:pt-0 last:pb-0">
+                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-magenta-500 to-plum-500 text-[12.5px] font-semibold text-white shadow-pink">
                           {i + 1}
                         </span>
-                        <span className="text-[15px] leading-relaxed text-ink/85">
-                          {t(o.text, lang)}
-                        </span>
+                        <span className="user-text pt-0.5 text-[15px] leading-relaxed text-ink/85">{t(o.text, lang)}</span>
                       </li>
                     ))}
-                  </ul>
-                </div>
-              )}
+                  </ol>
+              </PanelSection>
+            )}
 
-              {data.activities?.length > 0 && (
-                <div className="mt-12">
-                  <SectionHeading eyebrow={h('activities')} title={h('activities')} />
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    {data.activities.map((a, i) => (
-                      <div
-                        key={i}
-                        className="overflow-hidden rounded-3xl border border-plum-100 bg-white shadow-soft"
-                      >
-                        {a.image && (
-                          <img src={a.image} alt="" loading="lazy" className="aspect-[16/9] w-full object-cover" />
-                        )}
-                        <div className="p-5">
-                          <h3 className="font-display text-base font-semibold">{t(a.title, lang)}</h3>
-                          {t(a.description, lang) && (
-                            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-                              {t(a.description, lang)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {data.leadership?.length > 0 && (
-                <div className="mt-12">
-                  <SectionHeading eyebrow={h('leadership')} title={h('leadership')} />
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {data.leadership.map((person, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-4 rounded-2xl border border-plum-100 bg-white p-4 shadow-soft"
-                      >
-                        {person.photo ? (
+            {data.activities?.length > 0 && (
+              <PanelSection title={h('activities')} icon={Sparkles}>
+                <div className="grid gap-x-6 gap-y-7 sm:grid-cols-2">
+                  {data.activities.map((a, i) => (
+                    <div key={i} className="group min-w-0">
+                      {a.image && (
+                        <div className="mb-3 overflow-hidden rounded-xl">
                           <img
-                            src={person.photo}
+                            src={a.image}
                             alt=""
                             loading="lazy"
-                            className="h-14 w-14 rounded-full object-cover"
+                            className="aspect-[16/9] w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                           />
-                        ) : (
-                          <span className="grid h-14 w-14 place-items-center rounded-full bg-magenta-50 font-display font-semibold text-magenta-600">
-                            {(t(person.name, lang) || '?').charAt(0)}
-                          </span>
-                        )}
-                        <div className="min-w-0">
-                          <div className="truncate font-display text-[15px] font-semibold">
-                            {t(person.name, lang)}
-                          </div>
-                          <div className="truncate text-[13px] text-ink-muted">
-                            {t(person.designation, lang)}
-                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      )}
+                      <h3 className="flex items-center gap-2 font-display text-base font-semibold text-plum-800">
+                        <span className="h-4 w-1 shrink-0 rounded-full bg-gradient-to-b from-magenta-500 to-plum-500" aria-hidden="true" />
+                        <GradientText>{t(a.title, 'en')}</GradientText>
+                      </h3>
+                      {t(a.description, lang) && (
+                        <p className="user-text mt-1.5 text-sm leading-relaxed text-ink-muted">{t(a.description, lang)}</p>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              )}
+              </PanelSection>
+            )}
 
-              {data.posters?.length > 0 && (
-                <div className="mt-12">
-                  <SectionHeading eyebrow={h('media')} title={h('posters')} />
-                  <GalleryGrid items={data.posters} />
+            {data.leadership?.length > 0 && (
+              <PanelSection title={h('leadership')} icon={Users}>
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {data.leadership.map((person, i) => (
+                    <PersonRow key={i} name={t(person.name, 'en')} role={t(person.designation, 'en')} photo={person.photo} />
+                  ))}
                 </div>
-              )}
+              </PanelSection>
+            )}
 
-              {data.gallery?.length > 0 && (
-                <div className="mt-12">
-                  <SectionHeading eyebrow={h('media')} title={h('gallery')} />
-                  <GalleryGrid items={data.gallery} />
-                </div>
-              )}
-            </div>
+            {data.posters?.length > 0 && (
+              <PanelSection title={h('posters')} icon={Images}>
+                <GalleryGrid items={data.posters} />
+              </PanelSection>
+            )}
 
-            <aside className="space-y-5">
-              {data.logoUrl && (
-                <div className="rounded-3xl border border-plum-100 bg-white p-6 text-center shadow-soft">
-                  <img src={data.logoUrl} alt="" className="mx-auto h-20 w-auto object-contain" />
-                </div>
-              )}
-
-              {data.externalUrl && (
-                <Button href={data.externalUrl} variant="outline" className="w-full">
-                  {s('visitWebsite')}
-                  <ExternalLinkIcon size={15} />
-                </Button>
-              )}
-
-              {data.downloads?.length > 0 && (
-                <div className="rounded-3xl border border-plum-100 bg-white p-5 shadow-soft">
-                  <h3 className="mb-3 font-display text-base font-semibold">{h('downloads')}</h3>
-                  <ul className="space-y-2">
-                    {data.downloads.map((file, i) => (
-                      <li key={i}>
-                        <a
-                          href={file.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition hover:bg-magenta-50"
-                        >
-                          <Download size={15} className="shrink-0 text-magenta-600" />
-                          <span className="min-w-0 flex-1 truncate">
-                            {t(file.title, lang) || file.url.split('/').pop()}
-                          </span>
-                          {file.sizeBytes > 0 && (
-                            <span className="shrink-0 text-[11px] text-ink-faint">
-                              {formatBytes(file.sizeBytes)}
-                            </span>
-                          )}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </aside>
-          </div>
+            {data.gallery?.length > 0 && (
+              <PanelSection title={h('gallery')} icon={Images}>
+                <GalleryGrid items={data.gallery} />
+              </PanelSection>
+            )}
+          </ContentPanel>
         </Container>
       </Section>
     </>

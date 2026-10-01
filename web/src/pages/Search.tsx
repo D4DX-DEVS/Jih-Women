@@ -6,6 +6,7 @@ import {
   Container,
   EmptyState,
   ErrorState,
+  GradientText,
   Loading,
   PageHeader,
   Section,
@@ -70,7 +71,7 @@ export default function Search() {
                         {s(KIND_LABEL[result.kind] ?? result.kind)}
                       </span>
                       <span className="mt-0.5 block truncate font-display text-[15px] font-semibold">
-                        {t(result.title, lang)}
+                        <GradientText>{t(result.title, lang)}</GradientText>
                       </span>
                     </span>
                   </Link>
