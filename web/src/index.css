@@ -96,6 +96,15 @@
     min-width: 0;
   }
 
+  /* Body of a ContentCards card: spacer lines are dropped, so blocks get even gaps */
+  .content-card-body > * {
+    @apply mb-0 mt-0;
+  }
+
+  .content-card-body > * + * {
+    @apply mt-3.5;
+  }
+
   .prose-content h2 {
     @apply font-display text-xl md:text-2xl font-semibold text-plum-800 mt-9 mb-3;
   }
@@ -126,6 +135,18 @@
 
   .prose-content img {
     @apply rounded-2xl my-6 w-full;
+  }
+
+  /* Embeds pasted into CMS content (YouTube, maps, video) never exceed the column */
+  .prose-content iframe,
+  .prose-content video,
+  .prose-content embed {
+    @apply my-6 max-w-full rounded-2xl;
+  }
+
+  .prose-content iframe[src*='youtube'],
+  .prose-content iframe[src*='vimeo'] {
+    @apply aspect-video h-auto w-full;
   }
 
   .prose-content table {

@@ -6,12 +6,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Play,
-  UserPlus,
   Users,
 } from 'lucide-react';
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
-import { t, tLang } from '../lib/i18n';
+import { str, t } from '../lib/i18n';
 import { formatDate, youtubeThumb } from '../lib/format';
 import {
   Container,
@@ -33,7 +32,6 @@ import {
 import Reveal from '../components/Reveal';
 import type {
   HomePayload,
-  Localized,
   MediaPost,
   OrgEvent,
   ProgramBanner,
@@ -44,7 +42,7 @@ import type {
 } from '../lib/types';
 
 export default function Home() {
-  const { s } = useSite();
+  const { h } = useSite();
   const { data, loading, error, reload } = useApi<HomePayload>('/api/site/home');
   const [playing, setPlaying] = useState<VideoItem | null>(null);
 
@@ -59,7 +57,7 @@ export default function Home() {
   if (!data) return null;
 
   const { sections, presidentMessage } = data.settings;
-  const banners = (data.programBanners ?? []).filter((b) => Boolean(b.bannerImage));
+  const banners = (data.programBanners ?? []).filter((b) => Boolean(b.logoUrl || b.bannerImage));
   const showBanners = sections.programBanners !== false && banners.length > 0;
   const showPresident =
     sections.presidentMessage !== false && presidentMessage?.enabled !== false && presidentMessage;
@@ -90,14 +88,7 @@ export default function Home() {
         <section className="border-t border-plum-100/70 bg-white pb-8 pt-7 md:pb-10 md:pt-9">
           <Container>
             <Reveal>
-              <VideoRow
-                videos={
-                  sections.featuredVideos && data.featuredVideos.length > 1
-                    ? data.featuredVideos
-                    : data.featuredVideos.slice(0, 1)
-                }
-                onPlay={setPlaying}
-              />
+              <VideoRow videos={data.featuredVideos} onPlay={setPlaying} />
             </Reveal>
           </Container>
         </section>
@@ -106,7 +97,7 @@ export default function Home() {
       {sections.campaigns && data.campaigns.length > 0 && (
         <Section tone="white">
           <Container>
-            <ManagedSectionHeading sectionKey="homeCampaigns" eyebrow={s('mediaCentre')} title={s('campaigns')} />
+            <ManagedSectionHeading sectionKey="homeCampaigns" eyebrow={h('mediaCentre')} title={h('campaigns')} />
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {data.campaigns.map((c, i) => (
                 <Reveal key={c._id} delay={Math.min(i, 6) * 60}>
@@ -121,7 +112,7 @@ export default function Home() {
       {sections.featuredArticles && data.featuredArticles.length > 0 && (
         <Section tone="deep">
           <Container>
-            <ManagedSectionHeading sectionKey="homeFeaturedArticles" eyebrow={s('media')} title={s('featuredArticles')} />
+            <ManagedSectionHeading sectionKey="homeFeaturedArticles" eyebrow={h('media')} title={h('featuredArticles')} />
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {data.featuredArticles.map((post, i) => (
                 <Reveal key={post._id} delay={Math.min(i, 6) * 60}>
@@ -136,7 +127,7 @@ export default function Home() {
       {sections.publications && data.publications.length > 0 && (
         <Section tone="white">
           <Container>
-            <ManagedSectionHeading sectionKey="homePublications" eyebrow={s('publications')} title={s('publications')} />
+            <ManagedSectionHeading sectionKey="homePublications" eyebrow={h('publications')} title={h('publications')} />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {data.publications.map((p, i) => (
                 <Reveal key={p._id} delay={Math.min(i, 6) * 60}>
@@ -148,8 +139,6 @@ export default function Home() {
         </Section>
       )}
 
-      <CtaBand tagline={data.settings.tagline} joinLabel={data.settings.joinLabel} joinUrl={data.settings.joinUrl} />
-
       {playing && <VideoPlayerModal item={playing} onClose={() => setPlaying(null)} />}
     </>
   );
@@ -157,9 +146,21 @@ export default function Home() {
 
 /* ─────────────────────────── hero slider ─────────────────────────── */
 
+/* Aspect ratio of the uploaded 1920×900 slides; used until the real images load. */
+const HERO_FALLBACK_RATIO = 1920 / 900;
+
 function Hero({ slides }: { slides: Slide[] }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  // Natural width/height of each slide image, as actually loaded (mobile source included)
+  const [ratios, setRatios] = useState<Record<number, number>>({});
+
+  /* The hero takes the slides' own proportions at every width so each image is shown
+     whole (slides carry their own text and logos). The tallest slide sets the height,
+     keeping it steady while slides change; a wider slide is centred with a slim band
+     of the hero colour above and below rather than being cropped. */
+  const known = Object.values(ratios);
+  const heroRatio = known.length ? Math.min(...known) : HERO_FALLBACK_RATIO;
 
   useEffect(() => {
     if (paused || slides.length <= 1) return;
@@ -192,42 +193,56 @@ function Hero({ slides }: { slides: Slide[] }) {
                 src={item.imageUrl}
                 alt=""
                 loading={i === 0 ? 'eager' : 'lazy'}
-                className={`h-full w-full object-cover ${i === index ? 'sm:animate-zoom-slow' : ''}`}
+                onLoad={(e) => {
+                  const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+                  if (w && h) setRatios((r) => ({ ...r, [i]: w / h }));
+                }}
+                className="h-full w-full object-contain"
               />
             </picture>
           </div>
         ))}
 
         {/* Slides are absolutely positioned, so this spacer keeps the hero's height. */}
-        <div className="min-h-[400px] lg:min-h-[440px]" />
+        <div
+          className="aspect-[var(--hero-ratio)]"
+          style={{ '--hero-ratio': heroRatio } as React.CSSProperties}
+        />
 
         {slides.length > 1 && (
           <>
+            {/* Arrows sit at the vertical middle at every width: the slides carry their
+                own text and logos in the corners, which must stay visible */}
             <button
               onClick={() => go(index - 1)}
               aria-label="Previous slide"
-              className="absolute start-2 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-plum-800 shadow-soft transition hover:bg-white sm:start-3 md:start-6 md:h-10 md:w-10"
+              className="absolute start-2 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-plum-800 shadow-soft transition hover:bg-white sm:start-3 sm:h-9 sm:w-9 sm:bg-white/90 md:start-6 md:h-10 md:w-10"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={() => go(index + 1)}
               aria-label="Next slide"
-              className="absolute end-2 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-plum-800 shadow-soft transition hover:bg-white sm:end-3 md:end-6 md:h-10 md:w-10"
+              className="absolute end-2 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-plum-800 shadow-soft transition hover:bg-white sm:end-3 sm:h-9 sm:w-9 sm:bg-white/90 md:end-6 md:h-10 md:w-10"
             >
               <ChevronRight size={16} />
             </button>
 
-            <div className="absolute inset-x-0 bottom-5 z-10 flex justify-center gap-1.5 md:bottom-6">
+            {/* Each dot sits in a padded button so it stays easy to tap on phones */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-1 z-10 flex justify-center md:bottom-3 lg:bottom-4">
               {slides.map((item, i) => (
                 <button
                   key={item._id}
                   onClick={() => setIndex(i)}
                   aria-label={`Slide ${i + 1}`}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i === index ? 'w-5 bg-magenta-500' : 'w-1.5 bg-white/50 hover:bg-white/80'
-                  }`}
-                />
+                  className="group pointer-events-auto grid h-8 place-items-center px-2.5 lg:h-6 lg:px-[3px]"
+                >
+                  <span
+                    className={`block h-1.5 rounded-full transition-all ${
+                      i === index ? 'w-5 bg-magenta-500' : 'w-1.5 bg-white/50 group-hover:bg-white/80'
+                    }`}
+                  />
+                </button>
               ))}
             </div>
           </>
@@ -239,16 +254,103 @@ function Hero({ slides }: { slides: Slide[] }) {
 
 /* ─────────────────────── programme banner strip ─────────────────────── */
 
+/* Fewest logos one marquee copy may hold. Sparse lists are repeated up to this so a
+   single copy is wider than the widest strip (1280px container ÷ ~212px per logo),
+   otherwise an empty gap would trail the list before the loop restarts. */
+const MARQUEE_MIN_TILES = 8;
+/* Drift speed of the programme strip, in px per second. */
+const MARQUEE_SPEED = 70;
+
+function MarqueeArrow({ dir, onClick }: { dir: 1 | -1; onClick: () => void }) {
+  const { s } = useSite();
+  const Icon = dir === 1 ? ChevronRight : ChevronLeft;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={s(dir === 1 ? 'next' : 'previous')}
+      className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-plum-100 bg-white text-plum-800 shadow-soft transition hover:border-magenta-200 hover:text-magenta-600 md:h-9 md:w-9"
+    >
+      <Icon size={16} />
+    </button>
+  );
+}
+
 function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
-  const { lang, path, s, section } = useSite();
-  const heading = section('homePrograms', { heading: s('programs') });
-  const railRef = useRef<HTMLDivElement>(null);
-  const scroll = (dir: 1 | -1) => {
-    const rail = railRef.current;
-    if (rail) rail.scrollBy({ left: dir * rail.clientWidth * 0.8, behavior: 'smooth' });
+  const { path, section, h } = useSite();
+  const heading = section('homePrograms', { heading: h('programs') });
+  const repeat = Math.ceil(MARQUEE_MIN_TILES / banners.length);
+  const loop = Array.from({ length: repeat }, () => banners).flat();
+
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLUListElement>(null);
+  const pausedRef = useRef(false);
+  /* Distance (px) still to travel from arrow clicks; eased out over a few frames. */
+  const pendingRef = useRef(0);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    const track = trackRef.current;
+    if (!viewport || !track) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let pos = viewport.scrollLeft;
+    let last = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const dt = Math.min(now - last, 100) / 1000;
+      last = now;
+      const copy = track.scrollWidth / 2;
+      // The browser moved it (e.g. scrolling a focused tile into view): follow along.
+      if (Math.abs(viewport.scrollLeft - pos) > 1) pos = viewport.scrollLeft;
+      let move = pausedRef.current || reduceMotion.matches ? 0 : MARQUEE_SPEED * dt;
+      const pending = pendingRef.current;
+      if (pending) {
+        const step = Math.abs(pending) < 1 ? pending : pending * Math.min(1, dt * 7);
+        pendingRef.current -= step;
+        move += step;
+      }
+      if (copy > 0) {
+        pos = (((pos + move) % copy) + copy) % copy;
+        viewport.scrollLeft = pos;
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [banners.length]);
+
+  /** Arrow click: shift the strip by one tile (+1 shows the next tile on the right). */
+  const nudge = (dir: 1 | -1) => {
+    const tile = trackRef.current?.firstElementChild as HTMLElement | null;
+    pendingRef.current += dir * (tile?.offsetWidth ?? 220);
   };
-  const arrow =
-    'hidden h-8 w-8 shrink-0 place-items-center rounded-full border border-plum-100 bg-white text-plum-800 shadow-soft transition hover:border-magenta-200 hover:text-magenta-600 sm:grid';
+
+  /** One programme logo; `hidden` marks a repeated copy (not focusable or announced). */
+  const renderTile = (banner: ProgramBanner, hidden = false) => {
+    // A bare logo, no tile: fixed box, image contained so nothing is cropped or stretched
+    const cls =
+      'group flex h-14 w-[30vw] max-w-[140px] items-center justify-center rounded-lg sm:h-16 sm:w-[160px] sm:max-w-none lg:h-[72px] lg:w-[180px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-magenta-400';
+    const inner = (
+      <img
+        src={banner.logoUrl || banner.bannerImage}
+        alt={hidden ? '' : t(banner.title, 'en')}
+        loading="lazy"
+        /* multiply + a touch of brightness lets white or near-white logo backgrounds
+           melt into the white strip; transparent logos are unaffected */
+        className="h-auto max-h-full w-auto max-w-full object-contain mix-blend-multiply brightness-[1.04] transition duration-300 group-hover:scale-105"
+      />
+    );
+    const tabIndex = hidden ? -1 : undefined;
+    return banner.externalUrl ? (
+      <a href={banner.externalUrl} target="_blank" rel="noreferrer" className={cls} tabIndex={tabIndex}>
+        {inner}
+      </a>
+    ) : (
+      <Link to={path(`/programs/${banner.slug}`)} className={cls} tabIndex={tabIndex}>
+        {inner}
+      </Link>
+    );
+  };
 
   return (
     <section className="border-b border-plum-100/70 bg-white py-5 md:py-6">
@@ -259,40 +361,36 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
           {heading.heading}
           <span className="h-px w-6 bg-magenta-300" />
         </div>
+        {/* The row drifts right to left on its own; the arrows on either side jump it a
+            few tiles either way. Two copies of the (repeated) list sit side by side and
+            the offset wraps by one copy width, so the loop is seamless in both directions.
+            Hovering or focusing a tile pauses the drift; reduced-motion users get no
+            drift, only the arrows. */}
         <div className="flex items-center gap-2 md:gap-3">
-          <button type="button" onClick={() => scroll(-1)} aria-label={s('previous')} className={arrow}>
-            <ChevronLeft size={15} />
-          </button>
+          <MarqueeArrow dir={-1} onClick={() => nudge(-1)} />
           <div
-            ref={railRef}
-            className="no-scrollbar flex min-w-0 flex-1 snap-x snap-mandatory gap-2.5 overflow-x-auto md:gap-3"
+            ref={viewportRef}
+            // Edges fade out so logos glide in and out instead of being sliced off
+            className="min-w-0 flex-1 overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_8%,#000_92%,transparent)]"
+            onMouseEnter={() => (pausedRef.current = true)}
+            onMouseLeave={() => (pausedRef.current = false)}
+            onFocus={() => (pausedRef.current = true)}
+            onBlur={() => (pausedRef.current = false)}
           >
-            {banners.map((banner) => {
-              const inner = (
-                <img
-                  src={banner.bannerImage}
-                  alt={t(banner.title, lang)}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                />
-              );
-              const cls =
-                'group block aspect-[3/1] w-[46%] shrink-0 snap-start overflow-hidden rounded-xl border border-plum-100 bg-white transition hover:border-magenta-200 hover:shadow-soft min-[480px]:w-[31%] md:w-[calc((100%-2.25rem)/4)] lg:w-[calc((100%-3rem)/5)]';
-
-              return banner.externalUrl ? (
-                <a key={banner._id} href={banner.externalUrl} target="_blank" rel="noreferrer" className={cls}>
-                  {inner}
-                </a>
-              ) : (
-                <Link key={banner._id} to={path(`/programs/${banner.slug}`)} className={cls}>
-                  {inner}
-                </Link>
-              );
-            })}
+            <ul ref={trackRef} className="flex w-max">
+              {[0, 1].map((copy) =>
+                loop.map((banner, i) => {
+                  const hidden = copy === 1 || i >= banners.length;
+                  return (
+                    <li key={`${copy}-${i}`} className="shrink-0 px-3 sm:px-5 lg:px-4" aria-hidden={hidden || undefined}>
+                      {renderTile(banner, hidden)}
+                    </li>
+                  );
+                })
+              )}
+            </ul>
           </div>
-          <button type="button" onClick={() => scroll(1)} aria-label={s('next')} className={arrow}>
-            <ChevronRight size={15} />
-          </button>
+          <MarqueeArrow dir={1} onClick={() => nudge(1)} />
         </div>
       </Container>
     </section>
@@ -314,17 +412,17 @@ function Eyebrow({ children, logo }: { children: React.ReactNode; logo?: string 
 
 /* About (organisation intro) beside the president's message, as one card */
 function MainInfo({ settings, message }: { settings: SiteSettings; message: PresidentMessage | null }) {
-  const { lang, path, s, section } = useSite();
+  const { lang, path, section, h } = useSite();
   const about = section('homeAbout', {
-    label: s('aboutUs'),
-    heading: t(settings.siteName, lang),
-    description: t(settings.footerNote, lang) || s('footerBlurb'),
+    label: h('aboutUs'),
+    heading: settings.siteName?.en?.trim() || t(settings.siteName, lang),
+    description: t(settings.footerNote, lang) || str('footerBlurb', lang),
   });
   const aboutTitle = about.heading;
   const aboutBody = about.description;
-  const president = section('homePresident', { label: s('presidentMessage') });
+  const president = section('homePresident', { label: h('presidentMessage') });
   const label = president.label;
-  const heading = message ? t(message.heading, lang) || label : '';
+  const heading = message ? t(message.heading, 'en') || label : '';
   const body = message ? t(message.message, lang) : '';
   const name = message ? t(message.name, lang) : '';
   const designation = message ? t(message.designation, lang) : '';
@@ -344,7 +442,7 @@ function MainInfo({ settings, message }: { settings: SiteSettings; message: Pres
           <p className="mt-4 text-[14.5px] leading-relaxed text-ink/75">{aboutBody}</p>
           <div className="mt-5">
             <Button to={path('/who-we-are')} size="sm">
-              {s('readMore')}
+              {h('readMore')}
               <ArrowRight size={14} />
             </Button>
           </div>
@@ -398,7 +496,7 @@ function MainInfo({ settings, message }: { settings: SiteSettings; message: Pres
                     to={message.linkUrl}
                     className="ms-7 mt-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-magenta-600 hover:text-magenta-500"
                   >
-                    {s('readFullMessage')}
+                    {h('readMore')}
                     <ArrowRight size={14} />
                   </Link>
                 )}
@@ -427,8 +525,8 @@ function BandHeading({
   const { section } = useSite();
   const heading = section(sectionKey, { heading: label });
   return (
-    <div className="mb-3.5 flex min-w-0 items-center justify-between gap-3">
-      <h3 className="band-label flex min-w-0 items-center gap-2 whitespace-nowrap font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-magenta-500">
+    <div className="mb-3.5 flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+      <h3 className="band-label flex shrink-0 items-center gap-2 whitespace-nowrap font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-magenta-500">
         {heading.logo && <SectionLogo src={heading.logo} />}
         <span className="h-px w-5 shrink-0 bg-magenta-400" />
         {heading.heading}
@@ -436,7 +534,7 @@ function BandHeading({
       </h3>
       <Link
         to={to}
-        className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] font-medium text-ink-muted transition hover:text-magenta-600"
+        className="-my-2 inline-flex shrink-0 items-center gap-1 whitespace-nowrap py-2 text-[11px] font-medium text-ink-muted transition hover:text-magenta-600"
       >
         {actionLabel}
         <ArrowRight size={13} />
@@ -462,7 +560,7 @@ function RailArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => void
 }
 
 function NewsAndEvents({ updates, events }: { updates: MediaPost[]; events: OrgEvent[] }) {
-  const { lang, path, s } = useSite();
+  const { lang, path, s, h } = useSite();
   const posters = events.filter((e) => e.posterImage || e.coverImage);
   const railRef = useRef<HTMLDivElement>(null);
   const slide = (dir: 1 | -1) => {
@@ -472,14 +570,14 @@ function NewsAndEvents({ updates, events }: { updates: MediaPost[]; events: OrgE
   const empty = <p className="py-8 text-center text-[13px] text-ink-faint">{s('nothingHere')}</p>;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-12 lg:gap-7">
-      {/* Latest news — swipe row on phones, three-up from sm */}
-      <div className="min-w-0 lg:col-span-7">
-        <BandHeading sectionKey="homeNews" label={s('latestNews')} actionLabel={s('viewAllNews')} to={path('/media/news')} />
+    <div className="grid gap-8 lg:grid-cols-12 lg:gap-6">
+      {/* Latest news — swipe row on phones, three compact cards from sm */}
+      <div className="flex min-w-0 flex-col lg:col-span-7">
+        <BandHeading sectionKey="homeNews" label={h('latestNews')} actionLabel={s('viewAllNews')} to={path('/media/news')} />
         {updates.length === 0 ? (
           empty
         ) : (
-          <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
+          <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 lg:flex-1">
             {updates.slice(0, 3).map((post) => (
               <Link
                 key={post._id}
@@ -501,11 +599,16 @@ function NewsAndEvents({ updates, events }: { updates: MediaPost[]; events: OrgE
                     <CalendarDays size={12} />
                     {formatDate(post.publishedAt, lang)}
                   </span>
-                  <span className="mt-1.5 line-clamp-2 font-display text-[14px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600">
+                  <span className="mt-1.5 line-clamp-3 font-display text-[14px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600">
                     {t(post.title, lang)}
                   </span>
+                  {t(post.excerpt, lang) && (
+                    <span className="mt-1 line-clamp-2 text-[12.5px] leading-relaxed text-ink-muted lg:line-clamp-3">
+                      {t(post.excerpt, lang)}
+                    </span>
+                  )}
                   <span className="mt-auto inline-flex items-center gap-1 pt-2.5 text-[12px] font-medium text-magenta-600">
-                    {s('readMore')}
+                    {h('readMore')}
                     <ArrowRight size={13} />
                   </span>
                 </span>
@@ -515,30 +618,42 @@ function NewsAndEvents({ updates, events }: { updates: MediaPost[]; events: OrgE
         )}
       </div>
 
-      {/* Events & posters */}
-      <div className="min-w-0 lg:col-span-5">
-        <BandHeading sectionKey="homeEvents" label={s('upcomingEvents')} actionLabel={s('viewAllEvents')} to={path('/events')} />
+      {/* Events — the large item: one poster per view, shown whole over a soft
+          blurred copy of itself so the wide frame never looks empty */}
+      <div className="flex min-w-0 flex-col lg:col-span-5">
+        <BandHeading sectionKey="homeEvents" label={h('upcomingEvents')} actionLabel={s('viewAll')} to={path('/events')} />
         {events.length === 0 ? (
           empty
         ) : posters.length > 0 ? (
           <>
-            <div ref={railRef} className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1">
-              {posters.map((event) => (
-                <Link
-                  key={event._id}
-                  to={path(`/events/${event.slug}`)}
-                  className="group block w-[46%] shrink-0 snap-start overflow-hidden rounded-xl border border-plum-100 bg-plum-50 shadow-soft sm:w-[31%] lg:w-[44%]"
-                >
-                  <img
-                    src={event.posterImage || event.coverImage}
-                    alt={t(event.title, lang)}
-                    loading="lazy"
-                    className="aspect-[4/5] w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                  />
-                </Link>
-              ))}
+            <div ref={railRef} className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 lg:flex-1">
+              {posters.map((event) => {
+                const src = event.posterImage || event.coverImage;
+                return (
+                  <Link
+                    key={event._id}
+                    to={path(`/events/${event.slug}`)}
+                    className="card-hover group relative block aspect-[4/5] w-full shrink-0 snap-start overflow-hidden rounded-xl border border-plum-100 bg-plum-50 shadow-soft sm:aspect-[16/10] lg:aspect-auto lg:min-h-[300px]"
+                  >
+                    <img
+                      src={src}
+                      alt=""
+                      aria-hidden="true"
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-xl"
+                    />
+                    <img
+                      src={src}
+                      alt={t(event.title, lang)}
+                      loading="lazy"
+                      /* contain: posters are shown whole, never cropped */
+                      className="absolute inset-0 h-full w-full object-contain p-2 drop-shadow-md sm:p-3"
+                    />
+                  </Link>
+                );
+              })}
             </div>
-            {posters.length > 2 && (
+            {posters.length > 1 && (
               <div className="mt-3 flex justify-end">
                 <RailArrows onPrev={() => slide(-1)} onNext={() => slide(1)} />
               </div>
@@ -557,18 +672,26 @@ function NewsAndEvents({ updates, events }: { updates: MediaPost[]; events: OrgE
 }
 
 function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoItem) => void }) {
-  const { lang, path, s } = useSite();
-  const thumb = (v: VideoItem, big = false) => (
-    <span className="relative block aspect-video overflow-hidden rounded-xl bg-plum-900 shadow-soft">
+  const { lang, path, s, h } = useSite();
+  /** `inCard`: flush top of a card, so the card supplies the corners and shadow */
+  const thumb = (v: VideoItem, big = false, inCard = false) => (
+    <span className={`relative block aspect-video overflow-hidden bg-plum-900 ${inCard ? '' : 'rounded-xl shadow-soft'}`}>
       {(v.thumbnailUrl || youtubeThumb(v.youtubeUrl)) && (
         <img
           src={v.thumbnailUrl || youtubeThumb(v.youtubeUrl)}
           alt=""
           loading="lazy"
+          /* A broken custom thumbnail falls back to YouTube's own, then to the plain panel */
+          onError={(e) => {
+            const img = e.currentTarget;
+            const fallback = youtubeThumb(v.youtubeUrl);
+            if (fallback && img.src !== fallback) img.src = fallback;
+            else img.style.display = 'none';
+          }}
           className="h-full w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-105"
         />
       )}
-      <span className="absolute inset-0 grid place-items-center">
+      <span className="absolute inset-0 z-10 grid place-items-center">
         <span
           className={`grid place-items-center rounded-full bg-white/95 text-magenta-500 shadow-lift transition group-hover:scale-110 ${
             big ? 'h-12 w-12' : 'h-10 w-10'
@@ -578,7 +701,7 @@ function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoIt
         </span>
       </span>
       {v.durationLabel && (
-        <span className="absolute bottom-2 end-2 rounded-md bg-ink/80 px-1.5 py-0.5 text-[10.5px] font-medium text-white">
+        <span className="absolute bottom-2 end-2 z-10 rounded-md bg-ink/80 px-1.5 py-0.5 text-[11px] font-medium text-white">
           {v.durationLabel}
         </span>
       )}
@@ -589,24 +712,43 @@ function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoIt
     <div>
       <BandHeading
         sectionKey="homeVideos"
-        label={videos.length > 1 ? s('featuredVideos') : s('featuredVideo')}
+        label={videos.length > 1 ? h('featuredVideos') : h('featuredVideo')}
         actionLabel={s('viewMoreVideos')}
         to={path('/media/videos')}
       />
       {videos.length > 1 ? (
-        <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+        /* Up to three equal cards: one row on tablet and desktop (capped so the
+           cards stay compact), a swipe row on phones. */
+        <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 md:gap-4 lg:mx-auto lg:max-w-[840px]">
           {videos.map((v) => (
-            <button key={v._id} onClick={() => onPlay(v)} className="group min-w-0 text-start">
-              {thumb(v)}
-              <span className="mt-2 line-clamp-2 block font-display text-[13.5px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600">
-                {t(v.title, lang)}
-              </span>
-              {v.publishedAt && (
-                <span className="mt-1 flex items-center gap-1.5 text-[11px] text-ink-faint">
-                  <CalendarDays size={11} />
-                  {formatDate(v.publishedAt, lang)}
+            <button
+              key={v._id}
+              onClick={() => onPlay(v)}
+              className="card-hover group flex w-[76%] shrink-0 snap-start flex-col overflow-hidden rounded-xl border border-plum-100 bg-white text-start shadow-soft sm:w-auto"
+            >
+              {thumb(v, false, true)}
+              <span className="flex flex-1 flex-col p-3">
+                <span className="line-clamp-2 block font-display text-[13.5px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600">
+                  {t(v.title, lang)}
                 </span>
-              )}
+                {t(v.description, lang) && (
+                  <span className="mt-1 line-clamp-2 block text-[12.5px] leading-relaxed text-ink-muted">
+                    {t(v.description, lang)}
+                  </span>
+                )}
+                <span className="mt-auto flex items-center justify-between gap-2 pt-2.5">
+                  <span className="inline-flex items-center gap-1 text-[12px] font-medium text-magenta-600">
+                    {s('watchVideo')}
+                    <ArrowRight size={13} />
+                  </span>
+                  {v.publishedAt && (
+                    <span className="flex items-center gap-1 text-[11px] text-ink-faint">
+                      <CalendarDays size={11} />
+                      {formatDate(v.publishedAt, lang)}
+                    </span>
+                  )}
+                </span>
+              </span>
             </button>
           ))}
         </div>
@@ -635,51 +777,5 @@ function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoIt
         </button>
       )}
     </div>
-  );
-}
-
-/* ─────────────────────────── closing call-to-action ─────────────────────────── */
-
-function CtaBand({
-  tagline,
-  joinLabel,
-  joinUrl,
-}: {
-  tagline?: Localized;
-  joinLabel?: Localized;
-  joinUrl?: string;
-}) {
-  const { lang, path, s } = useSite();
-  const heading = t(tagline, lang);
-  if (!heading) return null;
-
-  const url = joinUrl || path('/contact');
-  const label = tLang(joinLabel, lang) || s('joinUs');
-  const cls =
-    'mt-5 inline-flex items-center gap-2 rounded-full bg-magenta-500 px-5 py-2.5 text-[13.5px] font-medium text-white shadow-pink transition hover:bg-magenta-600 active:scale-[0.97]';
-
-  return (
-    <section className="relative overflow-hidden bg-gradient-to-r from-plum-900 via-plum-800 to-plum-700 text-white">
-      <div className="leaf-watermark pointer-events-none absolute inset-0" />
-      <span className="pointer-events-none absolute -end-20 -top-20 h-64 w-64 rounded-full bg-magenta-500/20 blur-3xl" />
-      <Container className="relative py-10 text-center md:py-12">
-        <Reveal>
-          <p className="mx-auto max-w-2xl font-display text-[1.35rem] font-semibold leading-snug sm:text-[1.6rem] md:text-[1.9rem]">
-            {heading}
-          </p>
-          {/^https?:\/\//.test(url) ? (
-            <a href={url} target="_blank" rel="noreferrer" className={cls}>
-              <UserPlus size={15} />
-              {label}
-            </a>
-          ) : (
-            <Link to={url} className={cls}>
-              <UserPlus size={15} />
-              {label}
-            </Link>
-          )}
-        </Reveal>
-      </Container>
-    </section>
   );
 }

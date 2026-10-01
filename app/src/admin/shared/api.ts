@@ -125,8 +125,9 @@ export function describeError(err: unknown, fallback = 'Something went wrong. Pl
 export function formatDate(s?: string, full = false) {
   if (!s) return '—';
   const d = new Date(s);
-  if (full) return d.toLocaleString();
-  return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+  // English regardless of the browser's language, matching the public site
+  if (full) return d.toLocaleString('en-IN');
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 /** Upload one file to the CMS asset endpoint and return its CDN URLs. */

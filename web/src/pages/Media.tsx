@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { Download, ExternalLink as ExternalLinkIcon } from 'lucide-react';
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
@@ -35,31 +35,18 @@ const POST_TYPES: { type: MediaPostType; key: string }[] = [
   { type: 'speech', key: 'speeches' },
 ];
 
-function MediaTabs({ active }: { active: string }) {
-  const { path, pageTitle } = useSite();
-  const tabs = [
-    ...POST_TYPES.map((p) => ({ key: p.type, label: pageTitle(p.key), to: path(`/media/${p.type}`) })),
-    { key: 'videos', label: pageTitle('videos'), to: path('/media/videos') },
-    { key: 'podcasts', label: pageTitle('podcasts'), to: path('/media/podcasts') },
-    { key: 'gallery', label: pageTitle('photoGallery'), to: path('/media/gallery') },
-    { key: 'downloads', label: pageTitle('downloads'), to: path('/media/downloads') },
-  ];
-
+/**
+ * Title of a Media Centre category page. These pages have no page banner, so
+ * this is the page heading, centred between two short accent rules.
+ */
+function MediaHeading({ title }: { title: string }) {
   return (
-    <div className="no-scrollbar -mx-5 mb-9 flex gap-2 overflow-x-auto px-5">
-      {tabs.map((tab) => (
-        <Link
-          key={tab.key}
-          to={tab.to}
-          className={`shrink-0 rounded-full px-5 py-2.5 text-[13.5px] font-semibold transition ${
-            active === tab.key
-              ? 'bg-magenta-500 text-white shadow-soft'
-              : 'border border-plum-200 text-ink-muted hover:border-magenta-300'
-          }`}
-        >
-          {tab.label}
-        </Link>
-      ))}
+    <div className="mb-6 flex items-center justify-center gap-3 md:mb-8">
+      <span className="h-px w-8 shrink-0 bg-magenta-300 sm:w-12" aria-hidden="true" />
+      <h1 className="min-w-0 text-center font-display text-[1.5rem] font-semibold leading-tight text-plum-800 [overflow-wrap:anywhere] md:text-[1.9rem]">
+        {title}
+      </h1>
+      <span className="h-px w-8 shrink-0 bg-magenta-300 sm:w-12" aria-hidden="true" />
     </div>
   );
 }
@@ -68,7 +55,7 @@ function MediaTabs({ active }: { active: string }) {
 
 export function MediaList() {
   const { type } = useParams();
-  const { path, s, pageTitle } = useSite();
+  const { pageTitle } = useSite();
   const [page, setPage] = useState(1);
 
   const known = POST_TYPES.find((p) => p.type === type);
@@ -80,17 +67,9 @@ export function MediaList() {
 
   return (
     <>
-      <PageHeader
-        title={pageTitle(known.key)}
-        breadcrumb={[
-          { label: s('home'), to: path('/') },
-          { label: s('mediaCentre'), to: path('/media/news') },
-          { label: pageTitle(known.key) },
-        ]}
-      />
-      <Section tone="mist">
+      <Section tone="mist" className="pt-6 md:pt-8">
         <Container>
-          <MediaTabs active={known.type} />
+          <MediaHeading title={pageTitle(known.key)} />
           {loading ? (
             <Loading />
           ) : error ? (
@@ -115,7 +94,7 @@ export function MediaList() {
 
 export function MediaDetail() {
   const { slug, type } = useParams();
-  const { lang, path, s } = useSite();
+  const { lang, path, s, h } = useSite();
   const { data, loading, error, notFound, reload } = useApi<MediaPost>(
     slug ? `/api/site/media/${slug}` : null
   );
@@ -197,7 +176,7 @@ export function MediaDetail() {
 
           {data.downloads?.length > 0 && (
             <div className="mt-10 rounded-3xl border border-plum-100 bg-white p-6 shadow-soft">
-              <h3 className="mb-4 font-display text-base font-semibold">{s('downloads')}</h3>
+              <h3 className="mb-4 font-display text-base font-semibold">{h('downloads')}</h3>
               <ul className="space-y-2">
                 {data.downloads.map((file, i) => (
                   <li key={i}>
@@ -225,7 +204,7 @@ export function MediaDetail() {
 
           {data.gallery?.length > 0 && (
             <div className="mt-10">
-              <h3 className="mb-4 font-display text-base font-semibold">{s('gallery')}</h3>
+              <h3 className="mb-4 font-display text-base font-semibold">{h('gallery')}</h3>
               <GalleryGrid items={data.gallery} />
             </div>
           )}
@@ -235,7 +214,7 @@ export function MediaDetail() {
       {data.related && data.related.length > 0 && (
         <Section tone="white">
           <Container>
-            <SectionHeading eyebrow={s('mediaCentre')} title={s('relatedPosts')} />
+            <SectionHeading eyebrow={h('mediaCentre')} title={h('relatedPosts')} />
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {data.related.map((post) => (
                 <PostCard key={post._id} post={post} />
@@ -251,7 +230,7 @@ export function MediaDetail() {
 /* ---------------- videos & podcasts ---------------- */
 
 export function VideosPage({ kind }: { kind: 'video' | 'podcast' }) {
-  const { path, s, pageTitle } = useSite();
+  const { pageTitle } = useSite();
   const [page, setPage] = useState(1);
   const [playing, setPlaying] = useState<VideoItem | null>(null);
   const { data, loading, error, reload } = useApi<Paged<VideoItem>>(
@@ -262,17 +241,9 @@ export function VideosPage({ kind }: { kind: 'video' | 'podcast' }) {
 
   return (
     <>
-      <PageHeader
-        title={label}
-        breadcrumb={[
-          { label: s('home'), to: path('/') },
-          { label: s('mediaCentre'), to: path('/media/news') },
-          { label },
-        ]}
-      />
-      <Section tone="mist">
+      <Section tone="mist" className="pt-6 md:pt-8">
         <Container>
-          <MediaTabs active={kind === 'podcast' ? 'podcasts' : 'videos'} />
+          <MediaHeading title={label} />
           {loading ? (
             <Loading />
           ) : error ? (
@@ -299,7 +270,7 @@ export function VideosPage({ kind }: { kind: 'video' | 'podcast' }) {
 /* ---------------- photo gallery ---------------- */
 
 export function AlbumsIndex() {
-  const { path, s, pageTitle } = useSite();
+  const { pageTitle } = useSite();
   const [page, setPage] = useState(1);
   const { data, loading, error, reload } = useApi<Paged<Album>>(
     `/api/site/albums?page=${page}&limit=12`
@@ -307,17 +278,9 @@ export function AlbumsIndex() {
 
   return (
     <>
-      <PageHeader
-        title={pageTitle('photoGallery')}
-        breadcrumb={[
-          { label: s('home'), to: path('/') },
-          { label: s('mediaCentre'), to: path('/media/news') },
-          { label: pageTitle('photoGallery') },
-        ]}
-      />
-      <Section tone="mist">
+      <Section tone="mist" className="pt-6 md:pt-8">
         <Container>
-          <MediaTabs active="gallery" />
+          <MediaHeading title={pageTitle('photoGallery')} />
           {loading ? (
             <Loading />
           ) : error ? (
@@ -394,7 +357,7 @@ const DOWNLOAD_CATEGORIES = [
 ];
 
 export function DownloadsPage() {
-  const { path, s, pageTitle } = useSite();
+  const { s, pageTitle } = useSite();
   const [category, setCategory] = useState('');
   const { data, loading, error, reload } = useApi<{ items: DownloadItem[] }>(
     `/api/site/downloads${category ? `?category=${category}` : ''}`
@@ -402,17 +365,9 @@ export function DownloadsPage() {
 
   return (
     <>
-      <PageHeader
-        title={pageTitle('downloads')}
-        breadcrumb={[
-          { label: s('home'), to: path('/') },
-          { label: s('mediaCentre'), to: path('/media/news') },
-          { label: pageTitle('downloads') },
-        ]}
-      />
-      <Section tone="mist">
+      <Section tone="mist" className="pt-6 md:pt-8">
         <Container>
-          <MediaTabs active="downloads" />
+          <MediaHeading title={pageTitle('downloads')} />
 
           <div className="mb-7 flex flex-wrap gap-2">
             {DOWNLOAD_CATEGORIES.map((c) => (

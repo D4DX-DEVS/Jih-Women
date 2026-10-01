@@ -10,14 +10,14 @@ import {
   ErrorState,
   Loading,
   PageHeader,
-  RichText,
   Section,
 } from '../components/Primitives';
+import ContentCards from '../components/ContentCards';
 import NotFound from './NotFound';
 import type { PageDoc } from '../lib/types';
 
 export function WhoWeAreIndex() {
-  const { lang, path, s, pageTitle } = useSite();
+  const { lang, path, s, h } = useSite();
   const { data, loading, error, reload } = useApi<{ items: PageDoc[] }>(
     '/api/site/pages?section=who-we-are'
   );
@@ -25,10 +25,11 @@ export function WhoWeAreIndex() {
   return (
     <>
       <PageHeader
-        title={pageTitle('whoWeAre')}
-        breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('whoWeAre') }]}
+        compact
+        title={h('aboutUs')}
+        breadcrumb={[{ label: s('home'), to: path('/') }, { label: h('aboutUs') }]}
       />
-      <Section tone="mist">
+      <Section tone="mist" className="pt-6 md:pt-9">
         <Container>
           {loading ? (
             <Loading />
@@ -56,7 +57,7 @@ export function WhoWeAreIndex() {
                   )}
                   <div className="p-6">
                     <h2 className="font-display text-xl font-semibold transition group-hover:text-magenta-600">
-                      {t(page.title, lang)}
+                      {t(page.title, 'en')}
                     </h2>
                     {t(page.summary, lang) && (
                       <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-muted">
@@ -64,7 +65,7 @@ export function WhoWeAreIndex() {
                       </p>
                     )}
                     <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-magenta-600">
-                      {s('readMore')}
+                      {h('readMore')}
                       <ArrowRight size={15} />
                     </span>
                   </div>
@@ -80,7 +81,7 @@ export function WhoWeAreIndex() {
 
 export function PageDetail() {
   const { slug } = useParams();
-  const { lang, path, s, pageTitle } = useSite();
+  const { lang, path, s, h } = useSite();
   const { data, loading, error, notFound, reload } = useApi<PageDoc>(
     slug ? `/api/site/pages/${slug}` : null
   );
@@ -99,22 +100,23 @@ export function PageDetail() {
   return (
     <>
       <PageHeader
-        title={t(data.title, lang)}
+        compact
+        title={t(data.title, 'en')}
         description={t(data.summary, lang)}
         image={data.heroImage}
         breadcrumb={[
           { label: s('home'), to: path('/') },
-          { label: pageTitle('whoWeAre'), to: path('/who-we-are') },
-          { label: t(data.title, lang) },
+          { label: h('aboutUs'), to: path('/who-we-are') },
+          { label: t(data.title, 'en') },
         ]}
       />
-      <Section tone="mist">
-        <Container className="max-w-3xl">
-          <RichText html={t(data.body, lang)} />
+      <Section tone="mist" className="pt-6 md:pt-9">
+        <Container>
+          <ContentCards html={t(data.body, lang)} />
 
           {data.downloads?.length > 0 && (
-            <div className="mt-10 rounded-3xl border border-plum-100 bg-white p-6 shadow-soft">
-              <h3 className="mb-4 font-display text-lg font-semibold">{s('downloads')}</h3>
+            <div className="mt-5 rounded-2xl border border-plum-100 bg-white p-5 shadow-soft sm:p-6 md:p-7">
+              <h3 className="mb-4 font-display text-lg font-semibold">{h('downloads')}</h3>
               <ul className="space-y-2">
                 {data.downloads.map((file, i) => (
                   <li key={i}>

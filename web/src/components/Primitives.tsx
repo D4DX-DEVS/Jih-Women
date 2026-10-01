@@ -2,6 +2,12 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useSite } from '../lib/site';
 
+/**
+ * The site's one content width: top bar, header, page banners, page content and
+ * footer all use it, so their left and right edges line up on every screen size.
+ */
+export const CONTAINER_CLASS = 'mx-auto w-full min-w-0 max-w-[1280px] px-4 sm:px-5 lg:px-8';
+
 export function Container({
   children,
   className = '',
@@ -9,7 +15,7 @@ export function Container({
   children: ReactNode;
   className?: string;
 }) {
-  return <div className={`mx-auto w-full min-w-0 max-w-[1200px] px-4 sm:px-5 lg:px-8 ${className}`}>{children}</div>;
+  return <div className={`${CONTAINER_CLASS} ${className}`}>{children}</div>;
 }
 
 export function Section({
@@ -74,6 +80,7 @@ export function SectionHeading({
   logo,
   align = 'start',
   invert = false,
+  size = 'md',
 }: {
   eyebrow?: string;
   title: string;
@@ -83,12 +90,14 @@ export function SectionHeading({
   action?: ReactNode;
   align?: 'start' | 'center';
   invert?: boolean;
+  /** `sm` sits under a smaller page title (programme pages) */
+  size?: 'md' | 'sm';
 }) {
   return (
     <div
-      className={`mb-6 flex flex-col gap-3 md:mb-8 md:flex-row md:items-end md:justify-between ${
-        align === 'center' ? 'text-center md:text-center' : ''
-      }`}
+      className={`flex flex-col gap-3 md:flex-row md:items-end md:justify-between ${
+        size === 'sm' ? 'mb-4 md:mb-5' : 'mb-6 md:mb-8'
+      } ${align === 'center' ? 'text-center md:text-center' : ''}`}
     >
       <div className={align === 'center' ? 'mx-auto w-full min-w-0 max-w-2xl' : 'w-full min-w-0 max-w-2xl'}>
         {(eyebrow || logo) && (
@@ -104,9 +113,11 @@ export function SectionHeading({
           </div>
         )}
         <h2
-          className={`w-full min-w-0 text-[1.3rem] font-semibold leading-[1.25] [overflow-wrap:anywhere] [text-wrap:wrap] sm:text-[1.45rem] md:text-[1.75rem] md:leading-tight ${
-            invert ? 'text-white' : 'text-plum-800'
-          }`}
+          className={`w-full min-w-0 font-semibold leading-[1.25] [overflow-wrap:anywhere] [text-wrap:wrap] md:leading-tight ${
+            size === 'sm'
+              ? 'text-[1.2rem] sm:text-[1.3rem] md:text-[1.45rem]'
+              : 'text-[1.3rem] sm:text-[1.45rem] md:text-[1.75rem]'
+          } ${invert ? 'text-white' : 'text-plum-800'}`}
         >
           {title}
         </h2>
@@ -193,11 +204,17 @@ export function PageHeader({
   description,
   breadcrumb,
   image,
+  compact = false,
+  titleSize = 'lg',
 }: {
   title: string;
   description?: string;
   breadcrumb?: { label: string; to?: string }[];
   image?: string;
+  /** Thinner band for text pages (Who We Are); same look, less height */
+  compact?: boolean;
+  /** `md` scales the title fluidly from ~22px (phones) to ~34px (desktop) */
+  titleSize?: 'lg' | 'md';
 }) {
   return (
     <header className="relative overflow-hidden bg-plum-800 text-white">
@@ -217,18 +234,18 @@ export function PageHeader({
       />
       <span className="absolute -end-24 -top-24 h-64 w-64 rounded-full bg-magenta-500/25 blur-3xl" />
 
-      <Container className="relative py-12 md:py-16">
+      <Container className={`relative ${compact ? 'py-5 sm:py-6 md:py-7' : 'py-12 md:py-16'}`}>
         {breadcrumb && breadcrumb.length > 0 && (
-          <nav className="mb-4 flex flex-wrap items-center gap-2 text-xs text-white/55">
+          <nav className={`${compact ? 'mb-2' : 'mb-4'} flex flex-wrap items-center gap-2 text-xs text-white/55`}>
             {breadcrumb.map((crumb, i) => (
               <span key={i} className="flex items-center gap-2">
                 {i > 0 && <span className="opacity-40">/</span>}
                 {crumb.to ? (
-                  <Link to={crumb.to} className="transition hover:text-white">
+                  <Link to={crumb.to} className="-my-2 inline-block py-2 transition hover:text-white">
                     {crumb.label}
                   </Link>
                 ) : (
-                  <span className="max-w-[220px] truncate text-white/85 sm:max-w-none">
+                  <span className="min-w-0 text-white/85 [overflow-wrap:anywhere]">
                     {crumb.label}
                   </span>
                 )}
@@ -236,12 +253,22 @@ export function PageHeader({
             ))}
           </nav>
         )}
-        <h1 className="w-full min-w-0 max-w-3xl text-[1.55rem] font-semibold leading-[1.25] [overflow-wrap:anywhere] [text-wrap:wrap] sm:text-[1.8rem] md:text-[2.6rem] md:leading-tight">
+        <h1
+          className={`w-full min-w-0 max-w-3xl font-semibold leading-[1.25] [overflow-wrap:anywhere] md:leading-tight ${
+            titleSize === 'md'
+              ? 'text-[clamp(1.375rem,1rem+1.6vw,2.125rem)] [text-wrap:balance]'
+              : 'text-[1.55rem] [text-wrap:wrap] sm:text-[1.8rem] md:text-[2.6rem]'
+          }`}
+        >
           {title}
         </h1>
-        <Rule className="mt-5" />
+        <Rule className={compact ? 'mt-3' : 'mt-5'} />
         {description && (
-          <p className="user-text mt-5 max-w-2xl text-[15px] leading-relaxed text-white/75">
+          <p
+            className={`user-text ${compact ? 'mt-3' : 'mt-5'} max-w-2xl leading-relaxed text-white/75 ${
+              titleSize === 'md' ? 'text-[14px] md:text-[15px]' : 'text-[15px]'
+            }`}
+          >
             {description}
           </p>
         )}

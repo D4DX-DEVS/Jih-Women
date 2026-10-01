@@ -89,15 +89,16 @@ router.get('/home', async (_req, res) => {
         .sort({ publishedAt: -1 })
         .limit(4)
         .lean(),
+      // Home shows up to three featured videos; the rest stay on the videos page
       VideoItem.find({ ...PUBLISHED, kind: 'video', featured: true })
         .sort({ order: 1, publishedAt: -1 })
-        .limit(4)
+        .limit(3)
         .lean(),
       Publication.find(PUBLISHED).sort({ order: 1, publishedAt: -1 }).limit(6).lean(),
       FocusArea.find(PUBLISHED).sort({ order: 1 }).limit(8).lean(),
       // $ne alone also matches documents where the field is absent
       Program.find({ ...PUBLISHED, bannerImage: { $exists: true, $nin: ['', null] } })
-        .select('title slug bannerImage externalUrl order')
+        .select('title slug bannerImage logoUrl externalUrl order')
         .sort({ order: 1 })
         .limit(6)
         .lean(),

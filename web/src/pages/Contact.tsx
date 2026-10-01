@@ -1,15 +1,15 @@
 import { useState } from 'react';
-import { Clock, Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
+import { Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
 import { apiPost } from '../lib/api';
 import { useSite } from '../lib/site';
-import { t } from '../lib/i18n';
 import { whatsappHref } from '../lib/format';
+import { OFFICE_ADDRESS, OFFICE_EMAIL, OFFICE_PHONE, telHref } from '../lib/contact';
 import { Button, Container, PageHeader, Section } from '../components/Primitives';
 
 const EMPTY = { name: '', email: '', phone: '', district: '', subject: '', message: '' };
 
 export default function Contact() {
-  const { lang, data, path, s, pageTitle } = useSite();
+  const { data, path, s, pageTitle } = useSite();
   const settings = data?.settings;
   const [form, setForm] = useState(EMPTY);
   const [status, setStatus] = useState<'idle' | 'sending' | 'done'>('idle');
@@ -30,22 +30,11 @@ export default function Contact() {
   };
 
   const details = [
-    {
-      Icon: MapPin,
-      label: s('officeAddress'),
-      value: t(settings?.address, lang),
-      href: '',
-    },
-    { Icon: Phone, label: s('phone'), value: settings?.phone ?? '', href: `tel:${settings?.phone ?? ''}` },
-    {
-      Icon: MessageCircle,
-      label: s('whatsapp'),
-      value: settings?.whatsapp ?? '',
-      href: whatsappHref(settings?.whatsapp ?? ''),
-    },
-    { Icon: Mail, label: s('email'), value: settings?.email ?? '', href: `mailto:${settings?.email ?? ''}` },
-    { Icon: Clock, label: s('workingHours'), value: t(settings?.workingHours, lang), href: '' },
-  ].filter((d) => Boolean(d.value));
+    { Icon: MapPin, label: 'Office Address', value: OFFICE_ADDRESS, href: '' },
+    { Icon: Phone, label: 'Phone', value: OFFICE_PHONE, href: telHref(OFFICE_PHONE) },
+    { Icon: MessageCircle, label: 'WhatsApp', value: OFFICE_PHONE, href: whatsappHref(OFFICE_PHONE) },
+    { Icon: Mail, label: 'Email', value: OFFICE_EMAIL, href: `mailto:${OFFICE_EMAIL}` },
+  ];
 
   const field = (
     key: keyof typeof EMPTY,
@@ -56,7 +45,7 @@ export default function Contact() {
       <label className="mb-1.5 block text-[12px] font-medium text-ink-muted">
         {label}
         {required ? <span className="ms-1 text-magenta-500">*</span> : (
-          <span className="ms-1 text-ink-faint">({s('optional')})</span>
+          <span className="ms-1 text-ink-faint">(Optional)</span>
         )}
       </label>
       {rows ? (
@@ -120,7 +109,7 @@ export default function Contact() {
 
             <div className="min-w-0">
               <div className="rounded-3xl border border-plum-100 bg-white p-5 shadow-soft sm:p-6 md:p-8">
-                <h2 className="font-display text-xl font-semibold">{s('contactForm')}</h2>
+                <h2 className="font-display text-xl font-semibold">Write to Us</h2>
 
                 {status === 'done' ? (
                   <div className="mt-6 rounded-2xl border border-magenta-200 bg-magenta-50 p-6 text-center">
@@ -129,17 +118,17 @@ export default function Contact() {
                       onClick={() => setStatus('idle')}
                       className="mt-3 text-[13px] font-semibold text-magenta-600 underline underline-offset-4"
                     >
-                      {s('contactForm')}
+                      Write to Us
                     </button>
                   </div>
                 ) : (
                   <form onSubmit={submit} className="mt-6 grid gap-4 sm:grid-cols-2">
-                    {field('name', s('yourName'), { required: true })}
-                    {field('phone', s('yourPhone'), { type: 'tel' })}
-                    {field('email', s('yourEmail'), { type: 'email' })}
-                    {field('district', s('district'))}
-                    {field('subject', s('subject'))}
-                    {field('message', s('message'), { required: true, rows: 5 })}
+                    {field('name', 'Your Name', { required: true })}
+                    {field('phone', 'Phone Number', { type: 'tel' })}
+                    {field('email', 'Email Address', { type: 'email' })}
+                    {field('district', 'District')}
+                    {field('subject', 'Subject')}
+                    {field('message', 'Message', { required: true, rows: 5 })}
 
                     {error && (
                       <p className="text-[13px] text-red-600 sm:col-span-2">{error}</p>

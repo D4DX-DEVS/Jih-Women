@@ -20,7 +20,7 @@ const GROUPS: { category: ExternalLink['category']; key: string }[] = [
 ];
 
 export default function Links() {
-  const { path, s, pageTitle } = useSite();
+  const { path, s, pageTitle, h } = useSite();
   const { data, loading, error, reload } = useApi<{ items: ExternalLink[] }>(
     '/api/site/external-links'
   );
@@ -46,7 +46,7 @@ export default function Links() {
               if (!items.length) return null;
               return (
                 <div key={group.category} className="mb-14 last:mb-0">
-                  <SectionHeading eyebrow={s('externalLinks')} title={s(group.key)} />
+                  <SectionHeading eyebrow={h('externalLinks')} title={h(group.key)} />
                   <div className="grid gap-4 md:grid-cols-2">
                     {items.map((link) => (
                       <LinkCard key={link._id} link={link} />

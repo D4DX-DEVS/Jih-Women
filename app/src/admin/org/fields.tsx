@@ -16,7 +16,7 @@ import type { Attachment, Bullet, Localized, MediaItem, Person } from '../shared
 export type Doc = Record<string, unknown>;
 
 export type FieldDef =
-  | { kind: 'localized'; path: string; label: string; required?: boolean; multiline?: boolean; rows?: number; hint?: string }
+  | { kind: 'localized'; path: string; label: string; required?: boolean; multiline?: boolean; rows?: number; hint?: string; onlyLang?: 'ml' | 'en' }
   | { kind: 'rich'; path: string; label: string; hint?: string }
   | { kind: 'text'; path: string; label: string; placeholder?: string; hint?: string; required?: boolean }
   | { kind: 'number'; path: string; label: string; hint?: string; required?: boolean }
@@ -106,6 +106,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
           multiline={def.multiline}
           rows={def.rows}
           hint={def.hint}
+          onlyLang={def.onlyLang}
           value={(getPath(doc, def.path) as Localized) ?? emptyLocalized()}
           onChange={(v) => set(def.path, v)}
         />
