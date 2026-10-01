@@ -4,7 +4,13 @@ import { apiPost } from '../lib/api';
 import { useSite } from '../lib/site';
 import { whatsappHref } from '../lib/format';
 import { OFFICE_ADDRESS, OFFICE_EMAIL, OFFICE_PHONE, telHref } from '../lib/contact';
-import { Button, Container, PageHeader, Section } from '../components/Primitives';
+import {
+  Button,
+  Container,
+  GradientText,
+  PageHeader,
+  Section,
+} from '../components/Primitives';
 
 const EMPTY = { name: '', email: '', phone: '', district: '', subject: '', message: '' };
 
@@ -109,7 +115,7 @@ export default function Contact() {
 
             <div className="min-w-0">
               <div className="rounded-3xl border border-plum-100 bg-white p-5 shadow-soft sm:p-6 md:p-8">
-                <h2 className="font-display text-xl font-semibold">Write to Us</h2>
+                <h2 className="font-display text-xl font-semibold"><GradientText>Write to Us</GradientText></h2>
 
                 {status === 'done' ? (
                   <div className="mt-6 rounded-2xl border border-magenta-200 bg-magenta-50 p-6 text-center">

@@ -324,12 +324,13 @@ export const PROGRAMS: CollectionConfig = {
      downloads, external link, type, order) is left as it is; a new programme gets the
      model defaults (published, major, order 0, slug from the name). The backend
      accepts the same fields, plus the list's Published toggle. */
-  editable: ['title', 'overview', 'logoUrl'],
+  editable: ['title', 'overview', 'logoUrl', 'gallery'],
   modalSize: 'lg',
   blank: () => ({
     title: emptyLocalized(),
     overview: emptyLocalized(),
     logoUrl: '',
+    gallery: [],
   }),
   fields: [
     { kind: 'heading', label: 'Programme information' },
@@ -344,6 +345,16 @@ export const PROGRAMS: CollectionConfig = {
       fit: 'contain',
       hint: 'Shown on the programme page, its card on the Programs page and the logo strip on the home page.',
       recommend: 'At least 240px tall, width proportional. Transparent PNG or SVG — shown uncropped.',
+    },
+    { kind: 'heading', label: 'Gallery' },
+    {
+      kind: 'gallery',
+      path: 'gallery',
+      label: 'Photos',
+      folder: 'programs',
+      accept: 'image/*',
+      hint: "This programme's own photos, shown in a grid on its page. Select several at once; reorder them with the arrows.",
+      recommend: 'Up to 2000px on the long edge, any shape; images are compressed to WebP on upload.',
     },
   ],
 };

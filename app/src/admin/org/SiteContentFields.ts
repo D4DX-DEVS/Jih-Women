@@ -64,7 +64,8 @@ const SECTIONS: SectionDef[] = [
     description: 'The organisation introduction beside the president’s message.',
     fields: ['label', 'heading', 'description'],
     hints: {
-      heading: 'Leave blank to use the organisation name.',
+      label: 'Shown above the heading. Leave English blank to show the Malayalam label.',
+      heading: 'Leave blank to use the organisation name. Leave English blank to show the Malayalam heading.',
       description: 'Leave blank to use the footer note.',
     },
   },

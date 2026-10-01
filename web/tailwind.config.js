@@ -66,11 +66,25 @@ export default {
         },
         'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
         'zoom-slow': { from: { transform: 'scale(1)' }, to: { transform: 'scale(1.07)' } },
+        'pop-in': { from: { opacity: '0', transform: 'scale(0.94)' }, to: { opacity: '1', transform: 'scale(1)' } },
+        'sheet-up': { from: { opacity: '0', transform: 'translateY(24px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+        'hero-zoom': { from: { transform: 'scale(1)' }, to: { transform: 'scale(1.05)' } },
+        'pop-up': {
+          '0%': { opacity: '0', transform: 'translateY(22px) scale(0.92)' },
+          '60%': { opacity: '1', transform: 'translateY(-4px) scale(1.015)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 0.6s cubic-bezier(0.22,1,0.36,1) both',
         'fade-in': 'fade-in 0.5s ease-out both',
         'zoom-slow': 'zoom-slow 9s ease-out both',
+        'pop-in': 'pop-in 0.35s cubic-bezier(0.22,1,0.36,1) both',
+        'sheet-up': 'sheet-up 0.3s cubic-bezier(0.22,1,0.36,1) both',
+        // 14s in, 14s back out (alternate), so the loop never jumps
+        'hero-zoom': 'hero-zoom 14s ease-in-out infinite alternate',
+        // `backwards`: holds the start frame during the delay, then lets hover effects work
+        'pop-up': 'pop-up 0.7s cubic-bezier(0.22,1,0.36,1) backwards',
       },
     },
   },
