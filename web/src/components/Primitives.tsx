@@ -1,17 +1,18 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
-import { Download } from 'lucide-react';
+import { Download, LayoutGrid, List } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
 import { formatBytes } from '../lib/format';
+import { useViewMode } from '../lib/view';
 import type { Attachment, Lang } from '../lib/types';
 
 /**
  * The site's one content width: top bar, header, page banners, page content and
  * footer all use it, so their left and right edges line up on every screen size.
  */
-export const CONTAINER_CLASS = 'mx-auto w-full min-w-0 max-w-[1280px] px-4 sm:px-5 lg:px-8';
+export const CONTAINER_CLASS = 'mx-auto w-full min-w-0 max-w-[1280px] px-3 sm:px-5 lg:px-8';
 
 export function Container({
   children,
@@ -41,7 +42,7 @@ export function Section({
     plum: 'bg-plum-800 text-white',
   };
   return (
-    <section id={id} className={`py-10 md:py-14 ${tones[tone]} ${className}`}>
+    <section id={id} className={`py-5 sm:py-10 md:py-14 ${tones[tone]} ${className}`}>
       {children}
     </section>
   );
@@ -74,7 +75,7 @@ export function ManagedSectionHeading({
 
 /** A section's single admin-managed logo, sized to sit beside its heading. */
 export function SectionLogo({ src }: { src: string }) {
-  return <img src={src} alt="" aria-hidden="true" className="h-7 w-auto max-w-[120px] shrink-0 object-contain" />;
+  return <img src={src} alt="" aria-hidden="true" className="h-5 w-auto max-w-[96px] shrink-0 object-contain sm:h-7 sm:max-w-[120px]" />;
 }
 
 export function SectionHeading({
@@ -100,14 +101,14 @@ export function SectionHeading({
 }) {
   return (
     <div
-      className={`flex flex-col gap-3 md:flex-row md:items-end md:justify-between ${
-        size === 'sm' ? 'mb-4 md:mb-5' : 'mb-6 md:mb-8'
+      className={`flex flex-col gap-2 sm:gap-3 md:flex-row md:items-end md:justify-between ${
+        size === 'sm' ? 'mb-2.5 sm:mb-4 md:mb-5' : 'mb-3 sm:mb-6 md:mb-8'
       } ${align === 'center' ? 'text-center md:text-center' : ''}`}
     >
       <div className={align === 'center' ? 'mx-auto w-full min-w-0 max-w-2xl' : 'w-full min-w-0 max-w-2xl'}>
         {(eyebrow || logo) && (
           <div
-            className={`mb-2 flex items-center gap-2 eyebrow ${align === 'center' ? 'justify-center' : ''} ${
+            className={`mb-1 flex items-center gap-2 eyebrow sm:mb-2 ${align === 'center' ? 'justify-center' : ''} ${
               invert ? 'text-magenta-300' : ''
             }`}
           >
@@ -122,15 +123,15 @@ export function SectionHeading({
         <h2
           className={`w-full min-w-0 font-semibold leading-[1.25] [overflow-wrap:anywhere] [text-wrap:wrap] md:leading-tight ${
             size === 'sm'
-              ? 'text-[1.2rem] sm:text-[1.3rem] md:text-[1.45rem]'
-              : 'text-[1.3rem] sm:text-[1.45rem] md:text-[1.75rem]'
+              ? 'text-[1rem] sm:text-[1.3rem] md:text-[1.45rem]'
+              : 'text-[1.05rem] sm:text-[1.45rem] md:text-[1.75rem]'
           } ${invert ? 'text-white' : 'text-plum-800'}`}
         >
           <GradientText light={invert}>{title}</GradientText>
         </h2>
         {description && (
           <p
-            className={`mt-2 text-[14.5px] leading-relaxed ${
+            className={`mt-1 text-[12.5px] leading-relaxed sm:mt-2 sm:text-[14.5px] ${
               invert ? 'text-white/70' : 'text-ink-muted'
             }`}
           >
@@ -153,9 +154,42 @@ export function GradientText({ children, light = false }: { children: ReactNode;
   return <span className={light ? 'text-brand-gradient-light' : 'text-brand-gradient'}>{children}</span>;
 }
 
+/**
+ * Phones only: a Cards / List switch for a listing screen. The choice is remembered and
+ * shared by every listing; tablets and desktop always show cards, so it is hidden there.
+ */
+export function ViewToggle() {
+  const { s } = useSite();
+  const { mode, setMode } = useViewMode();
+  const options = [
+    { value: 'card' as const, label: s('cardView'), Icon: LayoutGrid },
+    { value: 'list' as const, label: s('listView'), Icon: List },
+  ];
+  return (
+    <div className="mb-2.5 flex justify-end sm:hidden">
+      <div role="group" aria-label="View" className="inline-flex rounded-full border border-plum-100 bg-white p-0.5 shadow-soft">
+        {options.map(({ value, label, Icon }) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setMode(value)}
+            aria-pressed={mode === value}
+            className={`inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-[11.5px] font-medium transition ${
+              mode === value ? 'bg-magenta-500 text-white shadow-pink' : 'text-ink-muted'
+            }`}
+          >
+            <Icon size={13} />
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Small magenta rule used under headings in the reference design. */
 export function Rule({ className = '' }: { className?: string }) {
-  return <span className={`block h-[3px] w-12 rounded-full bg-magenta-500 ${className}`} />;
+  return <span className={`block h-0.5 w-9 rounded-full bg-magenta-500 sm:h-[3px] sm:w-12 ${className}`} />;
 }
 
 export function Button({
@@ -182,9 +216,9 @@ export function Button({
   const base =
     'inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all active:scale-[0.97] disabled:opacity-55 disabled:pointer-events-none';
   const sizes = {
-    sm: 'px-4 py-2 text-[13px]',
-    md: 'px-6 py-3 text-sm',
-    lg: 'px-8 py-3.5 text-[15px]',
+    sm: 'px-3.5 py-1.5 text-[12px] sm:px-4 sm:py-2 sm:text-[13px]',
+    md: 'px-4 py-2 text-[13px] sm:px-6 sm:py-3 sm:text-sm',
+    lg: 'px-5 py-2.5 text-sm sm:px-8 sm:py-3.5 sm:text-[15px]',
   };
   const variants = {
     primary: 'bg-magenta-500 text-white hover:bg-magenta-600 shadow-pink',
@@ -251,7 +285,7 @@ export function PageHeader({
       />
       <span className="absolute -end-24 -top-24 h-64 w-64 rounded-full bg-magenta-500/25 blur-3xl" />
 
-      <Container className={`relative ${compact ? 'py-5 sm:py-6 md:py-7' : 'py-8 sm:py-10 md:py-16'}`}>
+      <Container className={`relative ${compact ? 'py-3 sm:py-6 md:py-7' : 'py-4 sm:py-10 md:py-16'}`}>
         {breadcrumb && breadcrumb.length > 0 && (
           /* Tablet and desktop only: phones go straight to the title (no gap left behind) */
           <nav className={`${compact ? 'mb-2' : 'mb-4'} hidden flex-wrap items-center gap-2 text-xs text-white/55 md:flex`}>
@@ -274,18 +308,18 @@ export function PageHeader({
         <h1
           className={`w-full min-w-0 max-w-3xl font-semibold leading-[1.25] [overflow-wrap:anywhere] md:leading-tight ${
             titleSize === 'md'
-              ? 'text-[clamp(1.375rem,1rem+1.6vw,2.125rem)] [text-wrap:balance]'
-              : 'text-[1.55rem] [text-wrap:wrap] sm:text-[1.8rem] md:text-[2.6rem]'
+              ? 'text-[1.1rem] [text-wrap:balance] sm:text-[clamp(1.375rem,1rem+1.6vw,2.125rem)]'
+              : 'text-[1.2rem] [text-wrap:wrap] sm:text-[1.8rem] md:text-[2.6rem]'
           }`}
         >
           {/* The banner is dark, so the title uses the light version of the heading style */}
           <GradientText light>{title}</GradientText>
         </h1>
-        <Rule className={compact ? 'mt-3' : 'mt-5'} />
+        <Rule className={compact ? 'mt-2 sm:mt-3' : 'mt-2.5 sm:mt-5'} />
         {description && (
           <p
-            className={`user-text ${compact ? 'mt-3' : 'mt-5'} max-w-2xl leading-relaxed text-white/75 ${
-              titleSize === 'md' ? 'text-[14px] md:text-[15px]' : 'text-[15px]'
+            className={`user-text ${compact ? 'mt-2 sm:mt-3' : 'mt-2.5 sm:mt-5'} max-w-2xl leading-relaxed text-white/75 ${
+              titleSize === 'md' ? 'text-[12.5px] sm:text-[14px] md:text-[15px]' : 'text-[12.5px] sm:text-[15px]'
             }`}
           >
             {description}
@@ -299,9 +333,9 @@ export function PageHeader({
 export function Loading({ label }: { label?: string }) {
   const { s } = useSite();
   return (
-    <div className="flex flex-col items-center justify-center gap-3 py-20 text-ink-faint">
-      <span className="h-7 w-7 animate-spin rounded-full border-2 border-magenta-100 border-t-magenta-500" />
-      <span className="text-sm">{label ?? s('loading')}</span>
+    <div className="flex flex-col items-center justify-center gap-2 py-10 text-ink-faint sm:gap-3 sm:py-20">
+      <span className="h-6 w-6 animate-spin sm:h-7 sm:w-7 rounded-full border-2 border-magenta-100 border-t-magenta-500" />
+      <span className="text-[13px] sm:text-sm">{label ?? s('loading')}</span>
     </div>
   );
 }
@@ -309,8 +343,8 @@ export function Loading({ label }: { label?: string }) {
 export function EmptyState({ message }: { message?: string }) {
   const { s } = useSite();
   return (
-    <div className="rounded-3xl border border-dashed border-plum-200 bg-white/70 py-16 text-center">
-      <p className="text-sm text-ink-faint">{message ?? s('nothingHere')}</p>
+    <div className="rounded-2xl border border-dashed border-plum-200 bg-white/70 py-8 text-center sm:rounded-3xl sm:py-16">
+      <p className="text-[13px] text-ink-faint sm:text-sm">{message ?? s('nothingHere')}</p>
     </div>
   );
 }
@@ -318,13 +352,13 @@ export function EmptyState({ message }: { message?: string }) {
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   const { s } = useSite();
   return (
-    <div className="rounded-3xl border border-red-200 bg-red-50/70 py-14 text-center">
+    <div className="rounded-2xl border border-red-200 bg-red-50/70 py-8 text-center sm:rounded-3xl sm:py-14">
       <p className="font-medium text-red-800">{s('errorTitle')}</p>
-      <p className="mt-1 text-sm text-red-700/80">{message}</p>
+      <p className="mt-1 text-[13px] text-red-700/80 sm:text-sm">{message}</p>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="mt-4 rounded-full border border-red-300 px-5 py-2 text-sm font-medium text-red-800 hover:bg-red-100"
+          className="mt-3 rounded-full border border-red-300 px-4 py-1.5 text-[13px] font-medium text-red-800 hover:bg-red-100 sm:mt-4 sm:px-5 sm:py-2 sm:text-sm"
         >
           {s('retry')}
         </button>
@@ -380,21 +414,21 @@ export function Pagination({
   const { s } = useSite();
   if (pages <= 1) return null;
   return (
-    <div className="mt-10 flex items-center justify-center gap-3">
+    <div className="mt-6 flex items-center justify-center gap-3 sm:mt-10">
       <button
         onClick={() => onPage(page - 1)}
         disabled={page <= 1}
-        className="rounded-full border border-plum-200 px-5 py-2 text-sm font-medium transition hover:border-magenta-500 hover:text-magenta-600 disabled:opacity-40"
+        className="rounded-full border border-plum-200 px-4 py-1.5 text-[13px] font-medium transition hover:border-magenta-500 hover:text-magenta-600 disabled:opacity-40 sm:px-5 sm:py-2 sm:text-sm"
       >
         {s('previous')}
       </button>
-      <span className="text-sm text-ink-muted">
+      <span className="text-[13px] text-ink-muted sm:text-sm">
         {page} / {pages}
       </span>
       <button
         onClick={() => onPage(page + 1)}
         disabled={page >= pages}
-        className="rounded-full border border-plum-200 px-5 py-2 text-sm font-medium transition hover:border-magenta-500 hover:text-magenta-600 disabled:opacity-40"
+        className="rounded-full border border-plum-200 px-4 py-1.5 text-[13px] font-medium transition hover:border-magenta-500 hover:text-magenta-600 disabled:opacity-40 sm:px-5 sm:py-2 sm:text-sm"
       >
         {s('next')}
       </button>
@@ -424,9 +458,9 @@ export function ContentPanel({
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border border-plum-100 bg-gradient-to-b from-white to-[#fbf8fd] shadow-soft ${className}`}
+      className={`relative overflow-hidden rounded-xl border border-plum-100 bg-gradient-to-b from-white to-[#fbf8fd] shadow-soft sm:rounded-2xl ${className}`}
     >
-      <span className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-magenta-500 via-magenta-400 to-plum-500" aria-hidden="true" />
+      <span className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r sm:h-1 from-magenta-500 via-magenta-400 to-plum-500" aria-hidden="true" />
       <span
         className="pointer-events-none absolute -end-20 -top-20 h-56 w-56 rounded-full bg-magenta-100/40 blur-3xl"
         aria-hidden="true"
@@ -436,16 +470,16 @@ export function ContentPanel({
           aside ? (asideStart ? 'lg:grid-cols-[280px_minmax(0,1fr)]' : 'lg:grid-cols-[minmax(0,1fr)_280px]') : ''
         }`}
       >
-        <div className={`min-w-0 p-5 pt-6 sm:p-7 sm:pt-8 md:p-9 md:pt-10 ${aside && asideStart ? 'lg:order-2' : ''}`}>
+        <div className={`min-w-0 p-3.5 pt-4 sm:p-7 sm:pt-8 md:p-9 md:pt-10 ${aside && asideStart ? 'lg:order-2' : ''}`}>
           {children}
         </div>
         {aside && (
           <aside
-            className={`min-w-0 border-t border-plum-100 bg-plum-50/40 p-5 sm:p-7 lg:border-t-0 ${
+            className={`min-w-0 border-t border-plum-100 bg-plum-50/40 p-3.5 sm:p-7 lg:border-t-0 ${
               asideStart ? 'lg:order-1 lg:border-e' : 'lg:border-s'
             }`}
           >
-            <div className="space-y-6 lg:sticky lg:top-24">{aside}</div>
+            <div className="space-y-4 sm:space-y-6 lg:sticky lg:top-24">{aside}</div>
           </aside>
         )}
       </div>
@@ -472,13 +506,13 @@ export function PanelSection({
   className?: string;
 }) {
   return (
-    <section className={`border-t border-plum-100/80 pt-7 first:border-t-0 first:pt-0 [&+&]:mt-7 md:pt-8 md:[&+&]:mt-8 ${className}`}>
+    <section className={`border-t border-plum-100/80 pt-4 first:border-t-0 first:pt-0 [&+&]:mt-4 sm:pt-7 sm:[&+&]:mt-7 md:pt-8 md:[&+&]:mt-8 ${className}`}>
       {title && (
-        <header className="mb-4 flex min-w-0 items-center gap-3">
-          <span className="grid h-9 min-w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-magenta-50 to-plum-50 px-1.5 text-[12.5px] font-semibold text-magenta-600 ring-1 ring-inset ring-magenta-100">
+        <header className="mb-2.5 flex min-w-0 items-center gap-2.5 sm:mb-4 sm:gap-3">
+          <span className="grid h-7 min-w-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-magenta-50 to-plum-50 px-1.5 text-[11px] font-semibold text-magenta-600 ring-1 ring-inset ring-magenta-100 max-sm:[&_svg]:h-3.5 max-sm:[&_svg]:w-3.5 sm:h-9 sm:min-w-9 sm:rounded-xl sm:text-[12.5px]">
             {badge ? badge : Icon ? <Icon size={17} strokeWidth={2.1} /> : <span className="h-1.5 w-1.5 rounded-full bg-magenta-500" />}
           </span>
-          <h2 className="user-text min-w-0 font-display text-[1.1rem] font-semibold leading-snug text-plum-800 md:text-[1.25rem]">
+          <h2 className="user-text min-w-0 font-display text-[0.95rem] font-semibold leading-snug text-plum-800 sm:text-[1.1rem] md:text-[1.25rem]">
             <GradientText>{title}</GradientText>
           </h2>
         </header>
@@ -491,7 +525,7 @@ export function PanelSection({
 /** A small heading for the side column of a `ContentPanel`. */
 export function PanelAsideHeading({ children }: { children: ReactNode }) {
   return (
-    <h3 className="mb-3 flex items-center gap-2 font-sans text-[11.5px] font-semibold uppercase tracking-[0.14em] text-plum-700">
+    <h3 className="mb-2 flex items-center gap-2 font-sans text-[11px] sm:mb-3 sm:text-[11.5px] font-semibold uppercase tracking-[0.14em] text-plum-700">
       <span className="h-px w-4 bg-magenta-400" aria-hidden="true" />
       <GradientText>{children}</GradientText>
     </h3>
@@ -508,9 +542,9 @@ export function DownloadList({ files, lang }: { files: Attachment[]; lang: Lang 
             href={file.url}
             target="_blank"
             rel="noreferrer"
-            className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-2.5 text-sm transition hover:bg-magenta-50/70"
+            className="group -mx-2 flex items-center gap-2.5 rounded-lg px-2 py-2 text-[13px] transition hover:bg-magenta-50/70 sm:gap-3 sm:py-2.5 sm:text-sm"
           >
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-magenta-50 text-magenta-600 transition group-hover:bg-magenta-500 group-hover:text-white">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-magenta-50 text-magenta-600 transition group-hover:bg-magenta-500 group-hover:text-white sm:h-8 sm:w-8">
               <Download size={15} />
             </span>
             <span className="min-w-0 flex-1 truncate font-medium text-ink/85">
@@ -527,17 +561,17 @@ export function DownloadList({ files, lang }: { files: Attachment[]; lang: Lang 
 /** A person (leader, speaker) as an avatar + name row, without a box of its own. */
 export function PersonRow({ name, role, photo }: { name: string; role?: string; photo?: string }) {
   return (
-    <div className="flex min-w-0 items-center gap-3.5">
+    <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5">
       {photo ? (
-        <img src={photo} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-white shadow-soft" />
+        <img src={photo} alt="" loading="lazy" className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-white shadow-soft sm:h-14 sm:w-14" />
       ) : (
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-gradient-to-br from-magenta-50 to-plum-50 font-display text-lg font-semibold text-magenta-600 ring-2 ring-white">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-magenta-50 to-plum-50 font-display text-base font-semibold text-magenta-600 ring-2 ring-white sm:h-14 sm:w-14 sm:text-lg">
           {(name || '?').charAt(0)}
         </span>
       )}
       <div className="min-w-0">
-        <div className="truncate font-display text-[15px] font-semibold text-plum-800">{name}</div>
-        {role && <div className="truncate text-[13px] text-ink-muted">{role}</div>}
+        <div className="truncate font-display text-[13.5px] font-semibold text-plum-800 sm:text-[15px]">{name}</div>
+        {role && <div className="truncate text-[12px] text-ink-muted sm:text-[13px]">{role}</div>}
       </div>
     </div>
   );

@@ -107,6 +107,8 @@ const STRINGS: Dict = {
   close: { ml: 'അടയ്ക്കുക', en: 'Close' },
   loading: { ml: 'ലോഡ് ചെയ്യുന്നു…', en: 'Loading…' },
   nothingHere: { ml: 'ഉള്ളടക്കം ലഭ്യമല്ല.', en: 'Nothing here yet.' },
+  cardView: { ml: 'കാർഡ്', en: 'Cards' },
+  listView: { ml: 'ലിസ്റ്റ്', en: 'List' },
   notFoundTitle: { ml: 'പേജ് കണ്ടെത്താനായില്ല', en: 'Page not found' },
   notFoundBody: {
     ml: 'നിങ്ങൾ തിരയുന്ന പേജ് നീക്കം ചെയ്യപ്പെട്ടതോ വിലാസം തെറ്റായതോ ആകാം.',

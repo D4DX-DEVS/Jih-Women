@@ -65,11 +65,11 @@ export default function BackToTop() {
       tabIndex={visible ? 0 : -1}
       aria-hidden={!visible}
       style={{ '--lift': `${lift}px` } as React.CSSProperties}
-      className={`fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+var(--lift))] end-4 z-40 grid h-11 w-11 place-items-center rounded-full bg-magenta-500 text-white shadow-pink transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-magenta-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-magenta-400 active:scale-95 motion-reduce:transition-none md:bottom-[calc(1.5rem+var(--lift))] md:end-6 ${
+      className={`fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom)+var(--lift))] end-3 z-40 grid h-9 w-9 place-items-center rounded-full bg-magenta-500 text-white shadow-pink transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-magenta-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-magenta-400 active:scale-95 motion-reduce:transition-none md:bottom-[calc(1.5rem+var(--lift))] md:end-6 md:h-11 md:w-11 ${
         visible ? 'pointer-events-auto scale-100 opacity-100' : 'pointer-events-none scale-75 opacity-0'
       }`}
     >
-      <ArrowUp size={19} strokeWidth={2.4} />
+      <ArrowUp size={17} strokeWidth={2.4} />
     </button>
   );
 }

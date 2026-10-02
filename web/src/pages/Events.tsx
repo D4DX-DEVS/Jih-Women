@@ -26,8 +26,10 @@ import {
   PersonRow,
   RichText,
   Section,
+  ViewToggle,
 } from '../components/Primitives';
 import { EventCard, GalleryGrid } from '../components/Cards';
+import { useViewMode } from '../lib/view';
 import NotFound from './NotFound';
 import type { OrgEvent, Paged } from '../lib/types';
 
@@ -35,6 +37,7 @@ export function EventsIndex() {
   const { path, s, pageTitle } = useSite();
   const [scope, setScope] = useState<'upcoming' | 'past'>('upcoming');
   const [page, setPage] = useState(1);
+  const { view } = useViewMode();
   const { data, loading, error, reload } = useApi<Paged<OrgEvent>>(
     `/api/site/events?scope=${scope}&page=${page}&limit=12`
   );
@@ -52,7 +55,8 @@ export function EventsIndex() {
       />
       <Section tone="mist">
         <Container>
-          <div className="mb-8 flex gap-2">
+          <ViewToggle />
+          <div className="mb-4 flex gap-1.5 sm:mb-8 sm:gap-2">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
@@ -60,7 +64,7 @@ export function EventsIndex() {
                   setScope(tab.key);
                   setPage(1);
                 }}
-                className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+                className={`rounded-full px-4 py-1.5 text-[13px] font-semibold transition sm:px-5 sm:py-2.5 sm:text-sm ${
                   scope === tab.key
                     ? 'bg-magenta-500 text-white shadow-soft'
                     : 'border border-plum-200 text-ink-muted hover:border-magenta-300'
@@ -79,9 +83,9 @@ export function EventsIndex() {
             <EmptyState />
           ) : (
             <>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className={`grid gap-2 sm:grid-cols-1 sm:gap-4 md:grid-cols-2 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
                 {data.items.map((event) => (
-                  <EventCard key={event._id} event={event} />
+                  <EventCard key={event._id} event={event} view={view} />
                 ))}
               </div>
               <Pagination page={data.page} pages={data.pages} onPage={setPage} />
@@ -131,9 +135,9 @@ export function EventDetail() {
           <ContentPanel
             aside={
               <>
-                <dl className="space-y-4 text-sm">
+                <dl className="space-y-3 text-[13px] sm:space-y-4 sm:text-sm">
                   <div className="flex gap-3">
-                    <Calendar size={17} className="mt-0.5 shrink-0 text-magenta-500" />
+                    <Calendar size={16} className="mt-0.5 shrink-0 text-magenta-500" />
                     <div>
                       <dt className="text-[11px] uppercase tracking-wider text-ink-faint">{s('date')}</dt>
                       <dd className="mt-0.5 font-medium">{formatDateRange(data.startDate, data.endDate, lang)}</dd>
@@ -189,7 +193,7 @@ export function EventDetail() {
             {(data.posterImage || t(data.description, lang)) && (
               <PanelSection>
                 {data.posterImage && (
-                  <img src={data.posterImage} alt="" className="mb-7 w-full rounded-xl" />
+                  <img src={data.posterImage} alt="" className="mb-4 w-full rounded-lg sm:mb-7 sm:rounded-xl" />
                 )}
                 <RichText html={t(data.description, lang)} />
               </PanelSection>
@@ -197,7 +201,7 @@ export function EventDetail() {
 
             {data.speakers?.length > 0 && (
               <PanelSection title={h('speakers')} icon={Mic}>
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
                   {data.speakers.map((person, i) => (
                     <PersonRow key={i} name={t(person.name, lang)} role={t(person.designation, lang)} photo={person.photo} />
                   ))}
@@ -238,7 +242,7 @@ function EventRegistrationForm({ slug }: { slug: string }) {
 
   if (status === 'done') {
     return (
-      <p className="rounded-xl bg-magenta-50 px-4 py-3 text-center text-sm font-medium text-plum-800">
+      <p className="rounded-xl bg-magenta-50 px-3 py-2.5 text-center text-[13px] font-medium text-plum-800 sm:px-4 sm:py-3 sm:text-sm">
         {s('registrationSent')}
       </p>
     );
@@ -246,7 +250,7 @@ function EventRegistrationForm({ slug }: { slug: string }) {
 
   const field = (key: keyof typeof form, label: string, required = false, type = 'text') => (
     <div>
-      <label className="mb-1.5 block text-[12px] font-medium text-ink-muted">
+      <label className="mb-1 block text-[11.5px] font-medium text-ink-muted sm:mb-1.5 sm:text-[12px]">
         {label}
         {required && <span className="ms-1 text-magenta-500">*</span>}
       </label>
@@ -255,7 +259,7 @@ function EventRegistrationForm({ slug }: { slug: string }) {
         required={required}
         value={form[key]}
         onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-        className="w-full rounded-xl border border-plum-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-magenta-500"
+        className="w-full rounded-lg border border-plum-200 bg-white px-3 py-2 text-[13px] outline-none transition focus:border-magenta-500 sm:rounded-xl sm:px-3.5 sm:py-2.5 sm:text-sm"
       />
     </div>
   );
@@ -263,7 +267,7 @@ function EventRegistrationForm({ slug }: { slug: string }) {
   return (
     <form onSubmit={submit}>
       <PanelAsideHeading>{h('register')}</PanelAsideHeading>
-      <div className="space-y-3">
+      <div className="space-y-2.5 sm:space-y-3">
         {field('name', s('yourName'), true)}
         {field('phone', s('yourPhone'), true, 'tel')}
         {field('email', s('yourEmail'), false, 'email')}
@@ -271,7 +275,7 @@ function EventRegistrationForm({ slug }: { slug: string }) {
         {field('place', s('place'))}
       </div>
       {error && <p className="mt-3 text-[13px] text-red-600">{error}</p>}
-      <Button type="submit" disabled={status === 'sending'} className="mt-5 w-full">
+      <Button type="submit" disabled={status === 'sending'} className="mt-4 w-full sm:mt-5">
         {status === 'sending' ? s('sending') : s('register')}
       </Button>
     </form>
