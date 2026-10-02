@@ -1,12 +1,12 @@
 import { useSite } from '../lib/site';
-import { Button, Container } from '../components/Primitives';
+import { Button, Container, GradientText } from '../components/Primitives';
 
 export default function NotFound() {
   const { path, s, h } = useSite();
   return (
     <Container className="flex min-h-[55vh] flex-col items-center justify-center py-20 text-center">
       <span className="font-display text-6xl font-bold text-plum-200">404</span>
-      <h1 className="mt-5 font-display text-2xl font-semibold">{h('notFoundTitle')}</h1>
+      <h1 className="mt-5 font-display text-2xl font-semibold"><GradientText>{h('notFoundTitle')}</GradientText></h1>
       <p className="mt-3 max-w-md text-[15px] leading-relaxed text-ink-muted">{s('notFoundBody')}</p>
       <Button to={path('/')} className="mt-7">
         {s('backHome')}

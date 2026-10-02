@@ -1,11 +1,9 @@
 import { useMemo } from 'react';
-import { RichText } from './Primitives';
+import type { LucideIcon } from 'lucide-react';
+import { PanelSection, RichText } from './Primitives';
 
 /** One card's worth of the page body. `heading` and `badge` are lifted from the content itself. */
 type ContentSection = { heading: string; badge: string; html: string; textLength: number };
-
-/* A section this short can share a row with the next short one on wider screens */
-const SHORT_SECTION = 650;
 
 const SEPARATOR = /^[-–—_*•]{3,}$/;
 /* "01 | Title", "2. Title" or "3) Title" on a line of its own */
@@ -88,67 +86,38 @@ export function splitContentSections(html: string): ContentSection[] {
 }
 
 /**
- * Informational page body as a stack of content cards. Consecutive short
- * sections pair up two to a row from md; longer ones take the full width.
+ * Informational page body as sections of the page's one content card
+ * (`ContentPanel`): each section the content defines gets its own heading and is
+ * separated from the next by a divider — no box per section. `firstTitle` names
+ * an opening section that has no heading of its own (e.g. "Overview").
  */
-export default function ContentCards({ html, size = 'md' }: { html: string; size?: 'md' | 'sm' }) {
-  /* `sm`: tighter cards under a section heading (programme pages); card titles become h3 */
-  const sm = size === 'sm';
-  const Title = sm ? 'h3' : 'h2';
+export default function ContentSections({
+  html,
+  firstTitle,
+  firstIcon,
+}: {
+  html: string;
+  firstTitle?: string;
+  firstIcon?: LucideIcon;
+}) {
   const sections = useMemo(() => splitContentSections(html), [html]);
   if (!sections.length) return null;
 
-  // Pair short sections in reading order (never reorder content to fill gaps)
-  const wide: boolean[] = [];
-  for (let i = 0; i < sections.length; i++) {
-    const short = sections[i].textLength <= SHORT_SECTION;
-    const nextShort = i + 1 < sections.length && sections[i + 1].textLength <= SHORT_SECTION;
-    if (short && nextShort) {
-      wide.push(false, false);
-      i++;
-    } else {
-      wide.push(true);
-    }
-  }
-
   return (
-    // `sm`: a short card paired with a long one keeps its own height instead of stretching
-    <div className={`grid gap-4 md:grid-cols-2 md:gap-5 ${sm ? 'md:items-start' : ''}`}>
-      {sections.map((section, i) => (
-        <article
-          key={i}
-          className={`min-w-0 rounded-2xl border border-plum-100 bg-white shadow-soft ${sm ? 'p-5 md:p-6' : 'p-5 sm:p-6 md:p-7'} ${
-            wide[i] ? 'md:col-span-2' : ''
-          }`}
-        >
-          {section.heading && (
-            <header className={`border-b border-plum-100/80 ${sm ? 'mb-3.5 pb-3' : 'mb-4 pb-3.5'}`}>
-              <div className="flex min-w-0 items-start gap-3">
-                {section.badge ? (
-                  <span className="mt-0.5 grid h-7 min-w-7 shrink-0 place-items-center rounded-lg bg-magenta-50 px-1.5 text-[12px] font-semibold text-magenta-600">
-                    {section.badge}
-                  </span>
-                ) : (
-                  <span className={`h-4 w-1 shrink-0 rounded-full bg-magenta-400 ${sm ? 'mt-1' : 'mt-2'}`} aria-hidden="true" />
-                )}
-                <Title
-                  className={`user-text min-w-0 font-display font-semibold leading-snug text-plum-800 ${
-                    sm ? 'text-[1rem] md:text-[1.1rem]' : 'text-[1.1rem] md:text-[1.25rem]'
-                  }`}
-                >
-                  {section.heading}
-                </Title>
-              </div>
-            </header>
-          )}
-          {section.html && (
-            <RichText
-              html={section.html}
-              className={`content-card-body ${sm ? 'text-[14.5px] leading-[1.8] md:text-[15px]' : ''}`}
-            />
-          )}
-        </article>
-      ))}
-    </div>
+    <>
+      {sections.map((section, i) => {
+        const heading = section.heading || (i === 0 ? firstTitle : undefined);
+        return (
+          <PanelSection
+            key={i}
+            title={heading}
+            badge={section.badge || undefined}
+            icon={i === 0 && !section.heading ? firstIcon : undefined}
+          >
+            {section.html && <RichText html={section.html} className="content-card-body" />}
+          </PanelSection>
+        );
+      })}
+    </>
   );
 }

@@ -158,6 +158,7 @@ const STRINGS: Dict = {
   majorProgrammes: { ml: 'പ്രധാന പദ്ധതികൾ', en: 'Major Programmes' },
   otherProgrammes: { ml: 'മറ്റ് പദ്ധതികൾ', en: 'Other Programmes' },
   relatedPosts: { ml: 'അനുബന്ധ വാർത്തകൾ', en: 'Related posts' },
+  relatedVideos: { ml: 'അനുബന്ധ വീഡിയോകൾ', en: 'Related Videos' },
   publishedOn: { ml: 'പ്രസിദ്ധീകരിച്ചത്', en: 'Published' },
   source: { ml: 'ഉറവിടം', en: 'Source' },
   author: { ml: 'രചയിതാവ്', en: 'Author' },
@@ -196,6 +197,7 @@ const STRINGS: Dict = {
   visionMission: { ml: 'ദർശനവും ദൗത്യവും', en: 'Our Vision & Mission' },
   readFullMessage: { ml: 'പൂർണ്ണ സന്ദേശം വായിക്കുക', en: 'Read the full message' },
   skipToContent: { ml: 'ഉള്ളടക്കത്തിലേക്ക് പോകുക', en: 'Skip to content' },
+  backToTop: { ml: 'മുകളിലേക്ക്', en: 'Back to top' },
 
   footerWing: { ml: 'വനിതാ വിഭാഗം', en: "Women's Wing" },
   footerKerala: { ml: 'കേരള', en: 'Kerala' },

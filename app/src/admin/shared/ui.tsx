@@ -764,6 +764,7 @@ export function GalleryEditor({
   onError,
   hint,
   recommend,
+  accept = 'image/*,video/*',
 }: {
   label: string;
   value: MediaItem[];
@@ -773,16 +774,23 @@ export function GalleryEditor({
   onError?: (m: string) => void;
   hint?: string;
   recommend?: ReactNode;
+  /** File types the picker offers (e.g. `image/*` for photo-only galleries) */
+  accept?: string;
 }) {
   const items = value ?? [];
   const [busy, setBusy] = useState(false);
+  /* Upload progress while several files go up one after another */
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const inputId = useId();
 
   const addFiles = async (files: FileList | null) => {
     if (!files || !files.length) return;
     setBusy(true);
     const added: MediaItem[] = [];
-    for (const file of Array.from(files)) {
+    const list = Array.from(files);
+    setProgress({ done: 0, total: list.length });
+    for (const [n, file] of list.entries()) {
+      setProgress({ done: n, total: list.length });
       try {
         const res = await uploadAsset(file, folder, token);
         added.push({
@@ -797,6 +805,7 @@ export function GalleryEditor({
     }
     if (added.length) onChange([...items, ...added]);
     setBusy(false);
+    setProgress(null);
   };
 
   const move = (from: number, to: number) => {
@@ -865,13 +874,26 @@ export function GalleryEditor({
           htmlFor={inputId}
           className="grid min-h-[128px] cursor-pointer place-items-center rounded-lg border border-dashed border-[#d3d7e4] text-[12px] text-foreground/45 transition hover:border-[#e6187e]/50 hover:bg-[#fdf2f8] hover:text-[#e6187e]"
         >
-          {busy ? <Spinner /> : '+ Add media'}
+          {busy ? (
+            <span className="flex flex-col items-center gap-2">
+              <Spinner />
+              {progress && progress.total > 1 && (
+                <span>
+                  Uploading {Math.min(progress.done + 1, progress.total)} of {progress.total}…
+                </span>
+              )}
+            </span>
+          ) : accept === 'image/*' ? (
+            '+ Add photos'
+          ) : (
+            '+ Add media'
+          )}
         </label>
         <input
           id={inputId}
           type="file"
           multiple
-          accept="image/*,video/*"
+          accept={accept}
           className="hidden"
           onChange={(e) => {
             addFiles(e.target.files);

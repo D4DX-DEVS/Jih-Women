@@ -24,7 +24,7 @@ export type FieldDef =
   | { kind: 'select'; path: string; label: string; options: { value: string; label: string }[]; hint?: string; required?: boolean }
   | { kind: 'toggle'; path: string; label: string; description?: string }
   | { kind: 'asset'; path: string; label: string; folder: string; accept?: string; preview?: 'image' | 'file'; fit?: 'cover' | 'contain'; hint?: string; recommend?: string; required?: boolean }
-  | { kind: 'gallery'; path: string; label: string; folder: string; hint?: string; recommend?: string }
+  | { kind: 'gallery'; path: string; label: string; folder: string; hint?: string; recommend?: string; accept?: string }
   | { kind: 'attachments'; path: string; label: string; folder: string; hint?: string; recommend?: string }
   | { kind: 'bullets'; path: string; label: string; hint?: string }
   | { kind: 'people'; path: string; label: string; folder: string; hint?: string; recommend?: string }
@@ -215,6 +215,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
           hint={def.hint}
           recommend={def.recommend}
           folder={def.folder}
+          accept={def.accept}
           token={token}
           onError={onError}
           value={(getPath(doc, def.path) as MediaItem[]) ?? []}

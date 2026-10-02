@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import { useParams } from 'react-router';
-import { Download, ExternalLink as ExternalLinkIcon } from 'lucide-react';
+import { CalendarDays, Download, ExternalLink as ExternalLinkIcon, Images } from 'lucide-react';
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
-import { formatBytes, formatDate } from '../lib/format';
+import { formatDate } from '../lib/format';
 import {
   Container,
+  ContentPanel,
+  DownloadList,
   EmptyState,
   ErrorState,
+  GradientText,
   Loading,
   PageHeader,
   Pagination,
+  PanelSection,
   RichText,
   Section,
   SectionHeading,
@@ -44,7 +48,7 @@ function MediaHeading({ title }: { title: string }) {
     <div className="mb-6 flex items-center justify-center gap-3 md:mb-8">
       <span className="h-px w-8 shrink-0 bg-magenta-300 sm:w-12" aria-hidden="true" />
       <h1 className="min-w-0 text-center font-display text-[1.5rem] font-semibold leading-tight text-plum-800 [overflow-wrap:anywhere] md:text-[1.9rem]">
-        {title}
+        <GradientText>{title}</GradientText>
       </h1>
       <span className="h-px w-8 shrink-0 bg-magenta-300 sm:w-12" aria-hidden="true" />
     </div>
@@ -124,90 +128,70 @@ export function MediaDetail() {
         ]}
       />
       <Section tone="mist">
-        <Container className="max-w-3xl">
-          <div className="mb-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-ink-muted">
-            <span>
-              {s('publishedOn')}: {formatDate(data.publishedAt, lang)}
-            </span>
-            {t(data.author, lang) && (
-              <span>
-                {s('author')}: {t(data.author, lang)}
-              </span>
-            )}
-            {data.source && (
-              <span>
-                {s('source')}: {data.source}
-              </span>
-            )}
-          </div>
-
-          {t(data.excerpt, lang) && (
-            <p className="mb-7 border-s-4 border-magenta-300 ps-5 text-[16px] font-medium leading-relaxed text-ink/80">
-              {t(data.excerpt, lang)}
-            </p>
-          )}
-
-          <RichText html={t(data.body, lang)} />
-
-          {data.sourceUrl && (
-            <a
-              href={data.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-magenta-600 underline underline-offset-4"
-            >
-              {s('source')}
-              <ExternalLinkIcon size={14} />
-            </a>
-          )}
-
-          {data.tags?.length > 0 && (
-            <div className="mt-8 flex flex-wrap gap-2">
-              {data.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-magenta-50 px-3 py-1 text-[12px] font-medium text-magenta-600"
-                >
-                  #{tag}
+        <Container className="max-w-4xl">
+          {/* One content card: details, summary and story, then downloads and photos */}
+          <ContentPanel>
+            <PanelSection>
+              <div className="mb-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-plum-100/80 pb-4 text-[13px] text-ink-muted">
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarDays size={14} className="text-magenta-500" />
+                  {s('publishedOn')}: {formatDate(data.publishedAt, lang)}
                 </span>
-              ))}
-            </div>
-          )}
+                {t(data.author, lang) && (
+                  <span>
+                    {s('author')}: {t(data.author, lang)}
+                  </span>
+                )}
+                {data.source && (
+                  <span>
+                    {s('source')}: {data.source}
+                  </span>
+                )}
+              </div>
 
-          {data.downloads?.length > 0 && (
-            <div className="mt-10 rounded-3xl border border-plum-100 bg-white p-6 shadow-soft">
-              <h3 className="mb-4 font-display text-base font-semibold">{h('downloads')}</h3>
-              <ul className="space-y-2">
-                {data.downloads.map((file, i) => (
-                  <li key={i}>
-                    <a
-                      href={file.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition hover:bg-magenta-50"
-                    >
-                      <Download size={15} className="shrink-0 text-magenta-600" />
-                      <span className="min-w-0 flex-1 truncate">
-                        {t(file.title, lang) || file.url.split('/').pop()}
-                      </span>
-                      {file.sizeBytes > 0 && (
-                        <span className="shrink-0 text-[11px] text-ink-faint">
-                          {formatBytes(file.sizeBytes)}
-                        </span>
-                      )}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+              {t(data.excerpt, lang) && (
+                <p className="user-text mb-7 rounded-e-xl border-s-4 border-magenta-400 bg-magenta-50/50 py-3 pe-4 ps-5 text-[16px] font-medium leading-relaxed text-ink/80">
+                  {t(data.excerpt, lang)}
+                </p>
+              )}
 
-          {data.gallery?.length > 0 && (
-            <div className="mt-10">
-              <h3 className="mb-4 font-display text-base font-semibold">{h('gallery')}</h3>
-              <GalleryGrid items={data.gallery} />
-            </div>
-          )}
+              <RichText html={t(data.body, lang)} />
+
+              {data.sourceUrl && (
+                <a
+                  href={data.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-magenta-600 underline underline-offset-4"
+                >
+                  {s('source')}
+                  <ExternalLinkIcon size={14} />
+                </a>
+              )}
+
+              {data.tags?.length > 0 && (
+                <div className="mt-8 flex flex-wrap gap-2">
+                  {data.tags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-magenta-50 px-3 py-1 text-[12px] font-medium text-magenta-600">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </PanelSection>
+
+            {data.downloads?.length > 0 && (
+              <PanelSection title={h('downloads')} icon={Download}>
+                <DownloadList files={data.downloads} lang={lang} />
+              </PanelSection>
+            )}
+
+            {data.gallery?.length > 0 && (
+              <PanelSection title={h('gallery')} icon={Images}>
+                <GalleryGrid items={data.gallery} />
+              </PanelSection>
+            )}
+          </ContentPanel>
         </Container>
       </Section>
 
@@ -335,12 +319,12 @@ export function AlbumDetail() {
       />
       <Section tone="mist">
         <Container>
-          {data.eventDate && (
-            <p className="mb-6 text-[13px] uppercase tracking-wider text-magenta-500">
-              {formatDate(data.eventDate, lang)}
-            </p>
-          )}
-          {data.items?.length ? <GalleryGrid items={data.items} /> : <EmptyState />}
+          {/* One content card holding the album's photos */}
+          <ContentPanel>
+            <PanelSection title={data.eventDate ? formatDate(data.eventDate, lang) : undefined} icon={CalendarDays}>
+              {data.items?.length ? <GalleryGrid items={data.items} /> : <EmptyState />}
+            </PanelSection>
+          </ContentPanel>
         </Container>
       </Section>
     </>

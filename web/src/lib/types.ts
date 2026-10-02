@@ -199,6 +199,8 @@ export type Program = {
   isMajor: boolean;
   externalUrl: string;
   externalLabel: Localized;
+  /** Videos whose titles name this programme (programme detail only) */
+  relatedVideos?: VideoItem[];
 };
 
 export type Leader = {
@@ -331,7 +333,7 @@ export type NavPayload = {
   settings: SiteSettings;
   nav: {
     departments: { _id: string; slug: string; title: Localized }[];
-    programs: { _id: string; slug: string; title: Localized; externalUrl: string }[];
+    programs: { _id: string; slug: string; title: Localized; logoUrl?: string; externalUrl: string }[];
   };
 };
 
@@ -346,6 +348,8 @@ export type HomePayload = {
   publications: Publication[];
   focusAreas: FocusArea[];
   programBanners: ProgramBanner[];
+  /** Photos for the home Photo Gallery (album and programme gallery images) */
+  galleryPhotos?: MediaItem[];
 };
 
 export type SearchResult = {

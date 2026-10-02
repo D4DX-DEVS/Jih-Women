@@ -2,40 +2,24 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router';
 import {
-  BookOpen,
   ChevronDown,
   ChevronRight,
-  Download,
   Facebook,
-  History as HistoryIcon,
-  Home,
-  Images,
   Instagram,
-  Lightbulb,
   Menu,
-  Phone,
-  ScrollText,
   Search,
   Sparkles,
-  Target,
   Twitter,
-  Users,
-  Video,
   X,
   Youtube,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { useSite } from '../lib/site';
 import { str, t } from '../lib/i18n';
-import type { Lang } from '../lib/types';
+import { buildNavItems, type NavItem } from '../lib/nav';
 import { CONTAINER_CLASS } from './Primitives';
 
 /* Same width and padding as every page section, so the edges line up */
 const SHELL = CONTAINER_CLASS;
-
-/** `icon` is shown in the mobile menu only; the desktop nav is text. */
-type NavLeaf = { label: string; to: string; icon?: LucideIcon };
-type NavItem = { label: string; to?: string; icon?: LucideIcon; children?: NavLeaf[] };
 
 export default function Header() {
   const { lang, data, path } = useSite();
@@ -71,33 +55,10 @@ export default function Header() {
 
   const settings = data?.settings;
 
-  const buildItems = (navLang: Lang): NavItem[] => [
-    { label: str('home', navLang), to: path('/'), icon: Home },
-    {
-      label: str('aboutUs', navLang),
-      children: [
-        { label: str('history', navLang), to: path('/who-we-are/history'), icon: HistoryIcon },
-        { label: str('ideology', navLang), to: path('/who-we-are/ideology'), icon: Lightbulb },
-        { label: str('objectives', navLang), to: path('/who-we-are/objectives'), icon: Target },
-        { label: str('constitution', navLang), to: path('/who-we-are/constitution'), icon: ScrollText },
-      ],
-    },
-    {
-      label: str('media', navLang),
-      children: [
-        { label: str('videos', navLang), to: path('/media/videos'), icon: Video },
-        { label: str('photoGallery', navLang), to: path('/media/gallery'), icon: Images },
-        { label: str('downloads', navLang), to: path('/media/downloads'), icon: Download },
-        { label: str('publications', navLang), to: path('/publications'), icon: BookOpen },
-      ],
-    },
-    { label: str('leaders', navLang), to: path('/leaders'), icon: Users },
-    { label: str('contact', navLang), to: path('/contact'), icon: Phone },
-  ];
 
   /* Header chrome (desktop nav + mobile drawer) is always shown in English,
      independent of the site's ML/EN toggle — only page content follows it. */
-  const items: NavItem[] = useMemo(() => buildItems('en'), [path]);
+  const items: NavItem[] = useMemo(() => buildNavItems(path, 'en'), [path]);
 
   /* Mobile menu categories, derived from the same items: every standalone link
      goes under "Main", and each dropdown becomes a category of its own. */
@@ -126,8 +87,6 @@ export default function Header() {
     setQuery('');
   };
 
-  /* Programme pages use a shorter header bar and logo */
-  const compact = /^\/(ml|en)\/programs(\/|$)/.test(location.pathname);
 
   const isActive = (item: NavItem) =>
     item.to
@@ -143,8 +102,9 @@ export default function Header() {
         {str('skipToContent', 'en')}
       </a>
 
-      {/* Announcement bar — always English, independent of the ML/EN toggle */}
-      <div className="bg-plum-800 text-white">
+      {/* Announcement bar — always English, independent of the ML/EN toggle; hidden on
+          phones, where the header is a single slim bar */}
+      <div className="hidden bg-plum-800 text-white md:block">
         <div className={SHELL}>
         <div className="flex h-8 items-center justify-between gap-2 text-[12px] sm:gap-4">
             <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -185,12 +145,9 @@ export default function Header() {
       {/* Main header */}
       <header className="sticky top-0 z-50 border-b border-plum-100 bg-white/95 shadow-[0_1px_16px_-8px_rgba(44,10,77,0.25)] backdrop-blur">
         <div className={SHELL}>
-        {/* Logo on the left; navigation and search grouped on the right */}
-        <div
-          className={`flex min-w-0 items-center justify-between gap-2 xl:gap-6 ${
-            compact ? 'h-14 lg:h-16' : 'h-16 lg:h-20'
-          }`}
-        >
+        {/* Logo on the left; navigation and search grouped on the right. One height and
+            width on every page (no per-page variants). */}
+        <div className="flex h-12 min-w-0 items-center justify-between gap-2 md:h-16 lg:h-20 xl:gap-6">
             <Link
               to={path('/')}
               className="flex shrink-0 items-center"
@@ -201,7 +158,7 @@ export default function Header() {
               <img
                 src="/logo.png"
                 alt={t(settings?.siteName, 'en') || "Women's Wing Kerala"}
-                className={`w-auto max-w-[60vw] object-contain object-left ${compact ? 'h-10 lg:h-12' : 'h-12 lg:h-16'}`}
+                className={`w-auto max-w-[60vw] object-contain object-left h-8 md:h-12 lg:h-16`}
               />
             </Link>
 
@@ -315,7 +272,8 @@ export default function Header() {
               <button
                 onClick={() => setMobileOpen(true)}
                 aria-label={str('menu', 'en')}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-plum-800 transition hover:bg-magenta-50 xl:hidden"
+                /* Tablets only: phones use the bottom navigation bar (BottomNav) */
+                className="hidden h-10 w-10 shrink-0 place-items-center rounded-full text-plum-800 transition hover:bg-magenta-50 md:grid xl:hidden"
               >
                 <Menu size={20} />
               </button>

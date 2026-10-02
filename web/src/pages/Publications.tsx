@@ -8,11 +8,13 @@ import { formatDate } from '../lib/format';
 import {
   Button,
   Container,
+  ContentPanel,
   EmptyState,
   ErrorState,
   Loading,
   PageHeader,
   Pagination,
+  PanelSection,
   RichText,
   Section,
 } from '../components/Primitives';
@@ -117,84 +119,74 @@ export function PublicationDetail() {
       />
       <Section tone="mist" className="pt-6 md:pt-9">
         <Container>
-          <div className="grid gap-10 lg:grid-cols-[280px_minmax(0,1fr)]">
-            <div>
-              {data.coverImage ? (
-                <img
-                  src={data.coverImage}
-                  alt=""
-                  className="w-full rounded-3xl border border-plum-100 shadow-lift"
-                />
-              ) : (
-                <div className="aspect-[3/4] rounded-3xl bg-magenta-50" />
-              )}
-
-              <div className="mt-5 space-y-2.5">
-                {data.fileUrl && (
-                  <Button href={data.fileUrl} className="w-full">
-                    <Download size={15} />
-                    {s('download')}
-                  </Button>
+          {/* One content card: cover and actions in the side column; details,
+              description and text as the main content */}
+          <ContentPanel
+            asideStart
+            aside={
+              <>
+                {data.coverImage ? (
+                  <img src={data.coverImage} alt="" className="mx-auto w-full max-w-[240px] rounded-xl shadow-lift lg:max-w-none" />
+                ) : (
+                  <div className="mx-auto aspect-[3/4] w-full max-w-[240px] rounded-xl bg-magenta-50 lg:max-w-none" />
                 )}
-                {data.externalUrl && (
-                  <Button href={data.externalUrl} variant="outline" className="w-full">
-                    <ExternalLinkIcon size={15} />
-                    {s('readOnline')}
-                  </Button>
-                )}
-                {data.purchaseUrl && (
-                  <Button href={data.purchaseUrl} variant="primary" className="w-full">
-                    <ShoppingBag size={15} />
-                    {s('buy')}
-                    {data.price ? ` · ₹${data.price}` : ''}
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="min-w-0">
-              <dl className="mb-7 grid grid-cols-1 gap-4 rounded-3xl border border-plum-100 bg-white p-5 text-sm shadow-soft min-[480px]:grid-cols-2 sm:grid-cols-3">
+                <div className="space-y-2.5">
+                  {data.fileUrl && (
+                    <Button href={data.fileUrl} className="w-full">
+                      <Download size={15} />
+                      {s('download')}
+                    </Button>
+                  )}
+                  {data.externalUrl && (
+                    <Button href={data.externalUrl} variant="outline" className="w-full">
+                      <ExternalLinkIcon size={15} />
+                      {s('readOnline')}
+                    </Button>
+                  )}
+                  {data.purchaseUrl && (
+                    <Button href={data.purchaseUrl} variant="primary" className="w-full">
+                      <ShoppingBag size={15} />
+                      {s('buy')}
+                      {data.price ? ` · ₹${data.price}` : ''}
+                    </Button>
+                  )}
+                </div>
+              </>
+            }
+          >
+            <PanelSection>
+              <dl className="mb-7 grid grid-cols-1 gap-4 border-b border-plum-100/80 pb-6 text-sm min-[480px]:grid-cols-2 sm:grid-cols-4">
                 {t(data.author, lang) && (
                   <div>
-                    <dt className="text-[11px] uppercase tracking-wider text-ink-faint">
-                      {s('author')}
-                    </dt>
+                    <dt className="text-[11px] uppercase tracking-wider text-ink-faint">{s('author')}</dt>
                     <dd className="mt-1 font-medium">{t(data.author, lang)}</dd>
                   </div>
                 )}
                 {t(data.publisher, lang) && (
                   <div>
-                    <dt className="text-[11px] uppercase tracking-wider text-ink-faint">
-                      {s('publisher')}
-                    </dt>
+                    <dt className="text-[11px] uppercase tracking-wider text-ink-faint">{s('publisher')}</dt>
                     <dd className="mt-1 font-medium">{t(data.publisher, lang)}</dd>
                   </div>
                 )}
                 {data.pages ? (
                   <div>
-                    <dt className="text-[11px] uppercase tracking-wider text-ink-faint">
-                      {s('pages')}
-                    </dt>
+                    <dt className="text-[11px] uppercase tracking-wider text-ink-faint">{s('pages')}</dt>
                     <dd className="mt-1 font-medium">{data.pages}</dd>
                   </div>
                 ) : null}
                 <div>
-                  <dt className="text-[11px] uppercase tracking-wider text-ink-faint">
-                    {s('publishedOn')}
-                  </dt>
+                  <dt className="text-[11px] uppercase tracking-wider text-ink-faint">{s('publishedOn')}</dt>
                   <dd className="mt-1 font-medium">{formatDate(data.publishedAt, lang)}</dd>
                 </div>
               </dl>
 
               {t(data.description, lang) && (
-                <p className="mb-6 text-[15px] leading-relaxed text-ink/85">
-                  {t(data.description, lang)}
-                </p>
+                <p className="user-text mb-6 text-[15px] leading-relaxed text-ink/85">{t(data.description, lang)}</p>
               )}
 
               <RichText html={t(data.body, lang)} />
-            </div>
-          </div>
+            </PanelSection>
+          </ContentPanel>
         </Container>
       </Section>
     </>

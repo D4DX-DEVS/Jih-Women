@@ -200,7 +200,7 @@ router.use(
     searchPaths: ['title.ml', 'title.en', 'slug'],
     filters: ['published', 'isMajor'],
     // The admin form edits only these; `published` is the list's Published/Draft toggle
-    writable: ['title', 'overview', 'logoUrl', 'published'],
+    writable: ['title', 'overview', 'logoUrl', 'gallery', 'published'],
   })
 );
 

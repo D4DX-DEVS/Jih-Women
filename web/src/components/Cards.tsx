@@ -1,9 +1,24 @@
+import { GradientText } from './Primitives';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { ArrowUpRight, Calendar, Download, FileText, MapPin, Play, X } from 'lucide-react';
+import {
+  ArrowUpRight,
+  Calendar,
+  Download,
+  FileText,
+  MapPin,
+  Play,
+  X,
+} from 'lucide-react';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
-import { formatBytes, formatDate, formatDay, youtubeId, youtubeThumb } from '../lib/format';
+import {
+  formatBytes,
+  formatDate,
+  formatDay,
+  youtubeId,
+  youtubeThumb,
+} from '../lib/format';
 import type {
   Album,
   Campaign,
@@ -55,7 +70,7 @@ export function PostCard({ post, compact = false }: { post: MediaPost; compact?:
             {formatDate(post.publishedAt, lang)}
           </div>
           <h3 className="mt-1 line-clamp-2 font-display text-[15px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600">
-            {t(post.title, lang)}
+            <GradientText>{t(post.title, lang)}</GradientText>
           </h3>
         </div>
       </Link>
@@ -85,7 +100,7 @@ export function PostCard({ post, compact = false }: { post: MediaPost; compact?:
           {formatDate(post.publishedAt, 'en')}
         </div>
         <h3 className="mt-2 line-clamp-2 font-display text-lg font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600">
-          {t(post.title, lang)}
+          <GradientText>{t(post.title, lang)}</GradientText>
         </h3>
         {/* A short preview only; the full story is on the detail page */}
         {t(post.excerpt, lang) && (
@@ -119,7 +134,7 @@ export function EventCard({ event }: { event: OrgEvent }) {
       </div>
       <div className="min-w-0 flex-1">
         <h3 className="line-clamp-2 font-display text-[17px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600">
-          {t(event.title, lang)}
+          <GradientText>{t(event.title, lang)}</GradientText>
         </h3>
         <div className="mt-2 space-y-1 text-[13px] text-ink-muted">
           {event.timeLabel && (
@@ -169,7 +184,7 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
             {campaign.hashtag}
           </span>
         )}
-        <h3 className="font-display text-xl font-semibold leading-snug">{t(campaign.title, lang)}</h3>
+        <h3 className="font-display text-xl font-semibold leading-snug"><GradientText light>{t(campaign.title, lang)}</GradientText></h3>
         {t(campaign.summary, lang) && (
           <p className="mt-2 line-clamp-2 text-sm text-white/75">{t(campaign.summary, lang)}</p>
         )}
@@ -204,7 +219,7 @@ export function DepartmentCard({ department }: { department: Pick<Department, '_
           <img src={department.logoUrl} alt="" className="mb-3 h-10 w-auto object-contain" />
         )}
         <h3 className="font-display text-lg font-semibold text-plum-800 transition group-hover:text-magenta-600">
-          {t(department.title, lang)}
+          <GradientText>{t(department.title, 'en')}</GradientText>
         </h3>
         {t(department.tagline, lang) && (
           <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-muted">
@@ -244,7 +259,7 @@ export function ProgramCard({ program }: { program: Pick<Program, '_id' | 'slug'
       <div className="flex flex-1 flex-col p-6">
         {/* Programme names and labels are always English; the tagline follows the site language */}
         <h3 className="font-display text-[1.05rem] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 md:text-[1.1rem]">
-          {t(program.title, 'en')}
+          <GradientText>{t(program.title, 'en')}</GradientText>
         </h3>
         {t(program.tagline, lang) && (
           <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-muted">
@@ -281,7 +296,7 @@ export function LeaderCard({ leader }: { leader: Leader }) {
       )}
       <div className="p-3 text-center sm:p-4">
         <h3 className="font-display text-[14px] font-semibold leading-snug text-plum-800 [overflow-wrap:anywhere] sm:text-[15px]">
-          {t(leader.name, lang)}
+          <GradientText>{t(leader.name, lang)}</GradientText>
         </h3>
         {t(leader.designation, lang) && (
           <p className="mt-1 text-[12px] leading-snug text-ink-muted sm:text-[13px]">{t(leader.designation, lang)}</p>
@@ -333,7 +348,7 @@ export function VideoCard({ item, onPlay }: { item: VideoItem; onPlay?: (item: V
           {isPodcast ? 'Podcast' : formatDate(item.publishedAt, lang)}
         </div>
         <h3 className="mt-1.5 line-clamp-2 font-display text-[15px] font-semibold leading-snug text-plum-800">
-          {t(item.title, lang)}
+          <GradientText>{t(item.title, lang)}</GradientText>
         </h3>
       </div>
     </button>
@@ -355,10 +370,10 @@ export function VideoPlayerModal({ item, onClose }: { item: VideoItem; onClose: 
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-ink/85 p-3 sm:p-4" onClick={onClose}>
-      <div className="my-auto w-full min-w-0 max-w-3xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[70] grid animate-fade-in place-items-center overflow-y-auto bg-ink/85 p-3 sm:p-4" onClick={onClose}>
+      <div className="my-auto w-full min-w-0 max-w-3xl animate-pop-in" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex min-w-0 items-start justify-between gap-3 text-white sm:gap-4">
-          <h3 className="min-w-0 flex-1 font-display text-base font-semibold leading-snug sm:text-lg">{t(item.title, lang)}</h3>
+          <h3 className="min-w-0 flex-1 font-display text-base font-semibold leading-snug sm:text-lg"><GradientText light>{t(item.title, lang)}</GradientText></h3>
           <button onClick={onClose} aria-label="Close" className="shrink-0 opacity-70 hover:opacity-100">
             <X size={22} />
           </button>
@@ -409,7 +424,7 @@ export function AlbumCard({ album }: { album: Album }) {
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-plum-900 via-plum-900/40 to-transparent" />
       <div className="relative">
-        <h3 className="font-display text-[17px] font-semibold leading-snug">{t(album.title, lang)}</h3>
+        <h3 className="font-display text-[17px] font-semibold leading-snug"><GradientText light>{t(album.title, lang)}</GradientText></h3>
         <p className="mt-1 text-xs text-white/70">
           {album.eventDate ? formatDate(album.eventDate, lang) : ''}
           {album.itemCount ? ` · ${album.itemCount} ${s('photos')}` : ''}
@@ -450,7 +465,7 @@ export function Lightbox({
   if (!item) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col bg-ink/92 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex flex-col bg-ink/90 p-4 animate-fade-in" onClick={onClose}>
       <div className="flex justify-end">
         <button onClick={onClose} aria-label="Close" className="p-2 text-white/70 hover:text-white">
           <X size={24} />
@@ -460,7 +475,8 @@ export function Lightbox({
         {item.kind === 'video' ? (
           <video src={item.url} controls autoPlay className="max-h-[80vh] max-w-full rounded-xl" />
         ) : (
-          <img src={item.url} alt="" className="max-h-[80vh] max-w-full rounded-xl object-contain" />
+          /* key: the pop (fade + slight scale) replays for each photo */
+          <img key={index} src={item.url} alt="" className="max-h-[80vh] max-w-full animate-pop-in rounded-xl object-contain" />
         )}
       </div>
       <div className="flex items-center justify-between gap-4 pt-3 text-white/70">
@@ -554,7 +570,7 @@ export function PublicationCard({ publication }: { publication: Publication }) {
           {publication.type}
         </span>
         <h3 className="mt-1 line-clamp-2 font-display text-[15px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600">
-          {t(publication.title, lang)}
+          <GradientText>{t(publication.title, lang)}</GradientText>
         </h3>
         {t(publication.author, lang) && (
           <p className="mt-1 text-[13px] text-ink-muted">{t(publication.author, lang)}</p>
@@ -578,7 +594,7 @@ export function DownloadRow({ item }: { item: DownloadItem }) {
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate font-display text-[15px] font-semibold text-plum-800">
-          {t(item.title, lang)}
+          <GradientText>{t(item.title, lang)}</GradientText>
         </span>
         {t(item.description, lang) && (
           <span className="mt-0.5 block line-clamp-1 text-[13px] text-ink-muted">
@@ -615,7 +631,7 @@ export function LinkCard({ link }: { link: ExternalLink }) {
       )}
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5 font-display text-[15px] font-semibold text-plum-800 transition group-hover:text-magenta-600">
-          {t(link.title, lang)}
+          <GradientText>{t(link.title, lang)}</GradientText>
           <ArrowUpRight size={15} className="opacity-60" />
         </span>
         {t(link.description, lang) && (
