@@ -56,7 +56,7 @@ export default function CampaignDetail() {
           <ContentPanel>
             <PanelSection>
               {(data.startDate || data.hashtag) && (
-                <div className="mb-6 flex flex-wrap items-center gap-4 text-[13px] text-ink-muted">
+                <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-ink-muted sm:mb-6 sm:gap-4 sm:text-[13px]">
                   {data.startDate && (
                     <span className="inline-flex items-center gap-1.5">
                       <Calendar size={14} className="text-magenta-500" />
@@ -64,14 +64,14 @@ export default function CampaignDetail() {
                     </span>
                   )}
                   {data.hashtag && (
-                    <span className="rounded-full bg-magenta-500/12 px-3 py-1 font-semibold text-magenta-500">{data.hashtag}</span>
+                    <span className="rounded-full bg-magenta-500/12 px-2.5 py-0.5 font-semibold text-magenta-500 sm:px-3 sm:py-1">{data.hashtag}</span>
                   )}
                 </div>
               )}
-              {data.posterImage && <img src={data.posterImage} alt="" className="mb-7 w-full rounded-xl" />}
+              {data.posterImage && <img src={data.posterImage} alt="" className="mb-4 w-full rounded-lg sm:mb-7 sm:rounded-xl" />}
               <RichText html={t(data.body, lang)} />
               {data.externalUrl && (
-                <Button href={data.externalUrl} variant="outline" className="mt-7">
+                <Button href={data.externalUrl} variant="outline" className="mt-4 sm:mt-7">
                   {s('visitWebsite')}
                   <ExternalLinkIcon size={15} />
                 </Button>

@@ -38,8 +38,14 @@ export default function Footer() {
   ].filter((x) => Boolean(x.href));
 
   /* Footer is always shown in English, independent of the site's ML/EN toggle. */
+  /* Videos and Photos already sit in the Programs column, so only the other media pages are here */
   const quickLinks = [
+    { label: str('home', 'en'), to: path('/') },
     { label: str('aboutUs', 'en'), to: path('/who-we-are') },
+    { label: str('news', 'en'), to: path('/media/news') },
+    { label: str('downloads', 'en'), to: path('/media/downloads') },
+    { label: str('publications', 'en'), to: path('/publications') },
+    { label: str('leaders', 'en'), to: path('/leaders') },
     { label: str('contact', 'en'), to: path('/contact') },
   ];
 

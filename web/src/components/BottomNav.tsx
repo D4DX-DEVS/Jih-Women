@@ -50,7 +50,7 @@ export default function BottomNav() {
     };
   }, [moreOpen]);
 
-  const cell = 'relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 pt-1.5 pb-1 text-[10.5px] font-medium leading-none transition-colors';
+  const cell = 'relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-0 pt-1 pb-0.5 text-[10px] font-medium leading-none transition-colors';
 
   return (
     <>
@@ -58,7 +58,7 @@ export default function BottomNav() {
         aria-label={str('menu', 'en')}
         className="fixed inset-x-0 bottom-0 z-50 border-t border-plum-100/80 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_20px_-12px_rgba(44,10,77,0.28)] backdrop-blur md:hidden"
       >
-        <div className="relative mx-auto flex h-16 max-w-md px-1.5">
+        <div className="relative mx-auto flex h-14 max-w-md px-1.5">
           {/* Sliding highlight behind the current tab: a soft pill plus a gradient bar on top */}
           {indicator !== -1 && (
             <span
@@ -67,7 +67,7 @@ export default function BottomNav() {
               style={{ transform: `translateX(${indicator * 100}%)` }}
             >
               <span className="absolute top-0 h-[3px] w-8 rounded-b-full bg-gradient-to-r from-magenta-500 to-plum-500" />
-              <span className="mt-1.5 h-8 w-12 rounded-2xl bg-gradient-to-br from-magenta-50 to-plum-50" />
+              <span className="mt-1 h-7 w-11 rounded-2xl bg-gradient-to-br from-magenta-50 to-plum-50" />
             </span>
           )}
 
@@ -81,8 +81,8 @@ export default function BottomNav() {
                 aria-current={active ? 'page' : undefined}
                 className={`${cell} ${active ? 'text-magenta-600' : 'text-ink-muted active:text-magenta-600'}`}
               >
-                <span className={`grid h-8 w-12 place-items-center transition-transform duration-300 ${active ? '-translate-y-px scale-110' : ''}`}>
-                  <Icon size={20} strokeWidth={active ? 2.3 : 1.9} />
+                <span className={`grid h-7 w-11 place-items-center transition-transform duration-300 ${active ? '-translate-y-px scale-110' : ''}`}>
+                  <Icon size={18} strokeWidth={active ? 2.3 : 1.9} />
                 </span>
                 <span className={`max-w-full truncate px-0.5 ${active ? 'text-brand-gradient font-semibold' : ''}`}>{tab.label}</span>
               </Link>
@@ -96,8 +96,8 @@ export default function BottomNav() {
             aria-haspopup="dialog"
             className={`${cell} ${moreOpen || moreActive ? 'text-magenta-600' : 'text-ink-muted active:text-magenta-600'}`}
           >
-            <span className={`grid h-8 w-12 place-items-center transition-transform duration-300 ${moreOpen || moreActive ? '-translate-y-px scale-110' : ''}`}>
-              {moreOpen ? <X size={20} strokeWidth={2.3} /> : <LayoutGrid size={20} strokeWidth={moreActive ? 2.3 : 1.9} />}
+            <span className={`grid h-7 w-11 place-items-center transition-transform duration-300 ${moreOpen || moreActive ? '-translate-y-px scale-110' : ''}`}>
+              {moreOpen ? <X size={18} strokeWidth={2.3} /> : <LayoutGrid size={18} strokeWidth={moreActive ? 2.3 : 1.9} />}
             </span>
             <span className={`max-w-full truncate px-0.5 ${moreOpen || moreActive ? 'text-brand-gradient font-semibold' : ''}`}>More</span>
           </button>
@@ -109,25 +109,25 @@ export default function BottomNav() {
           <div key={lang} className="fixed inset-0 z-[45] md:hidden" role="dialog" aria-modal="true" aria-label="More">
             <div className="absolute inset-0 animate-fade-in bg-plum-950/45" onClick={() => setMoreOpen(false)} aria-hidden="true" />
             {/* Sheet sits just above the bar, which stays visible to close it again */}
-            <div className="absolute inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] max-h-[calc(100dvh-7rem)] animate-sheet-up overflow-y-auto overscroll-contain rounded-t-3xl bg-mist px-4 pb-4 pt-2 shadow-2xl">
-              <span className="mx-auto mb-3 block h-1 w-10 rounded-full bg-plum-200" aria-hidden="true" />
-              <div className="mb-4 flex items-center justify-between">
-                <img src="/logo.png" alt={t(data?.settings?.siteName, 'en') || ''} className="h-9 w-auto object-contain object-left" />
+            <div className="absolute inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] max-h-[calc(100dvh-6rem)] animate-sheet-up overflow-y-auto overscroll-contain rounded-t-2xl bg-mist px-3 pb-3 pt-2 shadow-2xl">
+              <span className="mx-auto mb-2 block h-1 w-10 rounded-full bg-plum-200" aria-hidden="true" />
+              <div className="mb-3 flex items-center justify-between">
+                <img src="/logo.png" alt={t(data?.settings?.siteName, 'en') || ''} className="h-7 w-auto object-contain object-left" />
                 <button
                   type="button"
                   onClick={() => setMoreOpen(false)}
                   aria-label={str('close', 'en')}
-                  className="grid h-9 w-9 place-items-center rounded-full bg-white text-plum-800 shadow-soft transition active:scale-95"
+                  className="grid h-8 w-8 place-items-center rounded-full bg-white text-plum-800 shadow-soft transition active:scale-95"
                 >
                   <X size={17} />
                 </button>
               </div>
               {groups.map((group) => (
-                <section key={group.label} className="mb-4 last:mb-0">
-                  <h3 className="mb-2 px-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em]">
+                <section key={group.label} className="mb-3 last:mb-0">
+                  <h3 className="mb-1.5 px-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em]">
                     <span className="text-brand-gradient">{group.label}</span>
                   </h3>
-                  <ul className="grid grid-cols-2 gap-2">
+                  <ul className="grid grid-cols-2 gap-1.5">
                     {group.links.map(({ label, to, icon: Icon }) => {
                       const active = pathname === to || pathname.startsWith(`${to}/`);
                       return (
@@ -136,13 +136,13 @@ export default function BottomNav() {
                             to={to}
                             onClick={() => setMoreOpen(false)}
                             aria-current={active ? 'page' : undefined}
-                            className={`flex min-h-[52px] items-center gap-2.5 rounded-2xl border px-3 py-2 text-[13.5px] font-medium transition active:scale-[0.98] ${
+                            className={`flex min-h-[44px] items-center gap-2 rounded-xl border px-2.5 py-1.5 text-[12.5px] font-medium transition active:scale-[0.98] ${
                               active ? 'border-magenta-200 bg-magenta-50/70 text-magenta-600' : 'border-plum-100 bg-white text-plum-800'
                             }`}
                           >
                             {Icon && (
-                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-magenta-50 to-plum-50 text-magenta-600">
-                                <Icon size={16} />
+                              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-magenta-50 to-plum-50 text-magenta-600">
+                                <Icon size={15} />
                               </span>
                             )}
                             <span className="min-w-0 flex-1 leading-snug">{label}</span>

@@ -33,6 +33,7 @@ import {
   VideoPlayerModal,
 } from '../components/Cards';
 import Reveal from '../components/Reveal';
+import { useViewMode } from '../lib/view';
 import type {
   HomePayload,
   MediaItem,
@@ -47,6 +48,7 @@ import type {
 
 export default function Home() {
   const { h } = useSite();
+  const { view } = useViewMode();
   const { data, loading, error, reload } = useApi<HomePayload>('/api/site/home');
   const [playing, setPlaying] = useState<VideoItem | null>(null);
 
@@ -72,7 +74,7 @@ export default function Home() {
 
       {showBanners && <ProgramBanners banners={banners} />}
 
-      <section className="bg-mist py-7 md:py-9">
+      <section className="bg-mist py-4 sm:py-7 md:py-9">
         <Container className="space-y-5">
           <Reveal>
             <MainInfo settings={data.settings} message={showPresident ? presidentMessage : null} />
@@ -80,7 +82,7 @@ export default function Home() {
         </Container>
       </section>
 
-      <section className="bg-white py-7 md:py-9">
+      <section className="bg-white py-4 sm:py-7 md:py-9">
         <Container>
           <Reveal>
             <NewsAndEvents updates={data.updates} events={data.upcomingEvents} />
@@ -89,7 +91,7 @@ export default function Home() {
       </section>
 
       {data.featuredVideos.length > 0 && (
-        <section className="border-t border-plum-100/70 bg-white pb-8 pt-7 md:pb-10 md:pt-9">
+        <section className="border-t border-plum-100/70 bg-white pb-5 pt-4 sm:pb-8 sm:pt-7 md:pb-10 md:pt-9">
           <Container>
             <Reveal>
               <VideoRow videos={data.featuredVideos} onPlay={setPlaying} />
@@ -99,9 +101,10 @@ export default function Home() {
       )}
 
       {(data.galleryPhotos?.length ?? 0) > 0 && (
-        <section className="border-t border-plum-100/70 bg-white pb-8 pt-7 md:pb-10 md:pt-9">
-          {/* No page container here: the heading aligns itself, the photos run edge to edge */}
-          <PhotoGallery photos={data.galleryPhotos!} />
+        <section className="border-t border-plum-100/70 bg-white pb-5 pt-4 sm:pb-8 sm:pt-7 md:pb-10 md:pt-9">
+          <Container>
+            <PhotoGallery photos={data.galleryPhotos!} />
+          </Container>
         </section>
       )}
 
@@ -109,7 +112,7 @@ export default function Home() {
         <Section tone="white">
           <Container>
             <ManagedSectionHeading sectionKey="homeCampaigns" eyebrow={h('mediaCentre')} title={h('campaigns')} />
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
               {data.campaigns.map((c, i) => (
                 <Reveal key={c._id} delay={Math.min(i, 6) * 60}>
                   <CampaignCard campaign={c} />
@@ -124,10 +127,10 @@ export default function Home() {
         <Section tone="deep">
           <Container>
             <ManagedSectionHeading sectionKey="homeFeaturedArticles" eyebrow={h('media')} title={h('featuredArticles')} />
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
               {data.featuredArticles.map((post, i) => (
                 <Reveal key={post._id} delay={Math.min(i, 6) * 60}>
-                  <PostCard post={post} />
+                  <PostCard post={post} view={view} />
                 </Reveal>
               ))}
             </div>
@@ -139,7 +142,7 @@ export default function Home() {
         <Section tone="white">
           <Container>
             <ManagedSectionHeading sectionKey="homePublications" eyebrow={h('publications')} title={h('publications')} />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
               {data.publications.map((p, i) => (
                 <Reveal key={p._id} delay={Math.min(i, 6) * 60}>
                   <PublicationCard publication={p} />
@@ -229,14 +232,14 @@ function Hero({ slides }: { slides: Slide[] }) {
             <button
               onClick={() => go(index - 1)}
               aria-label="Previous slide"
-              className="absolute start-2 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-plum-800 shadow-soft transition hover:bg-white sm:start-3 sm:h-9 sm:w-9 sm:bg-white/90 md:start-6 md:h-10 md:w-10"
+              className="absolute start-2 top-1/2 z-10 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-plum-800 shadow-soft transition hover:bg-white sm:start-3 sm:h-9 sm:w-9 sm:bg-white/90 md:start-6 md:h-10 md:w-10"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={() => go(index + 1)}
               aria-label="Next slide"
-              className="absolute end-2 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-plum-800 shadow-soft transition hover:bg-white sm:end-3 sm:h-9 sm:w-9 sm:bg-white/90 md:end-6 md:h-10 md:w-10"
+              className="absolute end-2 top-1/2 z-10 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-plum-800 shadow-soft transition hover:bg-white sm:end-3 sm:h-9 sm:w-9 sm:bg-white/90 md:end-6 md:h-10 md:w-10"
             >
               <ChevronRight size={16} />
             </button>
@@ -286,7 +289,7 @@ function MarqueeArrow({ dir, onClick }: { dir: 1 | -1; onClick: () => void }) {
       type="button"
       onClick={onClick}
       aria-label={s(dir === 1 ? 'next' : 'previous')}
-      className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-plum-100 bg-white text-plum-800 shadow-soft transition hover:border-magenta-200 hover:text-magenta-600 md:h-9 md:w-9"
+      className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-plum-100 bg-white text-plum-800 shadow-soft transition hover:border-magenta-200 hover:text-magenta-600 sm:h-8 sm:w-8 md:h-9 md:w-9"
     >
       <Icon size={16} />
     </button>
@@ -455,7 +458,7 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
   const renderTile = (banner: ProgramBanner, hidden = false) => {
     // A bare logo, no tile: fixed box, image contained so nothing is cropped or stretched
     const cls =
-      'group flex h-14 w-[30vw] max-w-[140px] items-center justify-center rounded-lg sm:h-16 sm:w-[160px] sm:max-w-none lg:h-[72px] lg:w-[180px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-magenta-400';
+      'group flex h-9 w-[22vw] max-w-[88px] items-center justify-center rounded-lg sm:h-16 sm:w-[160px] sm:max-w-none lg:h-[72px] lg:w-[180px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-magenta-400';
     const inner = (
       <img
         src={banner.logoUrl || banner.bannerImage}
@@ -480,20 +483,20 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
   };
 
   return (
-    <section className="border-b border-plum-100/70 bg-white py-5 md:py-6">
+    <section className="border-b border-plum-100/70 bg-white py-2.5 sm:py-5 md:py-6">
       <Container>
-        <div className="mb-4 flex items-center justify-center gap-3 eyebrow">
+        <div className="mb-1.5 flex items-center justify-center gap-2 eyebrow sm:mb-4 sm:gap-3">
           {heading.logo && <SectionLogo src={heading.logo} />}
-          <span className="brand-rule-start w-10" />
+          <span className="brand-rule-start w-6 sm:w-10" />
           <span className="text-brand-gradient">{heading.heading}</span>
-          <span className="brand-rule-end w-10" />
+          <span className="brand-rule-end w-6 sm:w-10" />
         </div>
         {/* The row drifts slowly right to left; it can be dragged (mouse) or swiped
             (touch) either way, and the arrows jump it a tile at a time. Two copies of the
             (repeated) list sit side by side and the offset wraps by one copy width, so the
             loop is seamless in both directions. Hover, focus and dragging pause the drift;
             reduced-motion users get no drift. */}
-        <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex items-center gap-1.5 md:gap-3">
           <MarqueeArrow dir={-1} onClick={() => nudge(-1)} />
           <div
             ref={viewportRef}
@@ -506,7 +509,7 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
                 loop.map((banner, i) => {
                   const hidden = copy === 1 || i >= banners.length;
                   return (
-                    <li key={`${copy}-${i}`} className="shrink-0 px-3 sm:px-5 lg:px-4" aria-hidden={hidden || undefined}>
+                    <li key={`${copy}-${i}`} className="shrink-0 px-2 sm:px-5 lg:px-4" aria-hidden={hidden || undefined}>
                       {renderTile(banner, hidden)}
                     </li>
                   );
@@ -555,19 +558,19 @@ function MainInfo({ settings, message }: { settings: SiteSettings; message: Pres
   const designation = message ? t(message.designation, lang) : '';
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-magenta-100/80 bg-gradient-to-br from-white via-magenta-50/50 to-plum-50 shadow-card">
+    <div className="relative overflow-hidden rounded-2xl border border-magenta-100/80 bg-gradient-to-br from-white via-magenta-50/50 to-plum-50 shadow-card sm:rounded-3xl">
       <span className="pointer-events-none absolute -end-20 -top-24 h-64 w-64 rounded-full bg-magenta-100/60 blur-3xl" />
       <div className={`relative grid ${message ? 'lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]' : ''}`}>
-        <div className="flex min-w-0 flex-col p-5 sm:p-6 md:p-8">
+        <div className="flex min-w-0 flex-col p-3.5 sm:p-6 md:p-8">
           <Eyebrow logo={about.logo}>{about.label}</Eyebrow>
           {aboutTitle && (
-            <h2 className="responsive-copy mt-2.5 font-display text-[1.3rem] font-semibold leading-snug text-plum-800 sm:text-[1.45rem] md:text-[1.6rem]">
+            <h2 className="responsive-copy mt-1.5 font-display text-[1.05rem] font-semibold leading-snug text-plum-800 sm:mt-2.5 sm:text-[1.45rem] md:text-[1.6rem]">
               <GradientText>{aboutTitle}</GradientText>
             </h2>
           )}
-          <Rule className="mt-3" />
-          <p className="mt-4 text-[14.5px] leading-relaxed text-ink/75">{aboutBody}</p>
-          <div className="mt-5">
+          <Rule className="mt-2 sm:mt-3" />
+          <p className="mt-2.5 text-[12.5px] leading-relaxed text-ink/75 sm:mt-4 sm:text-[14.5px]">{aboutBody}</p>
+          <div className="mt-3 sm:mt-5">
             <Button to={path('/who-we-are')} size="sm">
               {h('readMore')}
               <ArrowRight size={14} />
@@ -576,43 +579,43 @@ function MainInfo({ settings, message }: { settings: SiteSettings; message: Pres
         </div>
 
         {message && (
-          <div className="relative min-w-0 border-t border-magenta-100/80 p-5 sm:p-6 md:p-8 lg:border-s lg:border-t-0">
+          <div className="relative min-w-0 border-t border-magenta-100/80 p-3.5 sm:p-6 md:p-8 lg:border-s lg:border-t-0">
             <Eyebrow logo={president.logo}>{label}</Eyebrow>
-            <div className="mt-3 grid gap-5 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-start">
+            <div className="mt-2 grid gap-3 sm:mt-3 sm:gap-5 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-start">
               <figure className="relative mx-auto sm:order-last sm:mx-0">
                 {message.photo ? (
                   <img
                     src={message.photo}
                     alt={name}
-                    className="h-[170px] w-[140px] rounded-t-[4.5rem] rounded-b-2xl border-4 border-white object-cover shadow-lift sm:h-[180px] sm:w-[150px]"
+                    className="h-[120px] w-[100px] rounded-t-[3.5rem] rounded-b-xl border-[3px] border-white object-cover shadow-lift sm:h-[180px] sm:w-[150px] sm:rounded-t-[4.5rem] sm:rounded-b-2xl sm:border-4"
                   />
                 ) : (
-                  <div className="grid h-[170px] w-[140px] place-items-center rounded-t-[4.5rem] rounded-b-2xl border-4 border-white bg-plum-100 text-plum-300 shadow-lift sm:h-[180px] sm:w-[150px]">
+                  <div className="grid h-[120px] w-[100px] place-items-center rounded-t-[3.5rem] rounded-b-xl border-[3px] border-white bg-plum-100 text-plum-300 shadow-lift sm:h-[180px] sm:w-[150px] sm:rounded-t-[4.5rem] sm:rounded-b-2xl sm:border-4">
                     <Users size={36} />
                   </div>
                 )}
                 {name && (
-                  <figcaption className="mt-2.5 text-center">
-                    <span className="block font-display text-[14px] font-semibold text-plum-800"><GradientText>{name}</GradientText></span>
-                    {designation && <span className="block text-[11.5px] text-ink-muted">{designation}</span>}
+                  <figcaption className="mt-1.5 text-center sm:mt-2.5">
+                    <span className="block font-display text-[13px] font-semibold text-plum-800 sm:text-[14px]"><GradientText>{name}</GradientText></span>
+                    {designation && <span className="block text-[11px] text-ink-muted sm:text-[11.5px]">{designation}</span>}
                   </figcaption>
                 )}
               </figure>
 
               <div className="relative min-w-0">
-                <span className="pointer-events-none absolute -start-1 -top-3 font-display text-[3.2rem] leading-none text-magenta-200">
+                <span className="pointer-events-none absolute -start-1 -top-2 font-display text-[2.4rem] leading-none text-magenta-200 sm:-top-3 sm:text-[3.2rem]">
                   &ldquo;
                 </span>
                 {heading !== label && (
-                  <h2 className="responsive-copy relative ps-7 font-display text-[1.2rem] font-semibold leading-snug text-magenta-500 md:text-[1.35rem]">
+                  <h2 className="responsive-copy relative ps-6 font-display text-[1rem] font-semibold leading-snug text-magenta-500 sm:ps-7 sm:text-[1.2rem] md:text-[1.35rem]">
                     <GradientText>{heading}</GradientText>
                   </h2>
                 )}
                 {body && (
                   <div
-                    className={`prose-content relative mt-2 overflow-hidden ps-7 text-[14px] leading-[1.85] ${
+                    className={`prose-content relative mt-1.5 overflow-hidden ps-6 text-[12.5px] leading-[1.7] sm:mt-2 sm:ps-7 sm:text-[14px] sm:leading-[1.85] ${
                       message.linkUrl
-                        ? 'max-h-[12.5rem] [mask-image:linear-gradient(to_bottom,black_75%,transparent)]'
+                        ? 'max-h-[9rem] sm:max-h-[12.5rem] [mask-image:linear-gradient(to_bottom,black_75%,transparent)]'
                         : ''
                     }`}
                     dangerouslySetInnerHTML={{ __html: body }}
@@ -621,7 +624,7 @@ function MainInfo({ settings, message }: { settings: SiteSettings; message: Pres
                 {message.linkUrl && (
                   <Link
                     to={message.linkUrl}
-                    className="ms-7 mt-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-magenta-600 hover:text-magenta-500"
+                    className="ms-6 mt-2 inline-flex items-center gap-1.5 text-[12px] font-medium text-magenta-600 hover:text-magenta-500 sm:ms-7 sm:mt-3 sm:text-[13px]"
                   >
                     {h('readMore')}
                     <ArrowRight size={14} />
@@ -652,16 +655,16 @@ function BandHeading({
   const { section } = useSite();
   const heading = section(sectionKey, { heading: label });
   return (
-    <div className="mb-3.5 flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
-      <h3 className="band-label flex shrink-0 items-center gap-2 whitespace-nowrap font-sans text-[14px] font-semibold uppercase tracking-[0.12em] text-magenta-500 md:text-[15px]">
+    <div className="mb-2.5 flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 sm:mb-3.5 sm:gap-y-1.5">
+      <h3 className="band-label flex shrink-0 items-center gap-2 whitespace-nowrap font-sans text-[12px] font-semibold uppercase tracking-[0.1em] text-magenta-500 sm:text-[14px] sm:tracking-[0.12em] md:text-[15px]">
         {heading.logo && <SectionLogo src={heading.logo} />}
-        <span className="brand-rule-start w-7" />
+        <span className="brand-rule-start w-5 sm:w-7" />
         <span className="text-brand-gradient">{heading.heading}</span>
-        <span className="brand-rule-end w-7" />
+        <span className="brand-rule-end w-5 sm:w-7" />
       </h3>
       <Link
         to={to}
-        className="-my-2 inline-flex shrink-0 items-center gap-1 whitespace-nowrap py-2 text-[11px] font-medium text-ink-muted transition hover:text-magenta-600"
+        className="-my-2 inline-flex shrink-0 items-center gap-1 whitespace-nowrap py-2 text-[10.5px] font-medium text-ink-muted transition hover:text-magenta-600 sm:text-[11px]"
       >
         {actionLabel}
         <ArrowRight size={13} />
@@ -699,11 +702,11 @@ const POP_DELAYS = ['[animation-delay:0ms]', '[animation-delay:110ms]', '[animat
 type CarouselSlot = { className: string; clone: boolean };
 
 /**
- * A row of cards that slides one card along every few seconds and loops seamlessly
- * (the first cards are repeated after the last, and the row snaps back to the start
- * once they are in view). From sm it shows `tabletPerView` cards, from lg three;
- * phones keep a native swipe row. Hover pauses it, a swipe on tablets moves it, and
- * prefers-reduced-motion turns the auto-slide off.
+ * A row of cards that loops seamlessly (the first cards are repeated after the last,
+ * and the row snaps back to the start once they are in view). With `autoPlay` it also
+ * slides one card along every few seconds; hover pauses that, and
+ * prefers-reduced-motion turns it off. From sm it shows `tabletPerView` cards, from
+ * lg three; phones keep a native swipe row, and a swipe on tablets moves the row.
  */
 function AutoCarousel<T>({
   items,
@@ -712,6 +715,7 @@ function AutoCarousel<T>({
   label,
   phoneWidth,
   tabletPerView = 3,
+  autoPlay = true,
   className = '',
 }: {
   items: T[];
@@ -721,6 +725,8 @@ function AutoCarousel<T>({
   /** Card width on phones, e.g. `w-[72%]` */
   phoneWidth: string;
   tabletPerView?: 2 | 3;
+  /** Slide on its own; when false the row only moves with the arrows, dots or a swipe */
+  autoPlay?: boolean;
   className?: string;
 }) {
   const count = items.length;
@@ -768,11 +774,11 @@ function AutoCarousel<T>({
 
   // Auto-advance; the timer restarts on every move so each set gets its full time
   useEffect(() => {
-    if (!canSlide || hovered) return;
+    if (!autoPlay || !canSlide || hovered) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const id = window.setTimeout(next, CAROUSEL_INTERVAL);
     return () => window.clearTimeout(id);
-  }, [index, hovered, canSlide]);
+  }, [index, hovered, canSlide, autoPlay]);
 
   // After an instant (unanimated) jump, turn the transition back on next frame
   useEffect(() => {
@@ -820,7 +826,7 @@ function AutoCarousel<T>({
           (one card + gap = (row width + gap) / cards per view) */}
       <div className="sm:-my-2 sm:overflow-hidden sm:py-2 lg:flex lg:flex-1 lg:flex-col">
         <div
-          className={`no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [--per:3] sm:mx-0 sm:snap-none sm:gap-4 sm:overflow-visible sm:px-0 sm:[transform:translate3d(calc(var(--slide)_*_-1_*_(100%_+_1rem)_/_var(--per)),0,0)] lg:flex-1 ${perView} ${
+          className={`no-scrollbar -mx-3 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-3 pb-1 [--per:3] sm:mx-0 sm:snap-none sm:gap-4 sm:overflow-visible sm:px-0 sm:[transform:translate3d(calc(var(--slide)_*_-1_*_(100%_+_1rem)_/_var(--per)),0,0)] lg:flex-1 ${perView} ${
             animate ? 'sm:transition-transform sm:duration-700 sm:ease-[cubic-bezier(0.22,1,0.36,1)]' : ''
           }`}
           style={{ '--slide': index } as React.CSSProperties}
@@ -877,7 +883,7 @@ function AutoCarousel<T>({
   );
 }
 
-/** Latest news: three cards at a time on tablet and desktop, sliding along. */
+/** Latest news: three cards at a time on tablet and desktop; stays put until moved by hand. */
 function NewsCarousel({ posts }: { posts: MediaPost[] }) {
   const { lang, path, h } = useSite();
   return (
@@ -885,7 +891,8 @@ function NewsCarousel({ posts }: { posts: MediaPost[] }) {
       items={posts}
       getKey={(post) => post._id}
       label="News"
-      phoneWidth="w-[72%]"
+      phoneWidth="w-[68%]"
+      autoPlay={false}
       className="lg:flex-1"
       renderItem={(post, { className, clone }) => (
         <Link
@@ -894,7 +901,7 @@ function NewsCarousel({ posts }: { posts: MediaPost[] }) {
           tabIndex={clone ? -1 : undefined}
           className={`card-hover group flex flex-col overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft ${className}`}
         >
-          <span className="block aspect-[16/10] overflow-hidden bg-magenta-50">
+          <span className="block aspect-[16/9] overflow-hidden bg-magenta-50 sm:aspect-[16/10]">
             {post.coverImage && (
               <img
                 src={post.coverImage}
@@ -904,20 +911,20 @@ function NewsCarousel({ posts }: { posts: MediaPost[] }) {
               />
             )}
           </span>
-          <span className="flex flex-1 flex-col p-3">
-            <span className="flex items-center gap-1.5 text-[11px] text-ink-faint">
+          <span className="flex flex-1 flex-col p-2.5 sm:p-3">
+            <span className="flex items-center gap-1.5 text-[10.5px] text-ink-faint sm:text-[11px]">
               <CalendarDays size={12} />
               {formatDate(post.publishedAt, lang)}
             </span>
-            <span className="mt-1.5 line-clamp-3 font-display text-[15px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600">
+            <span className="mt-1 line-clamp-3 font-display text-[13px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:mt-1.5 sm:text-[15px]">
               <GradientText>{t(post.title, lang)}</GradientText>
             </span>
             {t(post.excerpt, lang) && (
-              <span className="mt-1 line-clamp-2 text-[12.5px] leading-relaxed text-ink-muted lg:line-clamp-3">
+              <span className="mt-0.5 line-clamp-2 text-[11.5px] leading-relaxed text-ink-muted sm:mt-1 sm:text-[12.5px] lg:line-clamp-3">
                 {t(post.excerpt, lang)}
               </span>
             )}
-            <span className="mt-auto inline-flex items-center gap-1 pt-2.5 text-[12px] font-medium text-magenta-600">
+            <span className="mt-auto inline-flex items-center gap-1 pt-1.5 text-[11px] font-medium text-magenta-600 sm:pt-2.5 sm:text-[12px]">
               {h('readMore')}
               <ArrowRight size={13} />
             </span>
@@ -931,15 +938,16 @@ function NewsCarousel({ posts }: { posts: MediaPost[] }) {
 function NewsAndEvents({ updates, events }: { updates: MediaPost[]; events: OrgEvent[] }) {
   const { lang, path, s, h } = useSite();
   const posters = events.filter((e) => e.posterImage || e.coverImage);
+  const newsSlides = updates.length > CAROUSEL_PER_VIEW;
   const railRef = useRef<HTMLDivElement>(null);
   const slide = (dir: 1 | -1) => {
     const rail = railRef.current;
     if (rail) rail.scrollBy({ left: dir * rail.clientWidth * 0.8, behavior: 'smooth' });
   };
-  const empty = <p className="py-8 text-center text-[13px] text-ink-faint">{s('nothingHere')}</p>;
+  const empty = <p className="py-5 text-center text-[12.5px] text-ink-faint sm:py-8 sm:text-[13px]">{s('nothingHere')}</p>;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-12 lg:gap-6">
+    <div className="grid gap-5 sm:gap-8 lg:grid-cols-12 lg:gap-6">
       {/* Latest news — the wider part of the row: a swipe row on phones, a sliding row
           of three cards from sm */}
       <div className="flex min-w-0 flex-col lg:col-span-8">
@@ -948,7 +956,8 @@ function NewsAndEvents({ updates, events }: { updates: MediaPost[]; events: OrgE
       </div>
 
       {/* Events — the narrower part of the row, on the right: one poster per view, shown
-          whole over a soft blurred copy of itself so the frame never looks empty */}
+          whole and bare (no frame). From lg the poster is as tall as the news cards; its
+          arrow row mirrors the news controls row so the two heights match. */}
       <div className="flex min-w-0 flex-col lg:col-span-4">
         <BandHeading sectionKey="homeEvents" label={h('upcomingEvents')} actionLabel={s('viewAll')} to={path('/events')} />
         {events.length === 0 ? (
@@ -962,29 +971,23 @@ function NewsAndEvents({ updates, events }: { updates: MediaPost[]; events: OrgE
                   <Link
                     key={event._id}
                     to={path(`/events/${event.slug}`)}
-                    className="card-hover group relative block aspect-[4/5] w-full shrink-0 snap-start overflow-hidden rounded-xl border border-plum-100 bg-plum-50 shadow-soft sm:aspect-[16/10] lg:aspect-auto lg:min-h-[300px]"
+                    className="group relative block h-60 w-full shrink-0 snap-start overflow-hidden sm:aspect-[16/10] sm:h-auto lg:aspect-auto lg:min-h-[300px]"
                   >
-                    <img
-                      src={src}
-                      alt=""
-                      aria-hidden="true"
-                      loading="lazy"
-                      className="absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-xl"
-                    />
                     <img
                       src={src}
                       alt={t(event.title, lang)}
                       loading="lazy"
                       /* contain: posters are shown whole, never cropped */
-                      className="absolute inset-0 h-full w-full object-contain p-2 drop-shadow-md sm:p-3"
+                      className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
                     />
                   </Link>
                 );
               })}
             </div>
-            {posters.length > 1 && (
-              <div className="mt-3 flex justify-end">
-                <RailArrows onPrev={() => slide(-1)} onNext={() => slide(1)} />
+            {(posters.length > 1 || newsSlides) && (
+              /* Same height as the news controls row, so the poster and the news cards end together */
+              <div className={`mt-3 flex h-7 justify-end ${posters.length > 1 ? '' : 'max-lg:hidden'}`}>
+                {posters.length > 1 && <RailArrows onPrev={() => slide(-1)} onNext={() => slide(1)} />}
               </div>
             )}
           </>
@@ -1023,14 +1026,14 @@ function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoIt
       <span className="absolute inset-0 z-10 grid place-items-center">
         <span
           className={`grid place-items-center rounded-full bg-white/95 text-magenta-500 shadow-lift transition group-hover:scale-110 ${
-            big ? 'h-12 w-12' : 'h-10 w-10'
+            big ? 'h-9 w-9 sm:h-12 sm:w-12' : 'h-8 w-8 sm:h-10 sm:w-10'
           }`}
         >
           <Play size={big ? 19 : 16} className="ms-0.5" fill="currentColor" />
         </span>
       </span>
       {v.durationLabel && (
-        <span className="absolute bottom-2 end-2 z-10 rounded-md bg-ink/80 px-1.5 py-0.5 text-[11px] font-medium text-white">
+        <span className="absolute bottom-1.5 end-1.5 z-10 rounded-md bg-ink/80 px-1.5 py-0.5 text-[10px] font-medium text-white sm:bottom-2 sm:end-2 sm:text-[11px]">
           {v.durationLabel}
         </span>
       )}
@@ -1052,7 +1055,7 @@ function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoIt
           items={videos}
           getKey={(v) => v._id}
           label="Video"
-          phoneWidth="w-[86%]"
+          phoneWidth="w-[80%]"
           tabletPerView={2}
           renderItem={(v, { className, clone }) => (
             <button
@@ -1063,22 +1066,22 @@ function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoIt
               className={`card-hover group flex flex-col overflow-hidden rounded-xl border border-plum-100 bg-white text-start shadow-soft ${className}`}
             >
               {thumb(v, true, true)}
-              <span className="flex flex-1 flex-col p-4">
-                <span className="line-clamp-2 block font-display text-[15px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 md:text-[16px]">
+              <span className="flex flex-1 flex-col p-3 sm:p-4">
+                <span className="line-clamp-2 block font-display text-[13px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:text-[15px] md:text-[16px]">
                   <GradientText>{t(v.title, lang)}</GradientText>
                 </span>
                 {t(v.description, lang) && (
-                  <span className="mt-1.5 line-clamp-2 block text-[13px] leading-relaxed text-ink-muted">
+                  <span className="mt-1 line-clamp-2 block text-[11.5px] leading-relaxed text-ink-muted sm:mt-1.5 sm:text-[13px]">
                     {t(v.description, lang)}
                   </span>
                 )}
-                <span className="mt-auto flex items-center justify-between gap-2 pt-3">
-                  <span className="inline-flex items-center gap-1 text-[12.5px] font-medium text-magenta-600">
+                <span className="mt-auto flex items-center justify-between gap-2 pt-2 sm:pt-3">
+                  <span className="inline-flex items-center gap-1 text-[11.5px] font-medium text-magenta-600 sm:text-[12.5px]">
                     {s('watchVideo')}
                     <ArrowRight size={13} />
                   </span>
                   {v.publishedAt && (
-                    <span className="flex items-center gap-1 text-[11.5px] text-ink-faint">
+                    <span className="flex items-center gap-1 text-[10.5px] text-ink-faint sm:text-[11.5px]">
                       <CalendarDays size={11} />
                       {formatDate(v.publishedAt, lang)}
                     </span>
@@ -1091,15 +1094,15 @@ function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoIt
       ) : (
         <button
           onClick={() => onPlay(videos[0])}
-          className="group grid w-full items-center gap-4 text-start sm:grid-cols-[minmax(0,320px)_1fr] md:gap-6"
+          className="group grid w-full items-center gap-3 text-start sm:grid-cols-[minmax(0,320px)_1fr] sm:gap-4 md:gap-6"
         >
           {thumb(videos[0], true)}
           <span className="min-w-0">
-            <span className="block font-display text-[16px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 md:text-[18px]">
+            <span className="block font-display text-[14px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:text-[16px] md:text-[18px]">
               <GradientText>{t(videos[0].title, lang)}</GradientText>
             </span>
             {t(videos[0].description, lang) && (
-              <span className="mt-1.5 line-clamp-3 block text-[13.5px] leading-relaxed text-ink-muted">
+              <span className="mt-1 line-clamp-3 block text-[12px] leading-relaxed text-ink-muted sm:mt-1.5 sm:text-[13.5px]">
                 {t(videos[0].description, lang)}
               </span>
             )}
@@ -1159,13 +1162,11 @@ function PhotoGallery({ photos }: { photos: MediaItem[] }) {
 
   return (
     <div>
-      <Container>
-        <BandHeading sectionKey="homePhotos" label={h('photoGallery')} actionLabel={s('viewAll')} to={path('/media/gallery')} />
-      </Container>
-      {/* Full-width strip: photos reach both edges of the section; the arrows float over
-          the photos instead of taking space beside them */}
+      <BandHeading sectionKey="homePhotos" label={h('photoGallery')} actionLabel={s('viewAll')} to={path('/media/gallery')} />
+      {/* The strip is as wide as the other sections; the arrows float over the photos
+          instead of taking space beside them */}
       <div className="relative">
-        <span className="absolute start-2 top-1/2 z-10 -translate-y-1/2 md:start-4">
+        <span className="absolute start-1.5 top-1/2 z-10 -translate-y-1/2 sm:start-2 md:start-4">
           <MarqueeArrow dir={-1} onClick={() => nudge(-1)} />
         </span>
         <div
@@ -1182,7 +1183,7 @@ function PhotoGallery({ photos }: { photos: MediaItem[] }) {
                 const caption = t(photo.caption, lang);
                 const order = copy * loop.length + i;
                 return (
-                  <li key={`${copy}-${i}`} className="shrink-0 pe-3 md:pe-4" aria-hidden={hidden || undefined}>
+                  <li key={`${copy}-${i}`} className="shrink-0 pe-2 sm:pe-3 md:pe-4" aria-hidden={hidden || undefined}>
                     <button
                       type="button"
                       onClick={() => setOpen(index)}
@@ -1190,7 +1191,7 @@ function PhotoGallery({ photos }: { photos: MediaItem[] }) {
                       draggable={false}
                       aria-label={caption || `${h('photoGallery')} ${index + 1}`}
                       /* 3:2 like event photos; pops in (fade + slight scale) on first view */
-                      className={`group relative block aspect-[3/2] h-44 overflow-hidden rounded-xl bg-plum-50 shadow-soft transition duration-700 ease-out motion-reduce:transition-none sm:h-52 lg:h-60 ${
+                      className={`group relative block aspect-[3/2] h-28 overflow-hidden rounded-lg bg-plum-50 shadow-soft transition duration-700 ease-out motion-reduce:transition-none sm:h-52 sm:rounded-xl lg:h-60 ${
                         shown ? 'scale-100 opacity-100' : 'scale-[0.92] opacity-0'
                       }`}
                       style={{ transitionDelay: shown ? `${Math.min(order, 8) * 80}ms` : undefined }}
@@ -1218,7 +1219,7 @@ function PhotoGallery({ photos }: { photos: MediaItem[] }) {
             )}
           </ul>
         </div>
-        <span className="absolute end-2 top-1/2 z-10 -translate-y-1/2 md:end-4">
+        <span className="absolute end-1.5 top-1/2 z-10 -translate-y-1/2 sm:end-2 md:end-4">
           <MarqueeArrow dir={1} onClick={() => nudge(1)} />
         </span>
       </div>
