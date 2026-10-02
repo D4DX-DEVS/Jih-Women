@@ -46,31 +46,31 @@ export default function Search() {
           ) : !data?.results.length ? (
             <EmptyState message={s('noResults')} />
           ) : (
-            <ul className="divide-y divide-plum-100 overflow-hidden rounded-3xl border border-plum-100 bg-white shadow-soft">
+            <ul className="divide-y divide-plum-100 overflow-hidden rounded-2xl border border-plum-100 bg-white shadow-soft sm:rounded-3xl">
               {data.results.map((result, i) => (
                 <li key={`${result.kind}-${result.slug}-${i}`}>
                   <Link
                     to={path(result.path)}
-                    className="flex min-w-0 items-center gap-4 px-5 py-4 transition hover:bg-magenta-50"
+                    className="flex min-w-0 items-center gap-3 px-3 py-2.5 transition hover:bg-magenta-50 sm:gap-4 sm:px-5 sm:py-4"
                   >
                     {result.coverImage ? (
                       <img
                         src={result.coverImage}
                         alt=""
                         loading="lazy"
-                        className={`h-14 w-16 shrink-0 rounded-xl ${
+                        className={`h-11 w-[3.25rem] shrink-0 rounded-lg sm:h-14 sm:w-16 sm:rounded-xl ${
                           // programme results show a logo: keep it whole
                           result.kind === 'program' ? 'border border-plum-100 bg-white object-contain p-1.5' : 'object-cover'
                         }`}
                       />
                     ) : (
-                      <span className="h-14 w-16 shrink-0 rounded-xl bg-magenta-50" />
+                      <span className="h-11 w-[3.25rem] shrink-0 rounded-lg bg-magenta-50 sm:h-14 sm:w-16 sm:rounded-xl" />
                     )}
                     <span className="min-w-0">
-                      <span className="block text-[11px] uppercase tracking-wider text-magenta-500">
+                      <span className="block text-[10.5px] uppercase tracking-wider text-magenta-500 sm:text-[11px]">
                         {s(KIND_LABEL[result.kind] ?? result.kind)}
                       </span>
-                      <span className="mt-0.5 block truncate font-display text-[15px] font-semibold">
+                      <span className="mt-0.5 block truncate font-display text-[13.5px] font-semibold sm:text-[15px]">
                         <GradientText>{t(result.title, lang)}</GradientText>
                       </span>
                     </span>

@@ -48,7 +48,7 @@ export default function Contact() {
     { required = false, type = 'text', rows = 0 } = {}
   ) => (
     <div className={rows ? 'sm:col-span-2' : ''}>
-      <label className="mb-1.5 block text-[12px] font-medium text-ink-muted">
+      <label className="mb-1 block text-[11.5px] font-medium text-ink-muted sm:mb-1.5 sm:text-[12px]">
         {label}
         {required ? <span className="ms-1 text-magenta-500">*</span> : (
           <span className="ms-1 text-ink-faint">(Optional)</span>
@@ -60,7 +60,7 @@ export default function Contact() {
           required={required}
           value={form[key]}
           onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-          className="w-full rounded-2xl border border-plum-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-magenta-500"
+          className="w-full rounded-xl border border-plum-200 bg-white px-3 py-2 text-[13px] outline-none transition focus:border-magenta-500 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm"
         />
       ) : (
         <input
@@ -68,7 +68,7 @@ export default function Contact() {
           required={required}
           value={form[key]}
           onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-          className="w-full rounded-xl border border-plum-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-magenta-500"
+          className="w-full rounded-lg border border-plum-200 bg-white px-3 py-2 text-[13px] outline-none transition focus:border-magenta-500 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
         />
       )}
     </div>
@@ -82,29 +82,29 @@ export default function Contact() {
       />
       <Section tone="mist">
         <Container>
-          <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:gap-10">
-            <div className="min-w-0 space-y-4">
+          <div className="grid min-w-0 gap-4 sm:gap-8 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:gap-10">
+            <div className="min-w-0 space-y-2.5 sm:space-y-4">
               {details.map(({ Icon, label, value, href }) => (
                 <div
                   key={label}
-                  className="flex gap-4 rounded-3xl border border-plum-100 bg-white p-5 shadow-soft"
+                  className="flex gap-3 rounded-2xl border border-plum-100 bg-white p-3 shadow-soft sm:gap-4 sm:rounded-3xl sm:p-5"
                 >
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-magenta-50 text-magenta-600">
-                    <Icon size={18} />
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-magenta-50 text-magenta-600 sm:h-11 sm:w-11 sm:rounded-2xl">
+                    <Icon size={16} />
                   </span>
                   <div className="min-w-0">
-                    <div className="text-[11px] uppercase tracking-wider text-ink-faint">{label}</div>
+                    <div className="text-[10.5px] uppercase tracking-wider text-ink-faint sm:text-[11px]">{label}</div>
                     {href ? (
                       <a
                         href={href}
                         target={href.startsWith('http') ? '_blank' : undefined}
                         rel="noreferrer"
-                        className="mt-1 block break-words text-[15px] font-medium text-ink transition hover:text-magenta-600"
+                        className="mt-0.5 block break-words text-[13px] font-medium text-ink transition hover:text-magenta-600 sm:mt-1 sm:text-[15px]"
                       >
                         {value}
                       </a>
                     ) : (
-                      <p className="mt-1 whitespace-pre-line text-[15px] leading-relaxed text-ink/85">
+                      <p className="mt-0.5 whitespace-pre-line text-[13px] leading-relaxed text-ink/85 sm:mt-1 sm:text-[15px]">
                         {value}
                       </p>
                     )}
@@ -114,12 +114,12 @@ export default function Contact() {
             </div>
 
             <div className="min-w-0">
-              <div className="rounded-3xl border border-plum-100 bg-white p-5 shadow-soft sm:p-6 md:p-8">
-                <h2 className="font-display text-xl font-semibold"><GradientText>Write to Us</GradientText></h2>
+              <div className="rounded-2xl border border-plum-100 bg-white p-3.5 shadow-soft sm:rounded-3xl sm:p-6 md:p-8">
+                <h2 className="font-display text-base font-semibold sm:text-xl"><GradientText>Write to Us</GradientText></h2>
 
                 {status === 'done' ? (
-                  <div className="mt-6 rounded-2xl border border-magenta-200 bg-magenta-50 p-6 text-center">
-                    <p className="text-sm font-medium text-plum-800">{s('messageSent')}</p>
+                  <div className="mt-3 rounded-xl border border-magenta-200 bg-magenta-50 p-4 text-center sm:mt-6 sm:rounded-2xl sm:p-6">
+                    <p className="text-[13px] font-medium text-plum-800 sm:text-sm">{s('messageSent')}</p>
                     <button
                       onClick={() => setStatus('idle')}
                       className="mt-3 text-[13px] font-semibold text-magenta-600 underline underline-offset-4"
@@ -128,7 +128,7 @@ export default function Contact() {
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={submit} className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <form onSubmit={submit} className="mt-3 grid gap-2.5 sm:mt-6 sm:grid-cols-2 sm:gap-4">
                     {field('name', 'Your Name', { required: true })}
                     {field('phone', 'Phone Number', { type: 'tel' })}
                     {field('email', 'Email Address', { type: 'email' })}
@@ -150,13 +150,13 @@ export default function Contact() {
               </div>
 
               {settings?.mapEmbedUrl && (
-                <div className="mt-6 overflow-hidden rounded-3xl border border-plum-100 shadow-soft">
+                <div className="mt-4 overflow-hidden rounded-2xl border border-plum-100 shadow-soft sm:mt-6 sm:rounded-3xl">
                   <iframe
                     src={settings.mapEmbedUrl}
                     title="Map"
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
-                    className="h-[320px] w-full border-0"
+                    className="h-[220px] w-full border-0 sm:h-[320px]"
                   />
                 </div>
               )}

@@ -45,9 +45,9 @@ export default function Links() {
               const items = links.filter((l) => l.category === group.category);
               if (!items.length) return null;
               return (
-                <div key={group.category} className="mb-14 last:mb-0">
+                <div key={group.category} className="mb-7 last:mb-0 sm:mb-14">
                   <SectionHeading eyebrow={h('externalLinks')} title={h(group.key)} />
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-2.5 sm:gap-4 md:grid-cols-2">
                     {items.map((link) => (
                       <LinkCard key={link._id} link={link} />
                     ))}

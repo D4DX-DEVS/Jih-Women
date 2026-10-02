@@ -147,7 +147,7 @@ export default function Header() {
         <div className={SHELL}>
         {/* Logo on the left; navigation and search grouped on the right. One height and
             width on every page (no per-page variants). */}
-        <div className="flex h-12 min-w-0 items-center justify-between gap-2 md:h-16 lg:h-20 xl:gap-6">
+        <div className="flex h-11 min-w-0 items-center justify-between gap-2 md:h-16 lg:h-20 xl:gap-6">
             <Link
               to={path('/')}
               className="flex shrink-0 items-center"
@@ -158,7 +158,7 @@ export default function Header() {
               <img
                 src="/logo.png"
                 alt={t(settings?.siteName, 'en') || "Women's Wing Kerala"}
-                className={`w-auto max-w-[60vw] object-contain object-left h-8 md:h-12 lg:h-16`}
+                className={`w-auto max-w-[60vw] object-contain object-left h-7 md:h-12 lg:h-16`}
               />
             </Link>
 
@@ -220,17 +220,17 @@ export default function Header() {
                   below and no change in header height. On xl it grows within the row (the
                   nav slides left); on smaller screens it overlays the header row leftwards
                   from the icon, so nothing else moves. */}
-              <div className="relative h-10 w-10 shrink-0 xl:w-auto">
+              <div className="relative h-9 w-9 shrink-0 md:h-10 md:w-10 xl:w-auto">
                 <form
                   onSubmit={submitSearch}
                   role="search"
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') setSearchOpen(false);
                   }}
-                  className={`absolute end-0 top-0 z-20 flex h-10 items-center overflow-hidden rounded-full border transition-[width,background-color,border-color,box-shadow] duration-300 ease-out xl:static ${
+                  className={`absolute end-0 top-0 z-20 flex h-9 items-center overflow-hidden rounded-full border transition-[width,background-color,border-color,box-shadow] duration-300 ease-out md:h-10 xl:static ${
                     searchOpen
                       ? 'w-[min(calc(100vw-5rem),22rem)] border-plum-100 bg-white shadow-soft focus-within:border-magenta-200 focus-within:ring-2 focus-within:ring-magenta-100 xl:w-64'
-                      : 'w-10 border-transparent bg-magenta-50 hover:bg-magenta-100/70'
+                      : 'w-9 border-transparent bg-magenta-50 hover:bg-magenta-100/70 md:w-10'
                   }`}
                 >
                   <button
@@ -238,7 +238,7 @@ export default function Header() {
                     onClick={searchOpen ? undefined : () => setSearchOpen(true)}
                     aria-label={str('search', 'en')}
                     aria-expanded={searchOpen}
-                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors ${
+                    className={`grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors md:h-10 md:w-10 ${
                       searchOpen ? 'text-ink-faint hover:text-magenta-600' : 'text-magenta-600'
                     }`}
                   >

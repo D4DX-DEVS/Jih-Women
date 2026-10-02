@@ -17,23 +17,20 @@ function ScrollToTop() {
 function Shell() {
   const { lang } = useParams();
   const { pathname } = useLocation();
-  // The footer (with its bottom bar) appears on the home page only; content and
-  // detail pages end with their own content.
   const isHome = /^\/(ml|en)\/?$/.test(pathname);
   return (
     // Phones: bottom padding so the fixed bottom navigation never covers the end of a page
-    <div className="flex min-h-screen min-w-0 flex-col overflow-x-clip pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:pb-0">
+    <div className="flex min-h-screen min-w-0 flex-col overflow-x-clip pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0">
       <Header />
       <main id="main" className="min-w-0 flex-1 overflow-x-clip">
         <Outlet />
       </main>
-      {/* Phones have no footer (the bottom navigation covers it); from md, `contents`
-          drops the wrapper so the footer lays out exactly as before */}
-      {isHome && (
-        <div className="hidden md:contents">
-          <Footer key={lang} />
-        </div>
-      )}
+      {/* Phones show the footer on the home page only (the bottom navigation covers the
+          rest); from md it is on every page. `contents` drops the wrapper so the footer
+          lays out as a direct child of the page column. */}
+      <div className={isHome ? 'contents' : 'hidden md:contents'}>
+        <Footer key={lang} />
+      </div>
       <BackToTop />
       <BottomNav />
     </div>

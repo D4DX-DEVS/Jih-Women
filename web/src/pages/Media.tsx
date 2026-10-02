@@ -19,6 +19,7 @@ import {
   RichText,
   Section,
   SectionHeading,
+  ViewToggle,
 } from '../components/Primitives';
 import {
   AlbumCard,
@@ -28,6 +29,7 @@ import {
   VideoCard,
   VideoPlayerModal,
 } from '../components/Cards';
+import { useViewMode } from '../lib/view';
 import NotFound from './NotFound';
 import type { Album, DownloadItem, MediaPost, MediaPostType, Paged, VideoItem } from '../lib/types';
 
@@ -45,12 +47,12 @@ const POST_TYPES: { type: MediaPostType; key: string }[] = [
  */
 function MediaHeading({ title }: { title: string }) {
   return (
-    <div className="mb-6 flex items-center justify-center gap-3 md:mb-8">
-      <span className="h-px w-8 shrink-0 bg-magenta-300 sm:w-12" aria-hidden="true" />
-      <h1 className="min-w-0 text-center font-display text-[1.5rem] font-semibold leading-tight text-plum-800 [overflow-wrap:anywhere] md:text-[1.9rem]">
+    <div className="mb-3 flex items-center justify-center gap-2 sm:mb-6 sm:gap-3 md:mb-8">
+      <span className="h-px w-6 shrink-0 bg-magenta-300 sm:w-12" aria-hidden="true" />
+      <h1 className="min-w-0 text-center font-display text-[1.15rem] font-semibold leading-tight text-plum-800 [overflow-wrap:anywhere] sm:text-[1.5rem] md:text-[1.9rem]">
         <GradientText>{title}</GradientText>
       </h1>
-      <span className="h-px w-8 shrink-0 bg-magenta-300 sm:w-12" aria-hidden="true" />
+      <span className="h-px w-6 shrink-0 bg-magenta-300 sm:w-12" aria-hidden="true" />
     </div>
   );
 }
@@ -61,6 +63,7 @@ export function MediaList() {
   const { type } = useParams();
   const { pageTitle } = useSite();
   const [page, setPage] = useState(1);
+  const { view } = useViewMode();
 
   const known = POST_TYPES.find((p) => p.type === type);
   const { data, loading, error, reload } = useApi<Paged<MediaPost>>(
@@ -71,9 +74,10 @@ export function MediaList() {
 
   return (
     <>
-      <Section tone="mist" className="pt-6 md:pt-8">
+      <Section tone="mist" className="pt-3 sm:pt-6 md:pt-8">
         <Container>
           <MediaHeading title={pageTitle(known.key)} />
+          <ViewToggle />
           {loading ? (
             <Loading />
           ) : error ? (
@@ -82,9 +86,9 @@ export function MediaList() {
             <EmptyState />
           ) : (
             <>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
                 {data.items.map((post) => (
-                  <PostCard key={post._id} post={post} />
+                  <PostCard key={post._id} post={post} view={view} />
                 ))}
               </div>
               <Pagination page={data.page} pages={data.pages} onPage={setPage} />
@@ -99,6 +103,7 @@ export function MediaList() {
 export function MediaDetail() {
   const { slug, type } = useParams();
   const { lang, path, s, h } = useSite();
+  const { view } = useViewMode();
   const { data, loading, error, notFound, reload } = useApi<MediaPost>(
     slug ? `/api/site/media/${slug}` : null
   );
@@ -132,7 +137,7 @@ export function MediaDetail() {
           {/* One content card: details, summary and story, then downloads and photos */}
           <ContentPanel>
             <PanelSection>
-              <div className="mb-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-plum-100/80 pb-4 text-[13px] text-ink-muted">
+              <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-plum-100/80 pb-2.5 text-[12px] text-ink-muted sm:mb-6 sm:gap-x-5 sm:gap-y-2 sm:pb-4 sm:text-[13px]">
                 <span className="inline-flex items-center gap-1.5">
                   <CalendarDays size={14} className="text-magenta-500" />
                   {s('publishedOn')}: {formatDate(data.publishedAt, lang)}
@@ -150,7 +155,7 @@ export function MediaDetail() {
               </div>
 
               {t(data.excerpt, lang) && (
-                <p className="user-text mb-7 rounded-e-xl border-s-4 border-magenta-400 bg-magenta-50/50 py-3 pe-4 ps-5 text-[16px] font-medium leading-relaxed text-ink/80">
+                <p className="user-text mb-4 rounded-e-xl border-s-4 border-magenta-400 bg-magenta-50/50 py-2 pe-3 ps-3.5 text-[13.5px] font-medium leading-relaxed text-ink/80 sm:mb-7 sm:py-3 sm:pe-4 sm:ps-5 sm:text-[16px]">
                   {t(data.excerpt, lang)}
                 </p>
               )}
@@ -162,7 +167,7 @@ export function MediaDetail() {
                   href={data.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-magenta-600 underline underline-offset-4"
+                  className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-magenta-600 underline underline-offset-4 sm:mt-6 sm:text-sm"
                 >
                   {s('source')}
                   <ExternalLinkIcon size={14} />
@@ -170,9 +175,9 @@ export function MediaDetail() {
               )}
 
               {data.tags?.length > 0 && (
-                <div className="mt-8 flex flex-wrap gap-2">
+                <div className="mt-5 flex flex-wrap gap-1.5 sm:mt-8 sm:gap-2">
                   {data.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-magenta-50 px-3 py-1 text-[12px] font-medium text-magenta-600">
+                    <span key={tag} className="rounded-full bg-magenta-50 px-2.5 py-0.5 text-[11px] font-medium text-magenta-600 sm:px-3 sm:py-1 sm:text-[12px]">
                       #{tag}
                     </span>
                   ))}
@@ -199,9 +204,9 @@ export function MediaDetail() {
         <Section tone="white">
           <Container>
             <SectionHeading eyebrow={h('mediaCentre')} title={h('relatedPosts')} />
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className={`grid gap-2 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
               {data.related.map((post) => (
-                <PostCard key={post._id} post={post} />
+                <PostCard key={post._id} post={post} view={view} />
               ))}
             </div>
           </Container>
@@ -217,6 +222,7 @@ export function VideosPage({ kind }: { kind: 'video' | 'podcast' }) {
   const { pageTitle } = useSite();
   const [page, setPage] = useState(1);
   const [playing, setPlaying] = useState<VideoItem | null>(null);
+  const { view } = useViewMode();
   const { data, loading, error, reload } = useApi<Paged<VideoItem>>(
     `/api/site/videos?kind=${kind}&page=${page}&limit=12`
   );
@@ -225,9 +231,10 @@ export function VideosPage({ kind }: { kind: 'video' | 'podcast' }) {
 
   return (
     <>
-      <Section tone="mist" className="pt-6 md:pt-8">
+      <Section tone="mist" className="pt-3 sm:pt-6 md:pt-8">
         <Container>
           <MediaHeading title={label} />
+          <ViewToggle />
           {loading ? (
             <Loading />
           ) : error ? (
@@ -236,9 +243,9 @@ export function VideosPage({ kind }: { kind: 'video' | 'podcast' }) {
             <EmptyState />
           ) : (
             <>
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
                 {data.items.map((item) => (
-                  <VideoCard key={item._id} item={item} onPlay={setPlaying} />
+                  <VideoCard key={item._id} item={item} onPlay={setPlaying} view={view} />
                 ))}
               </div>
               <Pagination page={data.page} pages={data.pages} onPage={setPage} />
@@ -256,15 +263,17 @@ export function VideosPage({ kind }: { kind: 'video' | 'podcast' }) {
 export function AlbumsIndex() {
   const { pageTitle } = useSite();
   const [page, setPage] = useState(1);
+  const { view } = useViewMode();
   const { data, loading, error, reload } = useApi<Paged<Album>>(
     `/api/site/albums?page=${page}&limit=12`
   );
 
   return (
     <>
-      <Section tone="mist" className="pt-6 md:pt-8">
+      <Section tone="mist" className="pt-3 sm:pt-6 md:pt-8">
         <Container>
           <MediaHeading title={pageTitle('photoGallery')} />
+          <ViewToggle />
           {loading ? (
             <Loading />
           ) : error ? (
@@ -273,9 +282,9 @@ export function AlbumsIndex() {
             <EmptyState />
           ) : (
             <>
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
                 {data.items.map((album) => (
-                  <AlbumCard key={album._id} album={album} />
+                  <AlbumCard key={album._id} album={album} view={view} />
                 ))}
               </div>
               <Pagination page={data.page} pages={data.pages} onPage={setPage} />
@@ -349,16 +358,16 @@ export function DownloadsPage() {
 
   return (
     <>
-      <Section tone="mist" className="pt-6 md:pt-8">
+      <Section tone="mist" className="pt-3 sm:pt-6 md:pt-8">
         <Container>
           <MediaHeading title={pageTitle('downloads')} />
 
-          <div className="mb-7 flex flex-wrap gap-2">
+          <div className="mb-4 flex flex-wrap gap-1.5 sm:mb-7 sm:gap-2">
             {DOWNLOAD_CATEGORIES.map((c) => (
               <button
                 key={c.value}
                 onClick={() => setCategory(c.value)}
-                className={`rounded-full px-4 py-2 text-[13px] font-semibold transition ${
+                className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition sm:px-4 sm:py-2 sm:text-[13px] ${
                   category === c.value
                     ? 'bg-magenta-500 text-white'
                     : 'border border-plum-200 text-ink-muted hover:border-magenta-300'
@@ -376,7 +385,7 @@ export function DownloadsPage() {
           ) : !data?.items.length ? (
             <EmptyState />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {data.items.map((item) => (
                 <DownloadRow key={item._id} item={item} />
               ))}

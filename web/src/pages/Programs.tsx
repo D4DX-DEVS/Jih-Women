@@ -15,16 +15,20 @@ import {
   PageHeader,
   Section,
   SectionHeading,
+  ViewToggle,
 } from '../components/Primitives';
 import { Lightbox, ProgramCard, VideoCard, VideoPlayerModal } from '../components/Cards';
 import Reveal from '../components/Reveal';
 import ContentSections from '../components/ContentCards';
+import { useViewMode } from '../lib/view';
 import NotFound from './NotFound';
 import type { MediaItem, Program, VideoItem } from '../lib/types';
 
 export function ProgramsIndex() {
   const { path, s, pageTitle, h } = useSite();
+  const { view } = useViewMode();
   const { data, loading, error, reload } = useApi<{ items: Program[] }>('/api/site/programs');
+  const cols = view === 'list' ? 'grid-cols-1' : 'grid-cols-3';
 
   const major = data?.items.filter((p) => p.isMajor) ?? [];
   const others = data?.items.filter((p) => !p.isMajor) ?? [];
@@ -47,22 +51,23 @@ export function ProgramsIndex() {
             <EmptyState />
           ) : (
             <>
+              <ViewToggle />
               {major.length > 0 && (
                 <>
                   <ManagedSectionHeading size="sm" sectionKey="programsMajor" eyebrow={h('programs')} title={h('majorProgrammes')} />
-                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  <div className={`grid ${cols} gap-2 sm:grid-cols-1 sm:gap-6 md:grid-cols-2 lg:grid-cols-3`}>
                     {major.map((p) => (
-                      <ProgramCard key={p._id} program={p} />
+                      <ProgramCard key={p._id} program={p} view={view} />
                     ))}
                   </div>
                 </>
               )}
               {others.length > 0 && (
-                <div className="mt-14">
+                <div className="mt-7 sm:mt-14">
                   <ManagedSectionHeading size="sm" sectionKey="programsOther" eyebrow={h('programs')} title={h('otherProgrammes')} />
-                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  <div className={`grid ${cols} gap-2 sm:grid-cols-1 sm:gap-6 md:grid-cols-2 lg:grid-cols-3`}>
                     {others.map((p) => (
-                      <ProgramCard key={p._id} program={p} />
+                      <ProgramCard key={p._id} program={p} view={view} />
                     ))}
                   </div>
                 </div>
@@ -124,8 +129,8 @@ export function ProgramDetail() {
 
       {data.externalUrl && (
         <div className="border-b border-plum-100 bg-magenta-500/10">
-          <Container className="flex flex-wrap items-center justify-between gap-4 py-5">
-            <p className="text-sm text-ink-muted">{t(data.externalLabel, 'en') || s('visitWebsite')}</p>
+          <Container className="flex flex-wrap items-center justify-between gap-2 py-3 sm:gap-4 sm:py-5">
+            <p className="text-[13px] text-ink-muted sm:text-sm">{t(data.externalLabel, 'en') || s('visitWebsite')}</p>
             <Button href={data.externalUrl} variant="primary" size="sm">
               {s('visitWebsite')}
               <ExternalLinkIcon size={15} />
@@ -143,7 +148,7 @@ export function ProgramDetail() {
               hasAside ? (
                 <div className="flex flex-col items-center text-center">
                   {data.logoUrl && (
-                    <div className="flex h-16 w-full max-w-[180px] items-center justify-center md:h-20">
+                    <div className="flex h-12 w-full max-w-[140px] items-center justify-center sm:h-16 sm:max-w-[180px] md:h-20">
                       <img
                         src={data.logoUrl}
                         alt={title}
@@ -152,9 +157,9 @@ export function ProgramDetail() {
                       />
                     </div>
                   )}
-                  <p className="user-text mt-2.5 text-[13px] font-semibold text-plum-800">{title}</p>
+                  <p className="user-text mt-1.5 text-[12.5px] font-semibold text-plum-800 sm:mt-2.5 sm:text-[13px]">{title}</p>
                   {data.externalUrl && (
-                    <Button href={data.externalUrl} variant="outline" size="sm" className="mt-3">
+                    <Button href={data.externalUrl} variant="outline" size="sm" className="mt-2 sm:mt-3">
                       {s('visitWebsite')}
                       <ExternalLinkIcon size={14} />
                     </Button>
@@ -174,12 +179,12 @@ export function ProgramDetail() {
           {/* Related videos: only when videos naming this programme exist (matched on
               the server). A swipe row on phones, a grid from sm; cards fade up in turn. */}
           {(data.relatedVideos?.length ?? 0) > 0 && (
-            <section className="mt-10 md:mt-12">
+            <section className="mt-6 sm:mt-10 md:mt-12">
               <SectionHeading size="sm" eyebrow={title} title={h('relatedVideos')} />
-              <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3">
+              <div className="no-scrollbar -mx-3 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-3 pb-2 sm:mx-0 sm:gap-4 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3">
                 {data.relatedVideos!.map((video, i) => (
-                  <Reveal key={video._id} delay={Math.min(i, 5) * 90} className="w-[82%] shrink-0 snap-start sm:w-auto">
-                    <VideoCard item={video} onPlay={setPlaying} />
+                  <Reveal key={video._id} delay={Math.min(i, 5) * 90} className="w-[76%] shrink-0 snap-start sm:w-auto">
+                    <VideoCard item={video} onPlay={setPlaying} view="stack" />
                   </Reveal>
                 ))}
               </div>
@@ -203,9 +208,9 @@ function ProgramGallery({ items, label, heading }: { items: MediaItem[]; label: 
   const { lang } = useSite();
   const [open, setOpen] = useState<number | null>(null);
   return (
-    <section className="mt-10 md:mt-12">
+    <section className="mt-6 sm:mt-10 md:mt-12">
       <SectionHeading size="sm" eyebrow={label} title={heading} />
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 lg:gap-4">
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-3 lg:grid-cols-4 lg:gap-4">
         {items.map((item, i) => {
           const caption = t(item.caption, lang);
           return (
@@ -214,7 +219,7 @@ function ProgramGallery({ items, label, heading }: { items: MediaItem[]; label: 
                 type="button"
                 onClick={() => setOpen(i)}
                 aria-label={caption || `${heading} ${i + 1}`}
-                className="group relative block aspect-[3/2] w-full overflow-hidden rounded-xl bg-plum-50 shadow-soft"
+                className="group relative block aspect-[3/2] w-full overflow-hidden rounded-lg bg-plum-50 shadow-soft sm:rounded-xl"
               >
                 {item.kind === 'video' ? (
                   <>
