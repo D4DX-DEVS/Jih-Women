@@ -18,12 +18,13 @@ import {
   Container,
   ErrorState,
   GradientText,
-  Loading,
+  ManagedLink,
   ManagedSectionHeading,
   Rule,
   Section,
   SectionLogo,
 } from '../components/Primitives';
+import { HomeSkeleton } from '../components/PageSkeletons';
 import {
   CampaignCard,
   EventCard,
@@ -52,7 +53,7 @@ export default function Home() {
   const { data, loading, error, reload } = useApi<HomePayload>('/api/site/home');
   const [playing, setPlaying] = useState<VideoItem | null>(null);
 
-  if (loading) return <Loading />;
+  if (loading) return <HomeSkeleton />;
   if (error) {
     return (
       <Container className="py-20">
@@ -542,7 +543,7 @@ function Eyebrow({ children, logo }: { children: React.ReactNode; logo?: string 
 
 /* About (organisation intro) beside the president's message, as one card */
 function MainInfo({ settings, message }: { settings: SiteSettings; message: PresidentMessage | null }) {
-  const { lang, path, section, h } = useSite();
+  const { lang, link, section, h } = useSite();
   const about = section('homeAbout', {
     label: h('aboutUs'),
     heading: settings.siteName?.en?.trim() || t(settings.siteName, lang),
@@ -571,7 +572,7 @@ function MainInfo({ settings, message }: { settings: SiteSettings; message: Pres
           <Rule className="mt-2 sm:mt-3" />
           <p className="mt-2.5 text-[12.5px] leading-relaxed text-ink/75 sm:mt-4 sm:text-[14.5px]">{aboutBody}</p>
           <div className="mt-3 sm:mt-5">
-            <Button to={path('/who-we-are')} size="sm">
+            <Button {...link(about.linkUrl || '/who-we-are')} size="sm">
               {h('readMore')}
               <ArrowRight size={14} />
             </Button>
@@ -622,13 +623,13 @@ function MainInfo({ settings, message }: { settings: SiteSettings; message: Pres
                   />
                 )}
                 {message.linkUrl && (
-                  <Link
-                    to={message.linkUrl}
+                  <ManagedLink
+                    {...link(message.linkUrl)}
                     className="ms-6 mt-2 inline-flex items-center gap-1.5 text-[12px] font-medium text-magenta-600 hover:text-magenta-500 sm:ms-7 sm:mt-3 sm:text-[13px]"
                   >
                     {h('readMore')}
                     <ArrowRight size={14} />
-                  </Link>
+                  </ManagedLink>
                 )}
               </div>
             </div>

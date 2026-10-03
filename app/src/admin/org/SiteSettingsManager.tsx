@@ -55,12 +55,13 @@ const PRESIDENT_FIELDS: FieldDef[] = [
     recommend:
       '800×960px (5:6 portrait). The top of the frame is rounded into a tall arch and centre-cropped, so keep the face in the upper third.',
   },
-  { kind: 'rich', path: 'presidentMessage.message', label: 'Message' },
+  { kind: 'rich', path: 'presidentMessage.message', label: 'Message', sections: false },
   {
-    kind: 'text',
+    kind: 'link',
     path: 'presidentMessage.linkUrl',
-    label: 'Read more link',
-    placeholder: '/who-we-are/our-legacy',
+    label: 'Read More button opens',
+    emptyLabel: 'No button — show the whole message',
+    hint: 'Pick any page you have created, or enter a custom link.',
   },
 ];
 

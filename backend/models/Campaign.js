@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { RICH_BODY_MAX } = require('./common');
 const { localized, attachmentSchema, mediaItemSchema, autoSlug } = require('./common');
 
 const campaignSchema = new mongoose.Schema(
@@ -6,7 +7,7 @@ const campaignSchema = new mongoose.Schema(
     title: localized({ required: true, maxlength: 300 }),
     slug: { type: String, trim: true, unique: true, index: true },
     summary: localized({ maxlength: 1000 }),
-    body: localized({ maxlength: 60000 }),
+    body: localized({ maxlength: RICH_BODY_MAX }),
     coverImage: { type: String, trim: true, default: '' },
     posterImage: { type: String, trim: true, default: '' },
     startDate: { type: Date },

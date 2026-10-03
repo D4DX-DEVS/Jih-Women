@@ -10,12 +10,12 @@ import {
   ContentPanel,
   DownloadList,
   ErrorState,
-  Loading,
   PageHeader,
   PanelSection,
   RichText,
   Section,
 } from '../components/Primitives';
+import { DetailSkeleton } from '../components/PageSkeletons';
 import { GalleryGrid } from '../components/Cards';
 import NotFound from './NotFound';
 import type { Campaign } from '../lib/types';
@@ -28,7 +28,7 @@ export default function CampaignDetail() {
   );
 
   if (notFound) return <NotFound />;
-  if (loading) return <Loading />;
+  if (loading) return <DetailSkeleton />;
   if (error) {
     return (
       <Container className="py-20">
