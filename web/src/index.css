@@ -309,13 +309,49 @@
     letter-spacing: 0.01em;
   }
 
+  /* Loading placeholders: a soft block with a light band sweeping across it. `-dark`
+     is for blocks on the plum page banner. */
+  .skeleton,
+  .skeleton-dark {
+    @apply rounded-md;
+    background-size: 200% 100%;
+    animation: skeleton-sweep 1.6s linear infinite;
+  }
+
+  .skeleton {
+    background-image: linear-gradient(
+      90deg,
+      theme('colors.plum.100') 30%,
+      theme('colors.plum.50') 50%,
+      theme('colors.plum.100') 70%
+    );
+  }
+
+  .skeleton-dark {
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 30%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 70%);
+  }
+
   /* Starting state for <Reveal>; swapped for animate-fade-up once in view */
   .reveal-pending {
     opacity: 0;
   }
 }
 
+@keyframes skeleton-sweep {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .skeleton-dark {
+    animation: none;
+  }
+
   .reveal-pending {
     opacity: 1;
   }

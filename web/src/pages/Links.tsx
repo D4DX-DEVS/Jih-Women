@@ -4,11 +4,11 @@ import {
   Container,
   EmptyState,
   ErrorState,
-  Loading,
   PageHeader,
   Section,
   SectionHeading,
 } from '../components/Primitives';
+import { ListSkeleton } from '../components/PageSkeletons';
 import { LinkCard } from '../components/Cards';
 import { isExternalUrl } from '../lib/format';
 import type { ExternalLink } from '../lib/types';
@@ -35,7 +35,7 @@ export default function Links() {
       <Section tone="mist">
         <Container>
           {loading ? (
-            <Loading />
+            <ListSkeleton variant="rows" />
           ) : error ? (
             <ErrorState message={error} onRetry={reload} />
           ) : !links.length ? (

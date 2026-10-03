@@ -6,11 +6,11 @@ import {
   EmptyState,
   ErrorState,
   GradientText,
-  Loading,
   ManagedSectionHeading,
   Section,
   ViewToggle,
 } from '../components/Primitives';
+import { ListSkeleton } from '../components/PageSkeletons';
 import { LeaderCard } from '../components/Cards';
 import { useViewMode } from '../lib/view';
 import type { Leader } from '../lib/types';
@@ -35,7 +35,7 @@ export default function Leaders() {
           {/* A narrower column keeps the cards compact */}
           <div className="mx-auto max-w-4xl">
             {loading ? (
-              <Loading />
+              <ListSkeleton variant="people" />
             ) : error ? (
               <ErrorState message={error} onRetry={reload} />
             ) : !data?.current.length && !data?.past.length ? (

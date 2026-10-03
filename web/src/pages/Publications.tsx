@@ -11,7 +11,6 @@ import {
   ContentPanel,
   EmptyState,
   ErrorState,
-  Loading,
   PageHeader,
   Pagination,
   PanelSection,
@@ -19,6 +18,7 @@ import {
   Section,
   ViewToggle,
 } from '../components/Primitives';
+import { DetailSkeleton, ListSkeleton } from '../components/PageSkeletons';
 import { PublicationCard } from '../components/Cards';
 import { useViewMode } from '../lib/view';
 import NotFound from './NotFound';
@@ -71,7 +71,7 @@ export function PublicationsIndex() {
           </div>
 
           {loading ? (
-            <Loading />
+            <ListSkeleton />
           ) : error ? (
             <ErrorState message={error} onRetry={reload} />
           ) : !data?.items.length ? (
@@ -100,7 +100,7 @@ export function PublicationDetail() {
   );
 
   if (notFound) return <NotFound />;
-  if (loading) return <Loading />;
+  if (loading) return <DetailSkeleton />;
   if (error) {
     return (
       <Container className="py-20">

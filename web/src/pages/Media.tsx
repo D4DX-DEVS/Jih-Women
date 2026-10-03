@@ -12,7 +12,6 @@ import {
   EmptyState,
   ErrorState,
   GradientText,
-  Loading,
   PageHeader,
   Pagination,
   PanelSection,
@@ -21,6 +20,7 @@ import {
   SectionHeading,
   ViewToggle,
 } from '../components/Primitives';
+import { DetailSkeleton, ListSkeleton } from '../components/PageSkeletons';
 import {
   AlbumCard,
   DownloadRow,
@@ -79,7 +79,7 @@ export function MediaList() {
           <MediaHeading title={pageTitle(known.key)} />
           <ViewToggle />
           {loading ? (
-            <Loading />
+            <ListSkeleton />
           ) : error ? (
             <ErrorState message={error} onRetry={reload} />
           ) : !data?.items.length ? (
@@ -109,7 +109,7 @@ export function MediaDetail() {
   );
 
   if (notFound) return <NotFound />;
-  if (loading) return <Loading />;
+  if (loading) return <DetailSkeleton />;
   if (error) {
     return (
       <Container className="py-20">
@@ -236,7 +236,7 @@ export function VideosPage({ kind }: { kind: 'video' | 'podcast' }) {
           <MediaHeading title={label} />
           <ViewToggle />
           {loading ? (
-            <Loading />
+            <ListSkeleton />
           ) : error ? (
             <ErrorState message={error} onRetry={reload} />
           ) : !data?.items.length ? (
@@ -275,7 +275,7 @@ export function AlbumsIndex() {
           <MediaHeading title={pageTitle('photoGallery')} />
           <ViewToggle />
           {loading ? (
-            <Loading />
+            <ListSkeleton />
           ) : error ? (
             <ErrorState message={error} onRetry={reload} />
           ) : !data?.items.length ? (
@@ -304,7 +304,7 @@ export function AlbumDetail() {
   );
 
   if (notFound) return <NotFound />;
-  if (loading) return <Loading />;
+  if (loading) return <DetailSkeleton />;
   if (error) {
     return (
       <Container className="py-20">
@@ -379,7 +379,7 @@ export function DownloadsPage() {
           </div>
 
           {loading ? (
-            <Loading />
+            <ListSkeleton variant="rows" />
           ) : error ? (
             <ErrorState message={error} onRetry={reload} />
           ) : !data?.items.length ? (

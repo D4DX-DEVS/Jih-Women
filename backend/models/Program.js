@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { RICH_BODY_MAX } = require('./common');
 const {
   localized,
   bulletSchema,
@@ -29,7 +30,7 @@ const programSchema = new mongoose.Schema(
     title: localized({ required: true, maxlength: 300 }),
     slug: { type: String, trim: true, unique: true, index: true },
     tagline: localized({ maxlength: 500 }),
-    overview: localized({ maxlength: 60000 }),
+    overview: localized({ maxlength: RICH_BODY_MAX }),
     objectives: { type: [bulletSchema], default: [] },
     schedule: { type: [scheduleItemSchema], default: [] },
     coverImage: { type: String, trim: true, default: '' },

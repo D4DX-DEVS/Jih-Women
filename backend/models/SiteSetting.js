@@ -40,6 +40,8 @@ const sectionContentSchema = new mongoose.Schema(
     heading: localized({ maxlength: 300 }),
     description: localized({ maxlength: 2000 }),
     logo: { type: String, trim: true, default: '' },
+    // Where the section's "Read More" button goes: a site path (/who-we-are/history) or a full URL
+    linkUrl: { type: String, trim: true, default: '' },
   },
   { _id: false }
 );

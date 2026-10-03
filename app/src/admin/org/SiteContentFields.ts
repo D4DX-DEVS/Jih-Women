@@ -40,6 +40,8 @@ type SectionDef = {
   description: string;
   fields: SectionField[];
   hints?: Partial<Record<SectionField, string>>;
+  /** Offers a "Read More button links to" picker; the text says what an empty choice does */
+  readMore?: string;
 };
 
 const FIELD_LABELS: Record<SectionField, string> = {
@@ -68,6 +70,7 @@ const SECTIONS: SectionDef[] = [
       heading: 'Leave blank to use the organisation name. Leave English blank to show the Malayalam heading.',
       description: 'Leave blank to use the footer note.',
     },
+    readMore: 'Default — the About Us page list',
   },
   {
     key: 'homePresident',
@@ -112,6 +115,17 @@ export const SECTION_GROUPS: { key: string; title: string; description: string; 
         rows: field === 'description' ? 3 : undefined,
         hint: section.hints?.[field],
       })),
+      ...(section.readMore
+        ? [
+            {
+              kind: 'link' as const,
+              path: `content.sections.${section.key}.linkUrl`,
+              label: 'Read More button opens',
+              emptyLabel: section.readMore,
+              hint: 'Pick any page you have created, or enter a custom link.',
+            },
+          ]
+        : []),
       {
         kind: 'asset',
         path: `content.sections.${section.key}.logo`,
