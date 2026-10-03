@@ -10,13 +10,13 @@ import {
   ContentPanel,
   EmptyState,
   ErrorState,
-  Loading,
   ManagedSectionHeading,
   PageHeader,
   Section,
   SectionHeading,
   ViewToggle,
 } from '../components/Primitives';
+import { DetailSkeleton, ListSkeleton } from '../components/PageSkeletons';
 import { Lightbox, ProgramCard, VideoCard, VideoPlayerModal } from '../components/Cards';
 import Reveal from '../components/Reveal';
 import ContentSections from '../components/ContentCards';
@@ -44,7 +44,7 @@ export function ProgramsIndex() {
       <Section tone="mist">
         <Container>
           {loading ? (
-            <Loading />
+            <ListSkeleton />
           ) : error ? (
             <ErrorState message={error} onRetry={reload} />
           ) : !data?.items.length ? (
@@ -90,7 +90,7 @@ export function ProgramDetail() {
   const [playing, setPlaying] = useState<VideoItem | null>(null);
 
   if (notFound) return <NotFound />;
-  if (loading) return <Loading />;
+  if (loading) return <DetailSkeleton />;
   if (error) {
     return (
       <Container className="py-20">

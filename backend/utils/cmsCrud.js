@@ -57,6 +57,7 @@ function sendMongooseError(res, err, fallback) {
   if (err && err.name === 'ValidationError') {
     const fields = {};
     const missing = [];
+    const tooLong = [];
     const malformed = [];
     // Custom model validators carry their own editor-facing message
     const custom = [];
@@ -68,6 +69,12 @@ function sendMongooseError(res, err, fallback) {
       // and those are a different problem from a blank field.
       if (detail.kind === 'user defined') {
         custom.push(detail.message);
+      } else if (detail.kind === 'maxlength') {
+        // Not a blank field: say it is too long, and by how much it may run
+        const limit = Number(detail.properties?.maxlength);
+        tooLong.push(
+          `${humanFieldName(key)} is too long${limit ? ` (the limit is ${limit.toLocaleString('en-US')} characters)` : ''}.`
+        );
       } else if (detail.name === 'CastError' || detail.kind === 'date' || detail.kind === 'Number') {
         malformed.push(humanFieldName(key));
       } else {
@@ -83,6 +90,7 @@ function sendMongooseError(res, err, fallback) {
           : `Please fill in ${listNames(missing)}.`
       );
     }
+    parts.push(...tooLong);
     if (malformed.length) {
       parts.push(
         malformed.length === 1

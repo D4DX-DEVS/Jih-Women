@@ -62,41 +62,6 @@ export function isAuthError(err: unknown): boolean {
   return (err as ApiErrorShape)?.code === 401;
 }
 
-const FIELD_ALIASES: Record<string, string> = {
-  fileUrl: 'File',
-  imageUrl: 'Image',
-  mobileImageUrl: 'Mobile image',
-  coverImage: 'Cover image',
-  posterImage: 'Poster',
-  logoUrl: 'Logo',
-  bannerImage: 'Banner image',
-  thumbnailUrl: 'Thumbnail',
-  audioUrl: 'Audio file',
-  youtubeUrl: 'YouTube link',
-  externalUrl: 'External link',
-  linkUrl: 'Link',
-  url: 'Link',
-  whatsappNumber: 'WhatsApp number',
-  startDate: 'Start date',
-  endDate: 'End date',
-  publishedAt: 'Publish date',
-};
-
-/** Turns a field path such as "title.ml" into "Title (Malayalam)". */
-export function humanFieldName(path: string): string {
-  const [head, ...rest] = path.split('.');
-  const words = head
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/[_-]+/g, ' ')
-    .trim();
-  const label =
-    FIELD_ALIASES[head] ?? words.charAt(0).toUpperCase() + words.slice(1).toLowerCase();
-  const suffix = rest[0];
-  if (suffix === 'ml') return `${label} (Malayalam)`;
-  if (suffix === 'en') return `${label} (English)`;
-  return label;
-}
-
 /**
  * Converts an API failure into a sentence a non-technical editor can act on.
  */
@@ -104,14 +69,8 @@ export function describeError(err: unknown, fallback = 'Something went wrong. Pl
   const e = err as ApiErrorShape | undefined;
   if (!e) return fallback;
 
-  if (e.fields) {
-    const names = Object.keys(e.fields).map(humanFieldName);
-    if (names.length === 1) return `${names[0]} is required.`;
-    if (names.length > 1) {
-      const last = names.pop();
-      return `Please fill in ${names.join(', ')} and ${last}.`;
-    }
-  }
+  // Field errors arrive already worded by the server (required, too long, does not look right…)
+  if (e.fields && e.message) return e.message;
 
   if (e.code === 0) return e.message;
   if (e.code === 409) return e.message || 'That value is already used. Please choose a different one.';

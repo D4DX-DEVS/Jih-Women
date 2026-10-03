@@ -18,7 +18,6 @@ import {
   EmptyState,
   ErrorState,
   GradientText,
-  Loading,
   PageHeader,
   PanelAsideHeading,
   PanelSection,
@@ -27,6 +26,7 @@ import {
   Section,
   ViewToggle,
 } from '../components/Primitives';
+import { DetailSkeleton, ListSkeleton } from '../components/PageSkeletons';
 import { useViewMode } from '../lib/view';
 import { DepartmentCard, GalleryGrid } from '../components/Cards';
 import NotFound from './NotFound';
@@ -48,7 +48,7 @@ export function DepartmentsIndex() {
       <Section tone="mist">
         <Container>
           {loading ? (
-            <Loading />
+            <ListSkeleton />
           ) : error ? (
             <ErrorState message={error} onRetry={reload} />
           ) : !data?.items.length ? (
@@ -77,7 +77,7 @@ export function DepartmentDetail() {
   );
 
   if (notFound) return <NotFound />;
-  if (loading) return <Loading />;
+  if (loading) return <DetailSkeleton />;
   if (error) {
     return (
       <Container className="py-20">

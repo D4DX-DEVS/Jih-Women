@@ -17,8 +17,13 @@ function localized({ required = false, maxlength } = {}) {
 
 /** Short bilingual label (headings, names, designations) */
 const localizedShort = () => localized({ maxlength: 300 });
+/**
+ * Longest rich-text body (HTML characters, per language). Informational pages such as
+ * the constitution run to well over 60,000 characters once markup is counted.
+ */
+const RICH_BODY_MAX = 500000;
 /** Long bilingual body (rich HTML from the admin editor) */
-const localizedBody = () => localized({ maxlength: 60000 });
+const localizedBody = () => localized({ maxlength: RICH_BODY_MAX });
 
 /** Repeating bilingual bullet list item */
 const bulletSchema = new mongoose.Schema(
@@ -90,6 +95,7 @@ module.exports = {
   localized,
   localizedShort,
   localizedBody,
+  RICH_BODY_MAX,
   bulletSchema,
   attachmentSchema,
   mediaItemSchema,
