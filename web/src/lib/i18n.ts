@@ -43,6 +43,7 @@ const STRINGS: Dict = {
   whoWeAre: { ml: 'ഞങ്ങളെക്കുറിച്ച്', en: 'Who We Are' },
   departments: { ml: 'വകുപ്പുകൾ', en: 'Departments' },
   programs: { ml: 'പദ്ധതികൾ', en: 'Programs' },
+  highlights: { ml: 'ഹൈലൈറ്റുകൾ', en: 'Highlights' },
   leaders: { ml: 'നേതൃത്വം', en: 'Leaders' },
   events: { ml: 'പരിപാടികൾ', en: 'Events' },
   media: { ml: 'മീഡിയ', en: 'Media' },
@@ -61,6 +62,11 @@ const STRINGS: Dict = {
   featuredArticles: { ml: 'തിരഞ്ഞെടുത്ത ലേഖനങ്ങൾ', en: 'Featured Articles' },
   upcomingEvents: { ml: 'വരാനിരിക്കുന്ന പരിപാടികൾ', en: 'Upcoming Events' },
   pastEvents: { ml: 'കഴിഞ്ഞ പരിപാടികൾ', en: 'Past Events' },
+  noUpcomingEvents: {
+    ml: 'വരാനിരിക്കുന്ന പരിപാടികൾ ഇപ്പോൾ ഇല്ല. കഴിഞ്ഞ പരിപാടികൾ കാണാം.',
+    en: 'No upcoming events right now. Have a look at the past events.',
+  },
+  noPastEvents: { ml: 'കഴിഞ്ഞ പരിപാടികൾ ഇല്ല.', en: 'No past events yet.' },
   featuredVideos: { ml: 'തിരഞ്ഞെടുത്ത വീഡിയോകൾ', en: 'Featured Videos' },
 
   news: { ml: 'വാർത്തകൾ', en: 'News' },
@@ -81,6 +87,10 @@ const STRINGS: Dict = {
 
   currentLeadership: { ml: 'ഇപ്പോഴത്തെ നേതൃത്വം', en: 'Current Leadership' },
   pastLeadership: { ml: 'മുൻ നേതൃത്വം', en: 'Past Leadership' },
+  leaderCategories: { ml: 'നേതാക്കളുടെ വിഭാഗങ്ങൾ', en: 'Leader categories' },
+  stateLeaders: { ml: 'സംസ്ഥാന നേതാക്കൾ', en: 'State Leaders' },
+  districtLeaders: { ml: 'ജില്ലാ നേതാക്കൾ', en: 'District Leaders' },
+  partyLeaders: { ml: 'പാർട്ടി നേതാക്കൾ', en: 'Party Leaders' },
 
   overview: { ml: 'അവലോകനം', en: 'Overview' },
   objectives: { ml: 'ലക്ഷ്യങ്ങൾ', en: 'Objectives' },
@@ -116,6 +126,10 @@ const STRINGS: Dict = {
   },
   backHome: { ml: 'ഹോമിലേക്ക് മടങ്ങുക', en: 'Back to home' },
   errorTitle: { ml: 'എന്തോ പിഴവ് സംഭവിച്ചു', en: 'Something went wrong' },
+  serverUnavailable: {
+    ml: 'സെർവറുമായി ബന്ധപ്പെടാൻ കഴിഞ്ഞില്ല. കുറച്ചു കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കുക.',
+    en: 'Could not reach the server. Please check your connection and try again shortly.',
+  },
   retry: { ml: 'വീണ്ടും ശ്രമിക്കുക', en: 'Try again' },
   previous: { ml: 'മുമ്പത്തേത്', en: 'Previous' },
   next: { ml: 'അടുത്തത്', en: 'Next' },
@@ -160,7 +174,6 @@ const STRINGS: Dict = {
   majorProgrammes: { ml: 'പ്രധാന പദ്ധതികൾ', en: 'Major Programmes' },
   otherProgrammes: { ml: 'മറ്റ് പദ്ധതികൾ', en: 'Other Programmes' },
   relatedPosts: { ml: 'അനുബന്ധ വാർത്തകൾ', en: 'Related posts' },
-  relatedVideos: { ml: 'അനുബന്ധ വീഡിയോകൾ', en: 'Related Videos' },
   publishedOn: { ml: 'പ്രസിദ്ധീകരിച്ചത്', en: 'Published' },
   source: { ml: 'ഉറവിടം', en: 'Source' },
   author: { ml: 'രചയിതാവ്', en: 'Author' },
@@ -195,6 +208,7 @@ const STRINGS: Dict = {
   privacyPolicy: { ml: 'സ്വകാര്യതാ നയം', en: 'Privacy Policy' },
   termsConditions: { ml: 'നിബന്ധനകളും വ്യവസ്ഥകളും', en: 'Terms & Conditions' },
   aboutUs: { ml: 'ഞങ്ങളെക്കുറിച്ച്', en: 'About Us' },
+  focus: { ml: 'ഫോക്കസ്', en: 'Focus' },
   mediaNews: { ml: 'മീഡിയ & വാർത്തകൾ', en: 'Media & News' },
   visionMission: { ml: 'ദർശനവും ദൗത്യവും', en: 'Our Vision & Mission' },
   readFullMessage: { ml: 'പൂർണ്ണ സന്ദേശം വായിക്കുക', en: 'Read the full message' },

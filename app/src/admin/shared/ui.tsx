@@ -455,6 +455,25 @@ export function BilingualRichText({
 
 /* ---------------- asset upload ---------------- */
 
+/**
+ * Checks a chosen file against an `accept` list (the same syntax as the file input's
+ * attribute) because the picker's "All files" option lets people bypass it. Returns an
+ * editor-facing message, or null when the file is fine.
+ */
+function acceptMismatch(file: File, accept: string): string | null {
+  const tokens = accept.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+  if (!tokens.length) return null;
+  const name = file.name.toLowerCase();
+  const type = file.type.toLowerCase();
+  const allowed = tokens.some((t) =>
+    t.startsWith('.') ? name.endsWith(t) : t.endsWith('/*') ? type.startsWith(t.slice(0, -1)) : type === t
+  );
+  if (allowed) return null;
+  return tokens.every((t) => t.startsWith('image/'))
+    ? 'That file is not a supported image. Please choose a JPG, PNG or WebP image.'
+    : 'That file type is not allowed here. Please choose a file of the type listed under the field.';
+}
+
 export function AssetPicker({
   label,
   value,
@@ -480,14 +499,20 @@ export function AssetPicker({
   recommend?: ReactNode;
   onError?: (message: string) => void;
   preview?: 'image' | 'file';
-  /** `contain` previews the whole image in a wider box (logos); `cover` crops a square */
-  fit?: 'cover' | 'contain';
+  /** `contain` previews the whole image in a wider box (logos); `cover` crops a square;
+      `poster` previews the whole image in a tall 4:5 frame */
+  fit?: 'cover' | 'contain' | 'poster';
 }) {
   const [busy, setBusy] = useState(false);
   const inputId = useId();
 
   const handle = async (file: File | undefined) => {
     if (!file) return;
+    const mismatch = acceptMismatch(file, accept);
+    if (mismatch) {
+      onError?.(mismatch);
+      return;
+    }
     setBusy(true);
     try {
       const res = await uploadAsset(file, folder, token);
@@ -507,8 +532,12 @@ export function AssetPicker({
             <img
               src={value}
               alt=""
-              className={`h-20 rounded-lg border border-[#e6e8f0] bg-white ${
-                fit === 'contain' ? 'w-36 object-contain p-2' : 'w-20 object-cover'
+              className={`rounded-lg border border-[#e6e8f0] bg-white ${
+                fit === 'poster'
+                  ? 'h-40 w-32 object-contain p-1'
+                  : fit === 'contain'
+                    ? 'h-20 w-36 object-contain p-2'
+                    : 'h-20 w-20 object-cover'
               }`}
             />
           ) : (

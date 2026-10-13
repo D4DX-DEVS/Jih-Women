@@ -4,6 +4,7 @@ const {
   bulletSchema,
   attachmentSchema,
   mediaItemSchema,
+  isHttpUrl,
   autoSlug,
 } = require('./common');
 
@@ -36,6 +37,8 @@ const programSchema = new mongoose.Schema(
     logoUrl: { type: String, trim: true, default: '' },
     // Wide artwork used in the home page programme strip
     bannerImage: { type: String, trim: true, default: '' },
+    // Programme poster shown, uncropped, in the home page Programs section
+    posterImage: { type: String, trim: true, default: '' },
     gallery: { type: [mediaItemSchema], default: [] },
     videos: { type: [videoRefSchema], default: [] },
     downloads: { type: [attachmentSchema], default: [] },
@@ -43,7 +46,18 @@ const programSchema = new mongoose.Schema(
     // Major programmes get a dedicated card on the Programs landing page
     isMajor: { type: Boolean, default: true },
     // WES has its own standalone site — link out instead of rendering locally
-    externalUrl: { type: String, trim: true, default: '' },
+    // Optional, set per programme in the admin. Only http(s) links are accepted so a
+    // stored value can never be a javascript: or data: URL.
+    externalUrl: {
+      type: String,
+      trim: true,
+      default: '',
+      maxlength: [2000, 'The website link is too long.'],
+      validate: {
+        validator: isHttpUrl,
+        message: 'The website link must be a full address starting with http:// or https://.',
+      },
+    },
     externalLabel: localized({ maxlength: 120 }),
 
     order: { type: Number, default: 0 },

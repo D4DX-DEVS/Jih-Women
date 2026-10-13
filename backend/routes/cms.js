@@ -200,7 +200,7 @@ router.use(
     searchPaths: ['title.ml', 'title.en', 'slug'],
     filters: ['published', 'isMajor'],
     // The admin form edits only these; `published` is the list's Published/Draft toggle
-    writable: ['title', 'overview', 'logoUrl', 'gallery', 'published'],
+    writable: ['title', 'tagline', 'overview', 'logoUrl', 'posterImage', 'externalUrl', 'gallery', 'published'],
   })
 );
 
@@ -210,7 +210,9 @@ router.use(
     Model: Leader,
     name: 'Leader',
     searchPaths: ['name.ml', 'name.en', 'designation.ml', 'designation.en'],
-    filters: ['published', 'isCurrent'],
+    filters: ['published', 'isCurrent', 'category'],
+    // Leaders saved before categories existed have no category; they count as state leaders
+    filterMatch: { category: (value) => (value === 'state' ? { $in: ['state', null] } : value) },
   })
 );
 
@@ -222,6 +224,9 @@ router.use(
     searchPaths: ['title.ml', 'title.en', 'slug', 'district'],
     filters: ['published', 'featured'],
     sort: { startDate: -1 },
+    // Event Poster: the admin form manages the poster, its title and the event date.
+    // Other stored event fields are left as they are; `published` is the list's toggle.
+    writable: ['title', 'startDate', 'posterImage', 'published'],
   })
 );
 

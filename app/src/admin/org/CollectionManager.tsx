@@ -36,6 +36,8 @@ export type CollectionConfig = {
   /** Top-level fields the form saves. When set, only these are sent on create/edit;
       anything else stored on the record is left untouched. */
   editable?: string[];
+  /** What the records are called in running text, lower case (default: the label, lower-cased) */
+  noun?: string;
   /** Width of the add/edit modal (default `xl`) */
   modalSize?: 'md' | 'lg' | 'xl';
   /** Collection-specific panel shown above the list (e.g. the YouTube channel import) */
@@ -118,6 +120,7 @@ function RowPreview({ sectionKey, row }: { sectionKey: string; row: Doc }) {
 }
 
 export default function CollectionManager({ config, token, onToast, onLogout }: Props) {
+  const noun = config.noun ?? config.label.toLowerCase();
   const [list, setList] = useState<ListResponse<Doc> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -167,11 +170,11 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
       setList(data);
     } catch (err) {
       if (isAuthError(err)) return onLogout();
-      setError(describeError(err, `We could not load the ${config.label.toLowerCase()}.`));
+      setError(describeError(err, `We could not load the ${noun}.`));
     } finally {
       setLoading(false);
     }
-  }, [config.endpoint, config.label, query, token, onLogout]);
+  }, [config.endpoint, noun, query, token, onLogout]);
 
   useEffect(() => {
     load();
@@ -319,7 +322,7 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
               <label className="field-label">Search</label>
               <input
                 className="input"
-                placeholder={`Search ${config.label.toLowerCase()}…`}
+                placeholder={`Search ${noun}…`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -398,7 +401,7 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
                       message={
                         hasFilters
                           ? 'Nothing matches that search.'
-                          : `No ${config.label.toLowerCase()} yet. Create the first one.`
+                          : `No ${noun} yet. Create the first one.`
                       }
                       action={
                         hasFilters ? undefined : (

@@ -43,7 +43,10 @@ export async function apiJson<T>(path: string, opts: ApiOptions = {}): Promise<T
   const data = await res.json().catch(() => ({}));
 
   if (res.status === 401) {
-    const err: ApiErrorShape = new Error('Your session has expired. Please sign in again.');
+    // Without a token this is a failed sign-in, not an expired session.
+    const err: ApiErrorShape = new Error(
+      opts.token ? 'Your session has expired. Please sign in again.' : data.error || 'Invalid username or password'
+    );
     err.code = 401;
     throw err;
   }
@@ -105,6 +108,10 @@ export function describeError(err: unknown, fallback = 'Something went wrong. Pl
   if (!e) return fallback;
 
   if (e.fields) {
+    // The CMS routes already answer with a sentence an editor can act on: what is missing,
+    // or what is wrong with a value (a bad link, an unknown category). Only the older
+    // routes send a bare "Validation failed" with the field map.
+    if (e.message && e.message !== 'Validation failed') return e.message;
     const names = Object.keys(e.fields).map(humanFieldName);
     if (names.length === 1) return `${names[0]} is required.`;
     if (names.length > 1) {

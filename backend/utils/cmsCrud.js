@@ -66,7 +66,7 @@ function sendMongooseError(res, err, fallback) {
       fields[key] = detail.message;
       // Mongoose wraps type failures as CastError inside a ValidationError,
       // and those are a different problem from a blank field.
-      if (detail.kind === 'user defined') {
+      if (detail.kind === 'user defined' || detail.kind === 'enum') {
         custom.push(detail.message);
       } else if (detail.name === 'CastError' || detail.kind === 'date' || detail.kind === 'Number') {
         malformed.push(humanFieldName(key));
@@ -126,6 +126,8 @@ function sendMongooseError(res, err, fallback) {
  * @param {string[]} cfg.sortable      Paths allowed in ?sortBy
  * @param {string[]} [cfg.writable]    When set, create/update only accept these top-level
  *                                     fields; other stored fields are left untouched
+ * @param {object}   [cfg.filterMatch] Per-filter override: { param: (value) => mongoCondition },
+ *                                     for filters that are more than plain equality
  */
 function buildCrud({
   Model,
@@ -135,6 +137,7 @@ function buildCrud({
   sort = { order: 1, createdAt: -1 },
   sortable = ['order', 'createdAt', 'updatedAt', 'publishedAt', 'startDate'],
   writable,
+  filterMatch = {},
 }) {
   const router = express.Router();
 
@@ -148,8 +151,8 @@ function buildCrud({
     for (const key of filters) {
       const raw = req.query[key];
       if (raw === undefined || raw === '') continue;
-      if (raw === 'true' || raw === 'false') query[key] = raw === 'true';
-      else query[key] = raw;
+      const value = raw === 'true' || raw === 'false' ? raw === 'true' : raw;
+      query[key] = filterMatch[key] ? filterMatch[key](value) : value;
     }
 
     const search = (req.query.search || '').trim();

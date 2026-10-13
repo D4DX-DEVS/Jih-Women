@@ -23,7 +23,7 @@ export type FieldDef =
   | { kind: 'date'; path: string; label: string; hint?: string; required?: boolean }
   | { kind: 'select'; path: string; label: string; options: { value: string; label: string }[]; hint?: string; required?: boolean }
   | { kind: 'toggle'; path: string; label: string; description?: string }
-  | { kind: 'asset'; path: string; label: string; folder: string; accept?: string; preview?: 'image' | 'file'; fit?: 'cover' | 'contain'; hint?: string; recommend?: string; required?: boolean }
+  | { kind: 'asset'; path: string; label: string; folder: string; accept?: string; preview?: 'image' | 'file'; fit?: 'cover' | 'contain' | 'poster'; hint?: string; recommend?: string; required?: boolean }
   | { kind: 'gallery'; path: string; label: string; folder: string; hint?: string; recommend?: string; accept?: string }
   | { kind: 'attachments'; path: string; label: string; folder: string; hint?: string; recommend?: string }
   | { kind: 'bullets'; path: string; label: string; hint?: string }

@@ -6,7 +6,7 @@
 import type { FieldDef } from './fields';
 
 const PAGES: [key: string, label: string][] = [
-  ['whoWeAre', 'Who We Are / About Us'],
+  ['whoWeAre', 'About Us'],
   ['leaders', 'Leaders'],
   ['departments', 'Departments'],
   ['programs', 'Programmes'],

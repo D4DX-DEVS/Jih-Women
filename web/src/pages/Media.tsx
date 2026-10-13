@@ -66,8 +66,12 @@ export function MediaList() {
   const { view } = useViewMode();
 
   const known = POST_TYPES.find((p) => p.type === type);
+  // The News page is the full list behind the home "Latest News" band, which
+  // mixes every post type (news, statements, interviews…), so it lists them all.
+  // The other categories still filter by their own type.
+  const typeFilter = known && known.type !== 'news' ? `type=${known.type}&` : '';
   const { data, loading, error, reload } = useApi<Paged<MediaPost>>(
-    known ? `/api/site/media?type=${known.type}&page=${page}&limit=12` : null
+    known ? `/api/site/media?${typeFilter}page=${page}&limit=12` : null
   );
 
   if (!known) return <NotFound />;
@@ -86,9 +90,9 @@ export function MediaList() {
             <EmptyState />
           ) : (
             <>
-              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
                 {data.items.map((post) => (
-                  <PostCard key={post._id} post={post} view={view} />
+                  <PostCard key={post._id} post={post} view={view} small />
                 ))}
               </div>
               <Pagination page={data.page} pages={data.pages} onPage={setPage} />

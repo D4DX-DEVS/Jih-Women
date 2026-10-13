@@ -11,27 +11,26 @@ import {
 } from 'lucide-react';
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
-import { str, t } from '../lib/i18n';
-import { formatDate, youtubeThumb } from '../lib/format';
+import { t } from '../lib/i18n';
+import { formatDate, isExternalUrl, youtubeThumb } from '../lib/format';
 import {
-  Button,
   Container,
   ErrorState,
   GradientText,
   Loading,
   ManagedSectionHeading,
-  Rule,
   Section,
   SectionLogo,
 } from '../components/Primitives';
 import {
   CampaignCard,
-  EventCard,
   Lightbox,
   PostCard,
   PublicationCard,
   VideoPlayerModal,
 } from '../components/Cards';
+import FocusStrip from '../components/FocusStrip';
+import PresidentMessageModal, { type PresidentPopupMode } from '../components/PresidentMessageModal';
 import Reveal from '../components/Reveal';
 import { useViewMode } from '../lib/view';
 import type {
@@ -40,8 +39,8 @@ import type {
   MediaPost,
   OrgEvent,
   ProgramBanner,
+  ProgramPoster,
   PresidentMessage,
-  SiteSettings,
   Slide,
   VideoItem,
 } from '../lib/types';
@@ -64,28 +63,42 @@ export default function Home() {
 
   const { sections, presidentMessage } = data.settings;
   const banners = (data.programBanners ?? []).filter((b) => Boolean(b.logoUrl || b.bannerImage));
-  const showBanners = sections.programBanners !== false && banners.length > 0;
+  // Programme posters uploaded in the admin share the Programs section with the logo strip
+  const posters = (data.programPosters ?? []).filter((p) => Boolean(p.posterImage));
+  const showPrograms = sections.programBanners !== false && (banners.length > 0 || posters.length > 0);
+  // Event posters managed under Event Poster in the admin. An older backend only sends
+  // `upcomingEvents`, so fall back to it rather than showing an empty Events section.
+  const eventPosters = (data.eventPosters ?? data.upcomingEvents ?? []).filter((e) =>
+    Boolean(e.posterImage || e.coverImage)
+  );
   const showPresident =
     sections.presidentMessage !== false && presidentMessage?.enabled !== false && presidentMessage;
+  // Focus: shown only while the admin's Focus switch (sections.focusAreas) is on
+  const showFocus = sections.focusAreas !== false && (data.focusAreas?.length ?? 0) > 0;
 
   return (
     <>
       {sections.slider && data.sliders.length > 0 && <Hero slides={data.sliders} />}
 
-      {showBanners && <ProgramBanners banners={banners} />}
+      {showPrograms && <ProgramBanners banners={banners} posters={posters} />}
 
       <section className="bg-mist py-4 sm:py-7 md:py-9">
         <Container className="space-y-5">
           <Reveal>
-            <MainInfo settings={data.settings} message={showPresident ? presidentMessage : null} />
+            <PresidentAndEvents message={showPresident ? presidentMessage : null} events={eventPosters} />
           </Reveal>
+          {showFocus && (
+            <Reveal>
+              <FocusStrip areas={data.focusAreas} />
+            </Reveal>
+          )}
         </Container>
       </section>
 
       <section className="bg-white py-4 sm:py-7 md:py-9">
         <Container>
           <Reveal>
-            <NewsAndEvents updates={data.updates} events={data.upcomingEvents} />
+            <NewsBand posts={data.updates} />
           </Reveal>
         </Container>
       </section>
@@ -443,10 +456,16 @@ function useDriftStrip<V extends HTMLElement, T extends HTMLElement>(speedPxPerS
   return { viewportRef, trackRef, nudge, viewportProps };
 }
 
-function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
+/* The strip heading as first shipped and stored in the admin-managed content. The home
+   page shows "Highlights" in its place; any other wording an editor sets is shown as written. */
+const SHIPPED_STRIP_HEADINGS = new Set(['Programs', 'പദ്ധതികൾ']);
+
+function ProgramBanners({ banners, posters }: { banners: ProgramBanner[]; posters: ProgramPoster[] }) {
   const { path, section, h } = useSite();
-  const heading = section('homePrograms', { heading: h('programs') });
-  const repeat = Math.ceil(MARQUEE_MIN_TILES / banners.length);
+  const heading = section('homePrograms', { heading: h('highlights') });
+  const title = SHIPPED_STRIP_HEADINGS.has(heading.heading) ? h('highlights') : heading.heading;
+  const hasStrip = banners.length > 0;
+  const repeat = Math.ceil(MARQUEE_MIN_TILES / Math.max(1, banners.length));
   const loop = Array.from({ length: repeat }, () => banners).flat();
 
   const { viewportRef, trackRef, nudge, viewportProps } = useDriftStrip<HTMLDivElement, HTMLUListElement>(
@@ -471,8 +490,8 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
       />
     );
     const tabIndex = hidden ? -1 : undefined;
-    return banner.externalUrl ? (
-      <a href={banner.externalUrl} target="_blank" rel="noreferrer" className={cls} tabIndex={tabIndex} draggable={false}>
+    return isExternalUrl(banner.externalUrl) ? (
+      <a href={banner.externalUrl} target="_blank" rel="noopener noreferrer" className={cls} tabIndex={tabIndex} draggable={false}>
         {inner}
       </a>
     ) : (
@@ -488,7 +507,7 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
         <div className="mb-1.5 flex items-center justify-center gap-2 eyebrow sm:mb-4 sm:gap-3">
           {heading.logo && <SectionLogo src={heading.logo} />}
           <span className="brand-rule-start w-6 sm:w-10" />
-          <span className="text-brand-gradient">{heading.heading}</span>
+          <span className="text-brand-gradient">{title}</span>
           <span className="brand-rule-end w-6 sm:w-10" />
         </div>
         {/* The row drifts slowly right to left; it can be dragged (mouse) or swiped
@@ -496,31 +515,94 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
             (repeated) list sit side by side and the offset wraps by one copy width, so the
             loop is seamless in both directions. Hover, focus and dragging pause the drift;
             reduced-motion users get no drift. */}
-        <div className="flex items-center gap-1.5 md:gap-3">
-          <MarqueeArrow dir={-1} onClick={() => nudge(-1)} />
-          <div
-            ref={viewportRef}
-            // Edges fade out so logos glide in and out instead of being sliced off
-            className="min-w-0 flex-1 cursor-grab touch-pan-y select-none overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_8%,#000_92%,transparent)]"
-            {...viewportProps}
-          >
-            <ul ref={trackRef} className="flex w-max will-change-transform">
-              {[0, 1].map((copy) =>
-                loop.map((banner, i) => {
-                  const hidden = copy === 1 || i >= banners.length;
-                  return (
-                    <li key={`${copy}-${i}`} className="shrink-0 px-2 sm:px-5 lg:px-4" aria-hidden={hidden || undefined}>
-                      {renderTile(banner, hidden)}
-                    </li>
-                  );
-                })
-              )}
-            </ul>
+        {hasStrip && (
+          <div className="flex items-center gap-1.5 md:gap-3">
+            <MarqueeArrow dir={-1} onClick={() => nudge(-1)} />
+            <div
+              ref={viewportRef}
+              // Edges fade out so logos glide in and out instead of being sliced off
+              className="min-w-0 flex-1 cursor-grab touch-pan-y select-none overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_8%,#000_92%,transparent)]"
+              {...viewportProps}
+            >
+              <ul ref={trackRef} className="flex w-max will-change-transform">
+                {[0, 1].map((copy) =>
+                  loop.map((banner, i) => {
+                    const hidden = copy === 1 || i >= banners.length;
+                    return (
+                      <li key={`${copy}-${i}`} className="shrink-0 px-2 sm:px-5 lg:px-4" aria-hidden={hidden || undefined}>
+                        {renderTile(banner, hidden)}
+                      </li>
+                    );
+                  })
+                )}
+              </ul>
+            </div>
+            <MarqueeArrow dir={1} onClick={() => nudge(1)} />
           </div>
-          <MarqueeArrow dir={1} onClick={() => nudge(1)} />
-        </div>
+        )}
+        {posters.length > 0 && (
+          <div className={hasStrip ? 'mt-4 sm:mt-7' : 'mt-2 sm:mt-0'}>
+            <ProgramPosterGrid posters={posters} />
+          </div>
+        )}
       </Container>
     </section>
+  );
+}
+
+/* Programme posters managed under Highlights in the admin. Each is shown whole — contained
+   in a 4:5 frame, never cropped or stretched — with the programme name and short
+   description beneath; it links to the programme page (or its external site). */
+function ProgramPosterGrid({ posters }: { posters: ProgramPoster[] }) {
+  const { lang, path } = useSite();
+
+  return (
+    <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
+      {posters.map((poster) => {
+        const name = t(poster.title, lang);
+        const blurb = poster.tagline ? t(poster.tagline, lang) : '';
+        const cls =
+          'group flex h-full flex-col overflow-hidden rounded-xl border border-plum-100/80 bg-white shadow-card transition hover:-translate-y-0.5 hover:border-magenta-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-magenta-400';
+        const body = (
+          <>
+            {/* The image fills the frame absolutely: a percentage height would not resolve
+                against an aspect-ratio box, and a tall poster would stretch the card. */}
+            <span className="relative block aspect-[4/5] w-full overflow-hidden bg-mist">
+              <img
+                src={poster.posterImage}
+                alt={name}
+                loading="lazy"
+                draggable={false}
+                className="absolute inset-0 h-full w-full object-contain transition duration-300 group-hover:scale-[1.02]"
+              />
+            </span>
+            <span className="block px-2.5 py-2 sm:px-3.5 sm:py-3">
+              <span className="line-clamp-2 block font-display text-[12.5px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:text-[14.5px]">
+                {name}
+              </span>
+              {blurb && (
+                <span className="mt-0.5 line-clamp-2 block text-[11px] leading-snug text-ink-muted sm:text-[12.5px]">
+                  {blurb}
+                </span>
+              )}
+            </span>
+          </>
+        );
+        return (
+          <li key={poster._id} className="min-w-0">
+            {isExternalUrl(poster.externalUrl) ? (
+              <a href={poster.externalUrl} target="_blank" rel="noopener noreferrer" className={cls}>
+                {body}
+              </a>
+            ) : (
+              <Link to={path(`/programs/${poster.slug}`)} className={cls}>
+                {body}
+              </Link>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -540,16 +622,84 @@ function Eyebrow({ children, logo }: { children: React.ReactNode; logo?: string 
   );
 }
 
-/* About (organisation intro) beside the president's message, as one card */
-function MainInfo({ settings, message }: { settings: SiteSettings; message: PresidentMessage | null }) {
-  const { lang, path, section, h } = useSite();
-  const about = section('homeAbout', {
-    label: h('aboutUs'),
-    heading: settings.siteName?.en?.trim() || t(settings.siteName, lang),
-    description: t(settings.footerNote, lang) || str('footerBlurb', lang),
-  });
-  const aboutTitle = about.heading;
-  const aboutBody = about.description;
+/** How long the pointer must rest on the president's message before it floats open */
+const HOVER_OPEN_MS = 150;
+
+/* President's message (left) beside the event posters (right), as one card; stacked on
+   narrower screens. Either part is left out when it has nothing to show. */
+function PresidentAndEvents({ message, events }: { message: PresidentMessage | null; events: OrgEvent[] }) {
+  const { lang, section, h } = useSite();
+  // How the full message is showing: floating while the pointer is over it, or pinned (modal)
+  const [popup, setPopup] = useState<PresidentPopupMode | null>(null);
+  const [hovered, setHovered] = useState(false);
+  const openTimer = useRef<number | undefined>(undefined);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  // After a close, a pointer still resting on the message must not reopen it: hovering is
+  // off until the pointer has been somewhere else
+  const armed = useRef(true);
+  const rearm = useRef<((e: PointerEvent) => void) | null>(null);
+  const pointer = useRef<{ x: number; y: number } | null>(null);
+  const isOpen = popup !== null;
+
+  useEffect(
+    () => () => {
+      window.clearTimeout(openTimer.current);
+      if (rearm.current) document.removeEventListener('pointermove', rearm.current);
+    },
+    []
+  );
+
+  // While the popup is up it covers the message, so remember where the pointer is
+  useEffect(() => {
+    if (!isOpen) return;
+    const track = (e: PointerEvent) => {
+      pointer.current = { x: e.clientX, y: e.clientY };
+    };
+    document.addEventListener('pointermove', track, { passive: true });
+    return () => document.removeEventListener('pointermove', track);
+  }, [isOpen]);
+
+  const overTrigger = (x: number, y: number) => {
+    const r = triggerRef.current?.getBoundingClientRect();
+    return Boolean(r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom);
+  };
+
+  // Touch has no hover: a tap pins the popup instead (see the button's onClick)
+  const hoverIn = (e: React.PointerEvent) => {
+    if (e.pointerType === 'touch') return;
+    pointer.current = { x: e.clientX, y: e.clientY };
+    setHovered(true);
+    if (popup !== null || !armed.current) return;
+    window.clearTimeout(openTimer.current);
+    openTimer.current = window.setTimeout(() => setPopup((p) => p ?? 'hover'), HOVER_OPEN_MS);
+  };
+  const hoverOut = (e: React.PointerEvent) => {
+    if (e.pointerType === 'touch') return;
+    setHovered(false);
+    window.clearTimeout(openTimer.current);
+  };
+  const pin = () => {
+    window.clearTimeout(openTimer.current);
+    setPopup('pinned');
+  };
+  const closePopup = () => {
+    window.clearTimeout(openTimer.current);
+    setPopup(null);
+    if (rearm.current) document.removeEventListener('pointermove', rearm.current);
+    rearm.current = null;
+    const p = pointer.current;
+    // Pointer elsewhere (it left, so the popup closed): hovering stays live
+    armed.current = !(p && overTrigger(p.x, p.y));
+    if (armed.current) return;
+    const onMove = (e: PointerEvent) => {
+      if (overTrigger(e.clientX, e.clientY)) return;
+      armed.current = true;
+      document.removeEventListener('pointermove', onMove);
+      rearm.current = null;
+    };
+    rearm.current = onMove;
+    document.addEventListener('pointermove', onMove);
+  };
   const president = section('homePresident', { label: h('presidentMessage') });
   const label = president.label;
   const heading = message ? t(message.heading, 'en') || label : '';
@@ -557,31 +707,16 @@ function MainInfo({ settings, message }: { settings: SiteSettings; message: Pres
   const name = message ? t(message.name, lang) : '';
   const designation = message ? t(message.designation, lang) : '';
 
+  if (!message && events.length === 0) return null;
+
   return (
     <div className="relative overflow-hidden rounded-2xl border border-magenta-100/80 bg-gradient-to-br from-white via-magenta-50/50 to-plum-50 shadow-card sm:rounded-3xl">
       <span className="pointer-events-none absolute -end-20 -top-24 h-64 w-64 rounded-full bg-magenta-100/60 blur-3xl" />
-      <div className={`relative grid ${message ? 'lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]' : ''}`}>
-        <div className="flex min-w-0 flex-col p-3.5 sm:p-6 md:p-8">
-          <Eyebrow logo={about.logo}>{about.label}</Eyebrow>
-          {aboutTitle && (
-            <h2 className="responsive-copy mt-1.5 font-display text-[1.05rem] font-semibold leading-snug text-plum-800 sm:mt-2.5 sm:text-[1.45rem] md:text-[1.6rem]">
-              <GradientText>{aboutTitle}</GradientText>
-            </h2>
-          )}
-          <Rule className="mt-2 sm:mt-3" />
-          <p className="mt-2.5 text-[12.5px] leading-relaxed text-ink/75 sm:mt-4 sm:text-[14.5px]">{aboutBody}</p>
-          <div className="mt-3 sm:mt-5">
-            <Button to={path('/who-we-are')} size="sm">
-              {h('readMore')}
-              <ArrowRight size={14} />
-            </Button>
-          </div>
-        </div>
-
+      <div className={`relative grid ${message && events.length > 0 ? 'lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]' : ''}`}>
         {message && (
-          <div className="relative min-w-0 border-t border-magenta-100/80 p-3.5 sm:p-6 md:p-8 lg:border-s lg:border-t-0">
+          <div className="relative min-w-0 p-3.5 sm:p-6 md:p-8">
             <Eyebrow logo={president.logo}>{label}</Eyebrow>
-            <div className="mt-2 grid gap-3 sm:mt-3 sm:gap-5 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-start">
+            <div className="relative mt-2 grid gap-3 sm:mt-3 sm:gap-5 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-start">
               <figure className="relative mx-auto sm:order-last sm:mx-0">
                 {message.photo ? (
                   <img
@@ -611,30 +746,177 @@ function MainInfo({ settings, message }: { settings: SiteSettings; message: Pres
                     <GradientText>{heading}</GradientText>
                   </h2>
                 )}
-                {body && (
-                  <div
-                    className={`prose-content relative mt-1.5 overflow-hidden ps-6 text-[12.5px] leading-[1.7] sm:mt-2 sm:ps-7 sm:text-[14px] sm:leading-[1.85] ${
-                      message.linkUrl
-                        ? 'max-h-[9rem] sm:max-h-[12.5rem] [mask-image:linear-gradient(to_bottom,black_75%,transparent)]'
-                        : ''
-                    }`}
-                    dangerouslySetInnerHTML={{ __html: body }}
-                  />
-                )}
-                {message.linkUrl && (
-                  <Link
-                    to={message.linkUrl}
-                    className="ms-6 mt-2 inline-flex items-center gap-1.5 text-[12px] font-medium text-magenta-600 hover:text-magenta-500 sm:ms-7 sm:mt-3 sm:text-[13px]"
-                  >
-                    {h('readMore')}
-                    <ArrowRight size={14} />
-                  </Link>
-                )}
+                {body && <MessagePreview html={body} />}
               </div>
+
+              {/* Stretched over the portrait and text: the pointer resting on the block floats the
+                  full message; a tap, click or Enter pins it open */}
+              {body && (
+                <button
+                  ref={triggerRef}
+                  type="button"
+                  onPointerEnter={hoverIn}
+                  onPointerLeave={hoverOut}
+                  onClick={pin}
+                  aria-haspopup="dialog"
+                  aria-label={`${h('readMore')}: ${label}`}
+                  className="absolute -inset-2 z-10 cursor-pointer rounded-2xl transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 [@media(hover:hover)]:hover:bg-white/30"
+                />
+              )}
             </div>
           </div>
         )}
+
+        {events.length > 0 && (
+          <div
+            className={`relative min-w-0 p-3.5 sm:p-6 md:p-8 ${
+              message ? 'border-t border-magenta-100/80 lg:border-s lg:border-t-0' : ''
+            }`}
+          >
+            <EventPosters events={events} beside={Boolean(message)} />
+          </div>
+        )}
       </div>
+
+      {popup && message && body && (
+        <PresidentMessageModal
+          mode={popup}
+          triggerHovered={hovered}
+          label={label}
+          heading={heading}
+          body={body}
+          name={name}
+          designation={designation}
+          photo={message.photo}
+          onPin={pin}
+          onClose={closePopup}
+        />
+      )}
+    </div>
+  );
+}
+
+/* The message as a short preview: capped in height, fading out only when it is cut off.
+   The whole message opens in PresidentMessageModal. */
+function MessagePreview({ html }: { html: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [cut, setCut] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setCut(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    observer?.observe(el);
+    // Web fonts change the line count once they load
+    document.fonts?.ready.then(measure);
+    return () => observer?.disconnect();
+  }, [html]);
+
+  return (
+    <div
+      ref={ref}
+      className={`prose-content relative mt-1.5 max-h-[9rem] overflow-hidden ps-6 text-[12.5px] leading-[1.7] sm:mt-2 sm:max-h-[12.5rem] sm:ps-7 sm:text-[14px] sm:leading-[1.85] ${
+        cut ? '[mask-image:linear-gradient(to_bottom,black_75%,transparent)]' : ''
+      }`}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+/* The events heading as first shipped and stored in the admin-managed content. The home
+   page shows "Events" in its place; any other wording an editor sets is shown as written. */
+const SHIPPED_EVENTS_HEADINGS = new Set(['Upcoming Events', 'വരാനിരിക്കുന്ന പരിപാടികൾ']);
+
+/* Event posters (Event Poster in the admin), each shown whole in a 3:4 frame with its
+   title and date beneath. Two across on phones, three from sm, four from md; beside the
+   president's message (lg and up) the column is narrow, so two across. When there are
+   more than fit the row scrolls sideways (swipe, trackpad or the arrows). */
+function EventPosters({ events, beside }: { events: OrgEvent[]; beside: boolean }) {
+  const { lang, path, s, h, section } = useSite();
+  const heading = section('homeEvents', { heading: h('events') });
+  const title = SHIPPED_EVENTS_HEADINGS.has(heading.heading) ? h('events') : heading.heading;
+  const railRef = useRef<HTMLUListElement>(null);
+  const [overflowing, setOverflowing] = useState(false);
+
+  // Arrows only appear when the posters do not all fit in the row
+  useEffect(() => {
+    const measure = () => {
+      const rail = railRef.current;
+      if (rail) setOverflowing(rail.scrollWidth > rail.clientWidth + 1);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [events.length]);
+
+  const slide = (dir: 1 | -1) => {
+    const rail = railRef.current;
+    if (rail) rail.scrollBy({ left: dir * rail.clientWidth, behavior: 'smooth' });
+  };
+
+  return (
+    <div className="flex min-w-0 flex-col">
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <Eyebrow logo={heading.logo}>{title}</Eyebrow>
+        <div className="flex shrink-0 items-center gap-3">
+          {overflowing && <RailArrows onPrev={() => slide(-1)} onNext={() => slide(1)} />}
+          <Link
+            to={path('/events')}
+            className="-my-2 inline-flex shrink-0 items-center gap-1 whitespace-nowrap py-2 text-[10.5px] font-medium text-ink-muted transition hover:text-magenta-600 sm:text-[11px]"
+          >
+            {s('viewAll')}
+            <ArrowRight size={13} />
+          </Link>
+        </div>
+      </div>
+
+      {/* auto margins on the first and last poster centre a short row, and collapse to
+          nothing once the row overflows, so scrolling still reaches every poster */}
+      <ul
+        ref={railRef}
+        className="no-scrollbar mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-1 sm:mt-4 sm:gap-4 [&>li:first-child]:ms-auto [&>li:last-child]:me-auto"
+      >
+        {events.map((event) => {
+          const src = event.posterImage || event.coverImage;
+          const name = t(event.title, lang);
+          const when = [formatDate(event.startDate, lang), event.timeLabel].filter(Boolean).join(' · ');
+          return (
+            <li
+              key={event._id}
+              /* two across on phones (the next poster peeks in), three from sm, four from md */
+              className={`w-[calc((100%-0.75rem)/2.15)] shrink-0 snap-start sm:w-[calc((100%-2rem)/3)] md:w-[calc((100%-3rem)/4)] ${
+                beside ? 'lg:w-[calc((100%-1rem)/2)]' : ''
+              }`}
+            >
+              <Link to={path(`/events/${event.slug}`)} className="group flex flex-col">
+                {/* object-contain: posters are shown whole, never cropped or stretched */}
+                <span className="relative block aspect-[3/4] w-full overflow-hidden rounded-xl border border-plum-100/80 bg-white shadow-soft">
+                  <img
+                    src={src}
+                    alt={name}
+                    loading="lazy"
+                    draggable={false}
+                    className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+                  />
+                </span>
+                <span className="mt-2 block text-center sm:mt-2.5">
+                  <span className="line-clamp-2 block font-display text-[12.5px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:text-[14.5px]">
+                    <GradientText>{name}</GradientText>
+                  </span>
+                  {when && (
+                    <span className="mt-0.5 flex items-center justify-center gap-1.5 text-[11px] text-ink-muted sm:mt-1 sm:text-[12.5px]">
+                      <CalendarDays size={12} className="shrink-0 text-magenta-500" />
+                      {when}
+                    </span>
+                  )}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -646,14 +928,18 @@ function BandHeading({
   label,
   actionLabel,
   to,
+  shipped = [],
 }: {
   sectionKey: string;
   label: string;
   actionLabel: string;
   to: string;
+  /** Headings as first shipped; when the stored heading is one of these, `label` is shown instead */
+  shipped?: string[];
 }) {
   const { section } = useSite();
-  const heading = section(sectionKey, { heading: label });
+  const stored = section(sectionKey, { heading: label });
+  const heading = { ...stored, heading: shipped.includes(stored.heading) ? label : stored.heading };
   return (
     <div className="mb-2.5 flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 sm:mb-3.5 sm:gap-y-1.5">
       <h3 className="band-label flex shrink-0 items-center gap-2 whitespace-nowrap font-sans text-[12px] font-semibold uppercase tracking-[0.1em] text-magenta-500 sm:text-[14px] sm:tracking-[0.12em] md:text-[15px]">
@@ -689,7 +975,7 @@ function RailArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => void
   );
 }
 
-/* Home carousels (Latest News, Featured Videos): cards in view on desktop, the
+/* Home carousels (Videos): cards in view on desktop, the
    repeated cards that make the loop seamless, and time per step in ms. */
 const CAROUSEL_PER_VIEW = 3;
 const CAROUSEL_INTERVAL = 4500;
@@ -883,122 +1169,73 @@ function AutoCarousel<T>({
   );
 }
 
-/** Latest news: three cards at a time on tablet and desktop; stays put until moved by hand. */
-function NewsCarousel({ posts }: { posts: MediaPost[] }) {
-  const { lang, path, h } = useSite();
-  return (
-    <AutoCarousel
-      items={posts}
-      getKey={(post) => post._id}
-      label="News"
-      phoneWidth="w-[68%]"
-      autoPlay={false}
-      className="lg:flex-1"
-      renderItem={(post, { className, clone }) => (
-        <Link
-          to={path(`/media/${post.type}/${post.slug}`)}
-          aria-hidden={clone || undefined}
-          tabIndex={clone ? -1 : undefined}
-          className={`card-hover group flex flex-col overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft ${className}`}
-        >
-          <span className="block aspect-[16/9] overflow-hidden bg-magenta-50 sm:aspect-[16/10]">
-            {post.coverImage && (
-              <img
-                src={post.coverImage}
-                alt=""
-                loading="lazy"
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            )}
-          </span>
-          <span className="flex flex-1 flex-col p-2.5 sm:p-3">
-            <span className="flex items-center gap-1.5 text-[10.5px] text-ink-faint sm:text-[11px]">
-              <CalendarDays size={12} />
-              {formatDate(post.publishedAt, lang)}
-            </span>
-            <span className="mt-1 line-clamp-3 font-display text-[13px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:mt-1.5 sm:text-[15px]">
-              <GradientText>{t(post.title, lang)}</GradientText>
-            </span>
-            {t(post.excerpt, lang) && (
-              <span className="mt-0.5 line-clamp-2 text-[11.5px] leading-relaxed text-ink-muted sm:mt-1 sm:text-[12.5px] lg:line-clamp-3">
-                {t(post.excerpt, lang)}
-              </span>
-            )}
-            <span className="mt-auto inline-flex items-center gap-1 pt-1.5 text-[11px] font-medium text-magenta-600 sm:pt-2.5 sm:text-[12px]">
-              {h('readMore')}
-              <ArrowRight size={13} />
-            </span>
-          </span>
-        </Link>
-      )}
-    />
-  );
-}
+/* News shows at most this many posts, newest first. */
+const NEWS_COUNT = 4;
 
-function NewsAndEvents({ updates, events }: { updates: MediaPost[]; events: OrgEvent[] }) {
+/**
+ * News: the most recent posts as cards — a swipe row on phones, two across on
+ * tablets, one row of up to four on desktop.
+ */
+function NewsBand({ posts }: { posts: MediaPost[] }) {
   const { lang, path, s, h } = useSite();
-  const posters = events.filter((e) => e.posterImage || e.coverImage);
-  const newsSlides = updates.length > CAROUSEL_PER_VIEW;
-  const railRef = useRef<HTMLDivElement>(null);
-  const slide = (dir: 1 | -1) => {
-    const rail = railRef.current;
-    if (rail) rail.scrollBy({ left: dir * rail.clientWidth * 0.8, behavior: 'smooth' });
-  };
-  const empty = <p className="py-5 text-center text-[12.5px] text-ink-faint sm:py-8 sm:text-[13px]">{s('nothingHere')}</p>;
+  const time = (post: MediaPost) => new Date(post.publishedAt).getTime() || 0;
+  const latest = [...posts].sort((a, b) => time(b) - time(a)).slice(0, NEWS_COUNT);
+  const desktopCols = latest.length >= 4 ? 'lg:grid-cols-4' : latest.length === 3 ? 'lg:grid-cols-3' : '';
 
   return (
-    <div className="grid gap-5 sm:gap-8 lg:grid-cols-12 lg:gap-6">
-      {/* Latest news — the wider part of the row: a swipe row on phones, a sliding row
-          of three cards from sm */}
-      <div className="flex min-w-0 flex-col lg:col-span-8">
-        <BandHeading sectionKey="homeNews" label={h('latestNews')} actionLabel={s('viewAllNews')} to={path('/media/news')} />
-        {updates.length === 0 ? empty : <NewsCarousel posts={updates} />}
-      </div>
-
-      {/* Events — the narrower part of the row, on the right: one poster per view, shown
-          whole and bare (no frame). From lg the poster is as tall as the news cards; its
-          arrow row mirrors the news controls row so the two heights match. */}
-      <div className="flex min-w-0 flex-col lg:col-span-4">
-        <BandHeading sectionKey="homeEvents" label={h('upcomingEvents')} actionLabel={s('viewAll')} to={path('/events')} />
-        {events.length === 0 ? (
-          empty
-        ) : posters.length > 0 ? (
-          <>
-            <div ref={railRef} className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 lg:flex-1">
-              {posters.map((event) => {
-                const src = event.posterImage || event.coverImage;
-                return (
-                  <Link
-                    key={event._id}
-                    to={path(`/events/${event.slug}`)}
-                    className="group relative block h-60 w-full shrink-0 snap-start overflow-hidden sm:aspect-[16/10] sm:h-auto lg:aspect-auto lg:min-h-[300px]"
-                  >
+    <div>
+      <BandHeading
+        sectionKey="homeNews"
+        label={h('news')}
+        shipped={['Latest News', 'പുതിയ വാർത്തകൾ']}
+        actionLabel={s('viewAllNews')}
+        to={path('/media/news')}
+      />
+      {latest.length === 0 ? (
+        <p className="py-5 text-center text-[12.5px] text-ink-faint sm:py-8 sm:text-[13px]">{s('nothingHere')}</p>
+      ) : (
+        <div
+          className={`no-scrollbar -mx-3 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-3 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 ${desktopCols}`}
+        >
+          {latest.map((post, i) => (
+            <Reveal key={post._id} delay={Math.min(i, 4) * 80} className="w-[68%] shrink-0 snap-start sm:w-auto">
+              <Link
+                to={path(`/media/${post.type}/${post.slug}`)}
+                className="card-hover group flex h-full flex-col overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft"
+              >
+                <span className="block aspect-[16/9] overflow-hidden bg-magenta-50 sm:aspect-[16/10]">
+                  {post.coverImage && (
                     <img
-                      src={src}
-                      alt={t(event.title, lang)}
+                      src={post.coverImage}
+                      alt=""
                       loading="lazy"
-                      /* contain: posters are shown whole, never cropped */
-                      className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                  </Link>
-                );
-              })}
-            </div>
-            {(posters.length > 1 || newsSlides) && (
-              /* Same height as the news controls row, so the poster and the news cards end together */
-              <div className={`mt-3 flex h-7 justify-end ${posters.length > 1 ? '' : 'max-lg:hidden'}`}>
-                {posters.length > 1 && <RailArrows onPrev={() => slide(-1)} onNext={() => slide(1)} />}
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="space-y-3">
-            {events.slice(0, 2).map((event) => (
-              <EventCard key={event._id} event={event} />
-            ))}
-          </div>
-        )}
-      </div>
+                  )}
+                </span>
+                <span className="flex flex-1 flex-col p-2.5 sm:p-3">
+                  <span className="flex items-center gap-1.5 text-[10.5px] text-ink-faint sm:text-[11px]">
+                    <CalendarDays size={12} />
+                    {formatDate(post.publishedAt, lang)}
+                  </span>
+                  <span className="mt-1 line-clamp-3 font-display text-[13px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:mt-1.5 sm:text-[15px]">
+                    <GradientText>{t(post.title, lang)}</GradientText>
+                  </span>
+                  {t(post.excerpt, lang) && (
+                    <span className="mt-0.5 line-clamp-2 text-[11.5px] leading-relaxed text-ink-muted sm:mt-1 sm:text-[12.5px]">
+                      {t(post.excerpt, lang)}
+                    </span>
+                  )}
+                  <span className="mt-auto inline-flex items-center gap-1 pt-1.5 text-[11px] font-medium text-magenta-600 sm:pt-2.5 sm:text-[12px]">
+                    {h('readMore')}
+                    <ArrowRight size={13} />
+                  </span>
+                </span>
+              </Link>
+            </Reveal>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -1044,7 +1281,7 @@ function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoIt
     <div>
       <BandHeading
         sectionKey="homeVideos"
-        label={videos.length > 1 ? h('featuredVideos') : h('featuredVideo')}
+        label={h('videos')}
         actionLabel={s('viewMoreVideos')}
         to={path('/media/videos')}
       />

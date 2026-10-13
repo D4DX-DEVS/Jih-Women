@@ -30,6 +30,8 @@ export type Paged<T> = {
   page: number;
   limit: number;
   pages: number;
+  /** Events only: which list the backend returned ('upcoming', 'past' or 'all') */
+  scope?: string;
 };
 
 export type PresidentMessage = {
@@ -109,6 +111,16 @@ export type ProgramBanner = {
   /** The programme's own logo (as on its page); preferred over the banner in the logo strip */
   logoUrl?: string;
   externalUrl: string;
+};
+
+/** A programme with an uploaded poster, shown in the home page Programs section */
+export type ProgramPoster = {
+  _id: string;
+  slug: string;
+  title: Localized;
+  tagline?: Localized;
+  posterImage: string;
+  externalUrl?: string;
 };
 
 export type Slide = {
@@ -199,12 +211,14 @@ export type Program = {
   isMajor: boolean;
   externalUrl: string;
   externalLabel: Localized;
-  /** Videos whose titles name this programme (programme detail only) */
-  relatedVideos?: VideoItem[];
 };
+
+export type LeaderCategory = 'state' | 'district' | 'party';
 
 export type Leader = {
   _id: string;
+  /** Leaders saved before categories existed are reported as 'state' by the API */
+  category: LeaderCategory;
   name: Localized;
   designation: Localized;
   bio: Localized;
@@ -343,11 +357,14 @@ export type HomePayload = {
   campaigns: Campaign[];
   updates: MediaPost[];
   upcomingEvents: OrgEvent[];
+  /** Posters for the home Events section (Event Poster in the admin), upcoming first */
+  eventPosters?: OrgEvent[];
   featuredArticles: MediaPost[];
   featuredVideos: VideoItem[];
   publications: Publication[];
   focusAreas: FocusArea[];
   programBanners: ProgramBanner[];
+  programPosters?: ProgramPoster[];
   /** Photos for the home Photo Gallery (album and programme gallery images) */
   galleryPhotos?: MediaItem[];
 };

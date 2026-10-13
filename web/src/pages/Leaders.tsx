@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router';
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
@@ -13,17 +14,39 @@ import {
 } from '../components/Primitives';
 import { LeaderCard } from '../components/Cards';
 import { useViewMode } from '../lib/view';
-import type { Leader } from '../lib/types';
+import type { Leader, LeaderCategory } from '../lib/types';
+
+/** Tab order; the labels come from the UI strings of the same name */
+const CATEGORIES: { key: LeaderCategory; label: string }[] = [
+  { key: 'state', label: 'stateLeaders' },
+  { key: 'district', label: 'districtLeaders' },
+  { key: 'party', label: 'partyLeaders' },
+];
 
 export default function Leaders() {
   const { lang, pageTitle, h } = useSite();
   const { view } = useViewMode();
+  // The chosen category lives in the URL (?category=district) so a refresh or a shared
+  // link lands on the same tab; an unknown value falls back to State leaders.
+  const [params, setParams] = useSearchParams();
+  const requested = params.get('category');
+  const category: LeaderCategory = CATEGORIES.some((c) => c.key === requested)
+    ? (requested as LeaderCategory)
+    : 'state';
+  const selectCategory = (next: LeaderCategory) =>
+    setParams(next === 'state' ? {} : { category: next }, { replace: true });
+
   const { data, loading, error, reload } = useApi<{ current: Leader[]; past: Leader[] }>(
-    '/api/site/leaders'
+    `/api/site/leaders?category=${category}`
   );
 
-  const posters = (data?.past ?? []).filter((l) => l.posterImage);
-  const pastWithoutPoster = (data?.past ?? []).filter((l) => !l.posterImage);
+  // The API already narrows the list to the chosen category; this keeps the tab correct
+  // against an older backend that ignores the parameter (no category counts as State).
+  const inCategory = (l: Leader) => (l.category ?? 'state') === category;
+  const current = (data?.current ?? []).filter(inCategory);
+  const past = (data?.past ?? []).filter(inCategory);
+  const posters = past.filter((l) => l.posterImage);
+  const pastWithoutPoster = past.filter((l) => !l.posterImage);
   const grid = `grid gap-2 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`;
 
   return (
@@ -34,20 +57,42 @@ export default function Leaders() {
           <h1 className="sr-only">{pageTitle('leaders')}</h1>
           {/* A narrower column keeps the cards compact */}
           <div className="mx-auto max-w-4xl">
+            <div
+              role="tablist"
+              aria-label={h('leaderCategories')}
+              className="mb-4 flex flex-wrap justify-center gap-1.5 sm:mb-8 sm:gap-2"
+            >
+              {CATEGORIES.map((c) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={category === c.key}
+                  onClick={() => selectCategory(c.key)}
+                  className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition sm:px-5 sm:py-2.5 sm:text-sm ${
+                    category === c.key
+                      ? 'bg-magenta-500 text-white shadow-soft'
+                      : 'border border-plum-200 bg-white text-ink-muted hover:border-magenta-300'
+                  }`}
+                >
+                  {h(c.label)}
+                </button>
+              ))}
+            </div>
             {loading ? (
               <Loading />
             ) : error ? (
               <ErrorState message={error} onRetry={reload} />
-            ) : !data?.current.length && !data?.past.length ? (
+            ) : !current.length && !past.length ? (
               <EmptyState />
             ) : (
-              <>
+              <div role="tabpanel">
                 <ViewToggle />
-                {data.current.length > 0 && (
+                {current.length > 0 && (
                   <>
                     <ManagedSectionHeading sectionKey="leadersCurrent" eyebrow={h('leaders')} title={h('currentLeadership')} />
                     <div className={grid}>
-                      {data.current.map((leader) => (
+                      {current.map((leader) => (
                         <LeaderCard key={leader._id} leader={leader} view={view} />
                       ))}
                     </div>
@@ -113,7 +158,7 @@ export default function Leaders() {
                     )}
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
         </Container>
