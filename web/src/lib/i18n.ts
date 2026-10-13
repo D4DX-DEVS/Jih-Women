@@ -90,7 +90,7 @@ const STRINGS: Dict = {
   leaderCategories: { ml: 'നേതാക്കളുടെ വിഭാഗങ്ങൾ', en: 'Leader categories' },
   stateLeaders: { ml: 'സംസ്ഥാന നേതാക്കൾ', en: 'State Leaders' },
   districtLeaders: { ml: 'ജില്ലാ നേതാക്കൾ', en: 'District Leaders' },
-  partyLeaders: { ml: 'പാർട്ടി നേതാക്കൾ', en: 'Party Leaders' },
+  pastLeaders: { ml: 'മുൻ നേതാക്കൾ', en: 'Past Leaders' },
 
   overview: { ml: 'അവലോകനം', en: 'Overview' },
   objectives: { ml: 'ലക്ഷ്യങ്ങൾ', en: 'Objectives' },
@@ -104,6 +104,7 @@ const STRINGS: Dict = {
   time: { ml: 'സമയം', en: 'Time' },
 
   readMore: { ml: 'കൂടുതൽ വായിക്കുക', en: 'Read More' },
+  readLess: { ml: 'ചുരുക്കുക', en: 'Read Less' },
   viewAll: { ml: 'എല്ലാം കാണുക', en: 'View All' },
   viewDetails: { ml: 'വിശദാംശങ്ങൾ', en: 'View details' },
   download: { ml: 'ഡൗൺലോഡ്', en: 'Download' },

@@ -24,6 +24,8 @@ import NotFound from './NotFound';
 import type { FocusArea, HomePayload, PageDoc } from '../lib/types';
 
 const FOCUS_PANEL_ID = 'about-focus';
+/* The About Us page whose attached files are never listed for download */
+const NO_DOWNLOADS_SLUG = 'constitution';
 
 /**
  * The admin-managed Focus areas for the About Us page: the same content and the same
@@ -54,11 +56,10 @@ export function WhoWeAreIndex() {
   return (
     <>
       <PageHeader
-        compact
         title={h('aboutUs')}
         breadcrumb={[{ label: s('home'), to: path('/') }, { label: h('aboutUs') }]}
       />
-      <Section tone="mist" className="pt-3 sm:pt-6 md:pt-9">
+      <Section tone="mist">
         <Container>
           {hasFocus && (
             <>
@@ -69,7 +70,7 @@ export function WhoWeAreIndex() {
                   onClick={() => setFocusOpen((open) => !open)}
                   aria-expanded={focusOpen}
                   aria-controls={FOCUS_PANEL_ID}
-                  className={`inline-flex h-[34px] items-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-all active:scale-[0.97] sm:h-10 sm:gap-2 sm:px-5 sm:text-sm ${
+                  className={`inline-flex h-[34px] items-center gap-1.5 rounded-full px-4 type-body-sm font-medium transition-all active:scale-[0.97] sm:h-10 sm:gap-2 sm:px-5 ${
                     focusOpen
                       ? 'bg-magenta-500 text-white shadow-pink hover:bg-magenta-600'
                       : 'border border-magenta-500/30 bg-white text-magenta-600 hover:bg-magenta-50'
@@ -97,18 +98,18 @@ export function WhoWeAreIndex() {
           ) : (
             <>
               {!hasFocus && <ViewToggle />}
-              <div className={`grid gap-2 sm:grid-cols-1 sm:gap-5 md:grid-cols-2 ${row ? 'grid-cols-1' : 'grid-cols-3'}`}>
+              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${row ? 'grid-cols-1' : 'grid-cols-3'}`}>
                 {data.items.map((page) => (
                   <Link
                     key={page._id}
                     to={path(`/who-we-are/${page.slug}`)}
-                    className={`card-hover group flex overflow-hidden border border-plum-100 bg-white shadow-soft sm:flex-col sm:rounded-3xl ${
+                    className={`card-hover group flex overflow-hidden border border-plum-100 bg-white shadow-soft sm:flex-col sm:rounded-2xl ${
                       row ? 'rounded-xl' : 'flex-col rounded-lg'
                     }`}
                   >
                     {page.heroImage && (
                       <div
-                        className={`relative overflow-hidden sm:aspect-[16/7] ${
+                        className={`relative overflow-hidden sm:aspect-[16/9] ${
                           row ? 'w-[7.5rem] shrink-0 self-stretch sm:w-auto sm:self-auto' : 'aspect-[4/3]'
                         }`}
                       >
@@ -120,16 +121,16 @@ export function WhoWeAreIndex() {
                         />
                       </div>
                     )}
-                    <div className={`min-w-0 flex-1 sm:p-6 ${row ? 'self-center p-2.5' : 'p-1.5'}`}>
-                      <h2 className={`font-display font-semibold transition group-hover:text-magenta-600 sm:text-xl ${row ? 'text-[13.5px]' : 'text-[11.5px] leading-tight'}`}>
+                    <div className={`min-w-0 flex-1 sm:p-5 ${row ? 'self-center p-2.5' : 'p-1.5'}`}>
+                      <h2 className={`type-title-lg transition group-hover:text-magenta-600 ${row ? '' : 'max-sm:type-tile'}`}>
                         <GradientText>{t(page.title, 'en')}</GradientText>
                       </h2>
                       {t(page.summary, lang) && (
-                        <p className={`leading-relaxed text-ink-muted sm:mt-2 sm:line-clamp-3 sm:block sm:text-sm ${row ? 'mt-0.5 line-clamp-2 text-[11.5px]' : 'hidden'}`}>
+                        <p className={`type-body-sm leading-relaxed text-ink-muted max-sm:type-caption sm:mt-2 sm:line-clamp-3 sm:block ${row ? 'mt-0.5 line-clamp-2' : 'hidden'}`}>
                           {t(page.summary, lang)}
                         </p>
                       )}
-                      <span className={`items-center font-semibold text-magenta-600 sm:mt-4 sm:inline-flex sm:gap-1.5 sm:text-[13px] ${row ? 'mt-1.5 inline-flex gap-1 text-[11.5px]' : 'hidden'}`}>
+                      <span className={`type-caption items-center font-semibold text-magenta-600 sm:mt-4 sm:inline-flex sm:gap-1.5 ${row ? 'mt-1.5 inline-flex gap-1' : 'hidden'}`}>
                         {h('readMore')}
                         <ArrowRight size={15} />
                       </span>
@@ -166,7 +167,6 @@ export function PageDetail() {
   return (
     <>
       <PageHeader
-        compact
         title={t(data.title, 'en')}
         description={t(data.summary, lang)}
         image={data.heroImage}
@@ -176,12 +176,13 @@ export function PageDetail() {
           { label: t(data.title, 'en') },
         ]}
       />
-      <Section tone="mist" className="pt-3 sm:pt-6 md:pt-9">
+      <Section tone="mist">
         <Container>
-          {/* One content card: the page's own sections, then its downloads */}
+          {/* One content card: the page's own sections, then its downloads. The
+              Constitution page is read on the site only, so it offers no download. */}
           <ContentPanel>
             <ContentSections html={t(data.body, lang)} />
-            {data.downloads?.length > 0 && (
+            {data.slug !== NO_DOWNLOADS_SLUG && data.downloads?.length > 0 && (
               <PanelSection title={h('downloads')} icon={Download}>
                 <DownloadList files={data.downloads} lang={lang} />
               </PanelSection>

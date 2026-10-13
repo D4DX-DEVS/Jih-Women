@@ -8,6 +8,7 @@ import {
   ErrorState,
   GradientText,
   ManagedSectionHeading,
+  PageHeader,
   Section,
   ViewToggle,
 } from '../components/Primitives';
@@ -20,11 +21,12 @@ import type { Leader, LeaderCategory } from '../lib/types';
 const CATEGORIES: { key: LeaderCategory; label: string }[] = [
   { key: 'state', label: 'stateLeaders' },
   { key: 'district', label: 'districtLeaders' },
-  { key: 'party', label: 'partyLeaders' },
+  // Saved as `party` (the category's stored value); shown as "Past Leaders"
+  { key: 'party', label: 'pastLeaders' },
 ];
 
 export default function Leaders() {
-  const { lang, pageTitle, h } = useSite();
+  const { lang, path, s, pageTitle, h } = useSite();
   const { view } = useViewMode();
   // The chosen category lives in the URL (?category=district) so a refresh or a shared
   // link lands on the same tab; an unknown value falls back to State leaders.
@@ -36,27 +38,41 @@ export default function Leaders() {
   const selectCategory = (next: LeaderCategory) =>
     setParams(next === 'state' ? {} : { category: next }, { replace: true });
 
+  // State and District show who is serving now. Past Leaders gathers everyone whose term
+  // is over, whichever group they served in, so it asks for the whole list.
+  const isPastTab = category === 'party';
   const { data, loading, error, reload } = useApi<{ current: Leader[]; past: Leader[] }>(
-    `/api/site/leaders?category=${category}`
+    isPastTab ? '/api/site/leaders' : `/api/site/leaders?category=${category}`
   );
 
   // The API already narrows the list to the chosen category; this keeps the tab correct
   // against an older backend that ignores the parameter (no category counts as State).
   const inCategory = (l: Leader) => (l.category ?? 'state') === category;
-  const current = (data?.current ?? []).filter(inCategory);
-  const past = (data?.past ?? []).filter(inCategory);
+  const current = isPastTab ? [] : (data?.current ?? []).filter(inCategory);
+  // A leader filed under Past Leaders belongs here even if still marked as current
+  const past = isPastTab ? [...(data?.past ?? []), ...(data?.current ?? []).filter(inCategory)] : [];
   const posters = past.filter((l) => l.posterImage);
   const pastWithoutPoster = past.filter((l) => !l.posterImage);
-  const grid = `grid gap-2 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`;
+  /* Each card is a fixed share of the row (the calc() subtracts the gaps), so a flex row
+     that wraps keeps every column the same width and `justify-center` centres a last row
+     that is not full: 3 a row on phones (1 in list view), 4 on tablets, 5 on desktop. */
+  const row = 'flex flex-wrap justify-center gap-2 sm:gap-4 xl:gap-5';
+  const cell = `${
+    view === 'list' ? 'w-full' : 'w-[calc((100%-1rem)/3)]'
+  } sm:w-[calc((100%-2rem)/3)] md:w-[calc((100%-3rem)/4)] lg:w-[calc((100%-4rem)/5)] xl:w-[calc((100%-5rem)/5)]`;
 
   return (
     <>
-      {/* No page banner: the leaders start right under the site header */}
-      <Section tone="mist" className="pt-3 sm:pt-6 md:pt-8">
+      {/* The same page banner as the other listing pages (Programs, Events, Departments) */}
+      <PageHeader
+        title={pageTitle('leaders')}
+        breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('leaders') }]}
+      />
+      <Section tone="mist">
         <Container>
-          <h1 className="sr-only">{pageTitle('leaders')}</h1>
-          {/* A narrower column keeps the cards compact */}
-          <div className="mx-auto max-w-4xl">
+          {/* One wide panel holds the tabs and every leaders section. Its width is capped so
+              the five-a-row cards stay one size on every desktop, however wide the site is. */}
+          <div className="mx-auto max-w-[1216px] rounded-2xl border border-plum-100 bg-white p-3 shadow-soft sm:rounded-2xl sm:p-6 lg:p-8">
             <div
               role="tablist"
               aria-label={h('leaderCategories')}
@@ -69,7 +85,7 @@ export default function Leaders() {
                   role="tab"
                   aria-selected={category === c.key}
                   onClick={() => selectCategory(c.key)}
-                  className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition sm:px-5 sm:py-2.5 sm:text-sm ${
+                  className={`rounded-full px-3.5 py-1.5 type-body-sm font-semibold transition sm:px-5 sm:py-2.5 ${
                     category === c.key
                       ? 'bg-magenta-500 text-white shadow-soft'
                       : 'border border-plum-200 bg-white text-ink-muted hover:border-magenta-300'
@@ -80,7 +96,7 @@ export default function Leaders() {
               ))}
             </div>
             {loading ? (
-              <ListSkeleton variant="people" />
+              <ListSkeleton variant="people" count={5} />
             ) : error ? (
               <ErrorState message={error} onRetry={reload} />
             ) : !current.length && !past.length ? (
@@ -90,40 +106,55 @@ export default function Leaders() {
                 <ViewToggle />
                 {current.length > 0 && (
                   <>
-                    <ManagedSectionHeading sectionKey="leadersCurrent" eyebrow={h('leaders')} title={h('currentLeadership')} />
-                    <div className={grid}>
+                    <ManagedSectionHeading
+                      sectionKey="leadersCurrent"
+                      eyebrow={h('leaders')}
+                      title={h('currentLeadership')}
+                      align="center"
+                    />
+                    <div className={row}>
                       {current.map((leader) => (
-                        <LeaderCard key={leader._id} leader={leader} view={view} />
+                        <LeaderCard key={leader._id} leader={leader} view={view} className={cell} />
                       ))}
                     </div>
                   </>
                 )}
 
                 {(posters.length > 0 || pastWithoutPoster.length > 0) && (
-                  <div className="mt-6 sm:mt-10 md:mt-12">
-                    <ManagedSectionHeading sectionKey="leadersPast" eyebrow={h('leaders')} title={h('pastLeadership')} />
+                  <div>
+                    <ManagedSectionHeading
+                      sectionKey="leadersPast"
+                      eyebrow={h('leaders')}
+                      title={h('pastLeadership')}
+                      align="center"
+                    />
 
                     {posters.length > 0 && (
-                      <div className={grid}>
+                      <div className={row}>
                         {posters.map((leader) => (
                           <figure
                             key={leader._id}
-                            className={`overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft sm:block sm:rounded-2xl ${
+                            className={`${cell} card-hover group overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft hover:border-magenta-200 sm:block sm:rounded-2xl ${
                               view === 'list' ? 'flex items-center' : ''
                             }`}
                           >
-                            <img
-                              src={leader.posterImage}
-                              alt={t(leader.name, lang)}
-                              loading="lazy"
-                              className={`object-cover sm:w-full ${view === 'list' ? 'h-16 w-16 shrink-0' : 'w-full'}`}
-                            />
-                            <figcaption className={`sm:p-3 ${view === 'list' ? 'min-w-0 flex-1 p-2.5 text-start' : 'p-1.5 text-center'} sm:text-center`}>
-                              <div className="font-display text-[11px] font-semibold leading-tight sm:text-[14px] sm:leading-normal">
+                            {/* Clips the poster's hover zoom so it never covers the caption */}
+                            <div className={`card-sheen ${view === 'list' ? 'h-16 w-16 shrink-0' : ''}`}>
+                              <img
+                                src={leader.posterImage}
+                                alt={t(leader.name, lang)}
+                                loading="lazy"
+                                className={`w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+                                  view === 'list' ? 'h-full' : ''
+                                }`}
+                              />
+                            </div>
+                            <figcaption className={`sm:p-3 ${view === 'list' ? 'min-w-0 flex-1 p-2.5 text-start' : 'card-rule p-1.5 text-center'} sm:text-center`}>
+                              <div className="type-title max-sm:type-tile">
                                 <GradientText>{t(leader.name, lang)}</GradientText>
                               </div>
                               {leader.termLabel && (
-                                <div className="mt-0.5 text-[9.5px] uppercase tracking-wider text-magenta-500 sm:mt-1 sm:text-[12px]">
+                                <div className="type-meta mt-0.5 uppercase tracking-wider text-magenta-500 max-sm:type-micro sm:mt-1">
                                   {leader.termLabel}
                                 </div>
                               )}
@@ -134,21 +165,21 @@ export default function Leaders() {
                     )}
 
                     {pastWithoutPoster.length > 0 && (
-                      <ul className="mt-3 divide-y divide-plum-100 overflow-hidden rounded-2xl border border-plum-100 bg-white shadow-soft sm:mt-6 sm:rounded-3xl">
+                      <ul className="mx-auto mt-3 max-w-4xl divide-y divide-plum-100 overflow-hidden rounded-2xl border border-plum-100 bg-white shadow-soft sm:mt-6 sm:rounded-2xl">
                         {pastWithoutPoster.map((leader) => (
                           <li key={leader._id} className="flex items-center justify-between gap-3 px-3 py-2.5 sm:gap-4 sm:px-5 sm:py-4">
                             <div className="min-w-0">
-                              <div className="font-display text-[13.5px] font-semibold sm:text-[15px]">
+                              <div className="type-title">
                                 <GradientText>{t(leader.name, lang)}</GradientText>
                               </div>
                               {t(leader.designation, lang) && (
-                                <div className="text-[12px] text-ink-muted sm:text-[13px]">
+                                <div className="type-caption text-ink-muted">
                                   {t(leader.designation, lang)}
                                 </div>
                               )}
                             </div>
                             {leader.termLabel && (
-                              <span className="shrink-0 rounded-full bg-magenta-50 px-2.5 py-0.5 text-[11px] font-medium text-magenta-600 sm:px-3 sm:py-1 sm:text-[12px]">
+                              <span className="shrink-0 rounded-full bg-magenta-50 px-2.5 py-0.5 type-meta font-medium text-magenta-600 sm:px-3 sm:py-1">
                                 {leader.termLabel}
                               </span>
                             )}

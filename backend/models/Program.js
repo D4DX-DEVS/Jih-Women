@@ -38,7 +38,7 @@ const programSchema = new mongoose.Schema(
     logoUrl: { type: String, trim: true, default: '' },
     // Wide artwork used in the home page programme strip
     bannerImage: { type: String, trim: true, default: '' },
-    // Programme poster shown, uncropped, in the home page Programs section
+    // Programme poster shown, uncropped, beside the description on the programme's own page
     posterImage: { type: String, trim: true, default: '' },
     gallery: { type: [mediaItemSchema], default: [] },
     videos: { type: [videoRefSchema], default: [] },

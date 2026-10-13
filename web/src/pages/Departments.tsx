@@ -10,6 +10,7 @@ import {
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
+import { validMedia } from '../lib/format';
 import {
   Button,
   Container,
@@ -40,8 +41,6 @@ export function DepartmentsIndex() {
   return (
     <>
       <PageHeader
-        compact
-        titleSize="md"
         title={pageTitle('departments')}
         breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('departments') }]}
       />
@@ -56,7 +55,7 @@ export function DepartmentsIndex() {
           ) : (
             <>
               <ViewToggle />
-              <div className={`grid gap-2 sm:grid-cols-1 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
                 {data.items.map((d) => (
                   <DepartmentCard key={d._id} department={d} view={view} />
                 ))}
@@ -96,8 +95,6 @@ export function DepartmentDetail() {
       {/* Compact banner like the programme pages, and no cover image behind it: the
           covers carry large lettering that read as stray text behind the title */}
       <PageHeader
-        compact
-        titleSize="md"
         title={title}
         description={t(data.tagline, lang)}
         breadcrumb={[
@@ -147,10 +144,10 @@ export function DepartmentDetail() {
                 <ol className="divide-y divide-plum-100/80">
                     {data.objectives.map((o, i) => (
                       <li key={i} className="flex gap-2.5 py-2 first:pt-0 last:pb-0 sm:gap-3.5 sm:py-3">
-                        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-magenta-500 to-plum-500 text-[11px] font-semibold text-white shadow-pink sm:h-7 sm:w-7 sm:text-[12.5px]">
+                        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-magenta-500 to-plum-500 type-meta font-semibold text-white shadow-pink sm:h-7 sm:w-7">
                           {i + 1}
                         </span>
-                        <span className="user-text pt-0.5 text-[13px] leading-relaxed text-ink/85 sm:text-[15px]">{t(o.text, lang)}</span>
+                        <span className="user-text pt-0.5 type-body leading-relaxed text-ink/85">{t(o.text, lang)}</span>
                       </li>
                     ))}
                   </ol>
@@ -172,12 +169,12 @@ export function DepartmentDetail() {
                           />
                         </div>
                       )}
-                      <h3 className="flex items-center gap-2 font-display text-[14px] font-semibold text-plum-800 sm:text-base">
+                      <h3 className="flex items-center gap-2 type-title-lg text-plum-800">
                         <span className="h-4 w-1 shrink-0 rounded-full bg-gradient-to-b from-magenta-500 to-plum-500" aria-hidden="true" />
                         <GradientText>{t(a.title, 'en')}</GradientText>
                       </h3>
                       {t(a.description, lang) && (
-                        <p className="user-text mt-1 text-[12.5px] leading-relaxed text-ink-muted sm:mt-1.5 sm:text-sm">{t(a.description, lang)}</p>
+                        <p className="user-text mt-1 type-body-sm leading-relaxed text-ink-muted sm:mt-1.5">{t(a.description, lang)}</p>
                       )}
                     </div>
                   ))}
@@ -195,13 +192,13 @@ export function DepartmentDetail() {
               </PanelSection>
             )}
 
-            {data.posters?.length > 0 && (
+            {validMedia(data.posters).length > 0 && (
               <PanelSection title={h('posters')} icon={Images}>
                 <GalleryGrid items={data.posters} />
               </PanelSection>
             )}
 
-            {data.gallery?.length > 0 && (
+            {validMedia(data.gallery).length > 0 && (
               <PanelSection title={h('gallery')} icon={Images}>
                 <GalleryGrid items={data.gallery} />
               </PanelSection>

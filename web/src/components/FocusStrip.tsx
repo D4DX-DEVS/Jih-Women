@@ -65,10 +65,10 @@ export default function FocusStrip({ areas, id }: { areas: FocusArea[]; id?: str
               <span className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-magenta-50 text-magenta-500 transition group-hover:bg-magenta-500 group-hover:text-white sm:h-14 sm:w-14">
                 <Icon size={22} />
               </span>
-              <span className="mt-2.5 block font-display text-[13.5px] font-semibold leading-snug text-plum-800 sm:mt-3.5 sm:text-[15px]">
+              <span className="mt-2.5 block type-title text-plum-800 sm:mt-3.5">
                 {t(area.title, lang)}
               </span>
-              <span className="mt-1 block text-[11.5px] leading-relaxed text-ink-muted sm:mt-1.5 sm:text-[12.5px]">
+              <span className="mt-1 block type-caption leading-relaxed text-ink-muted sm:mt-1.5">
                 {t(area.description, lang)}
               </span>
             </>

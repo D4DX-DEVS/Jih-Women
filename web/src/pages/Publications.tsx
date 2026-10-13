@@ -44,11 +44,10 @@ export function PublicationsIndex() {
   return (
     <>
       <PageHeader
-        compact
         title={pageTitle('publications')}
         breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('publications') }]}
       />
-      <Section tone="mist" className="pt-3 sm:pt-6 md:pt-9">
+      <Section tone="mist">
         <Container>
           <ViewToggle />
           <div className="mb-4 flex flex-wrap gap-1.5 sm:mb-8 sm:gap-2">
@@ -59,7 +58,7 @@ export function PublicationsIndex() {
                   setType(item.value);
                   setPage(1);
                 }}
-                className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition sm:px-4 sm:py-2 sm:text-[13px] ${
+                className={`rounded-full px-3 py-1.5 type-caption font-semibold transition sm:px-4 sm:py-2 ${
                   type === item.value
                     ? 'bg-magenta-500 text-white'
                     : 'border border-plum-200 text-ink-muted hover:border-magenta-300'
@@ -78,7 +77,7 @@ export function PublicationsIndex() {
             <EmptyState />
           ) : (
             <>
-              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
                 {data.items.map((p) => (
                   <PublicationCard key={p._id} publication={p} view={view} />
                 ))}
@@ -113,7 +112,6 @@ export function PublicationDetail() {
   return (
     <>
       <PageHeader
-        compact
         title={t(data.title, lang)}
         breadcrumb={[
           { label: s('home'), to: path('/') },
@@ -121,7 +119,7 @@ export function PublicationDetail() {
           { label: t(data.title, lang) },
         ]}
       />
-      <Section tone="mist" className="pt-3 sm:pt-6 md:pt-9">
+      <Section tone="mist">
         <Container>
           {/* One content card: cover and actions in the side column; details,
               description and text as the main content */}
@@ -159,33 +157,33 @@ export function PublicationDetail() {
             }
           >
             <PanelSection>
-              <dl className="mb-4 grid grid-cols-2 gap-x-3 gap-y-2.5 border-b border-plum-100/80 pb-3 text-[13px] sm:mb-7 sm:grid-cols-4 sm:gap-4 sm:pb-6 sm:text-sm">
+              <dl className="mb-4 grid grid-cols-2 gap-x-3 gap-y-2.5 border-b border-plum-100/80 pb-3 type-body-sm sm:mb-7 sm:grid-cols-4 sm:gap-4 sm:pb-6">
                 {t(data.author, lang) && (
                   <div>
-                    <dt className="text-[10.5px] uppercase tracking-wider text-ink-faint sm:text-[11px]">{s('author')}</dt>
+                    <dt className="type-overline tracking-wider text-ink-faint">{s('author')}</dt>
                     <dd className="mt-0.5 font-medium sm:mt-1">{t(data.author, lang)}</dd>
                   </div>
                 )}
                 {t(data.publisher, lang) && (
                   <div>
-                    <dt className="text-[10.5px] uppercase tracking-wider text-ink-faint sm:text-[11px]">{s('publisher')}</dt>
+                    <dt className="type-overline tracking-wider text-ink-faint">{s('publisher')}</dt>
                     <dd className="mt-0.5 font-medium sm:mt-1">{t(data.publisher, lang)}</dd>
                   </div>
                 )}
                 {data.pages ? (
                   <div>
-                    <dt className="text-[10.5px] uppercase tracking-wider text-ink-faint sm:text-[11px]">{s('pages')}</dt>
+                    <dt className="type-overline tracking-wider text-ink-faint">{s('pages')}</dt>
                     <dd className="mt-0.5 font-medium sm:mt-1">{data.pages}</dd>
                   </div>
                 ) : null}
                 <div>
-                  <dt className="text-[10.5px] uppercase tracking-wider text-ink-faint sm:text-[11px]">{s('publishedOn')}</dt>
+                  <dt className="type-overline tracking-wider text-ink-faint">{s('publishedOn')}</dt>
                   <dd className="mt-0.5 font-medium sm:mt-1">{formatDate(data.publishedAt, lang)}</dd>
                 </div>
               </dl>
 
               {t(data.description, lang) && (
-                <p className="user-text mb-3 text-[13.5px] leading-relaxed text-ink/85 sm:mb-6 sm:text-[15px]">{t(data.description, lang)}</p>
+                <p className="user-text mb-3 type-body leading-relaxed text-ink/85 sm:mb-6">{t(data.description, lang)}</p>
               )}
 
               <RichText html={t(data.body, lang)} />

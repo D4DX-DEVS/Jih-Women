@@ -50,7 +50,7 @@ export default function BottomNav() {
     };
   }, [moreOpen]);
 
-  const cell = 'relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-0 pt-1 pb-0.5 text-[10px] font-medium leading-none transition-colors';
+  const cell = 'relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-0 pt-1 pb-0.5 type-micro font-medium leading-none transition-colors';
 
   return (
     <>
@@ -124,7 +124,7 @@ export default function BottomNav() {
               </div>
               {groups.map((group) => (
                 <section key={group.label} className="mb-3 last:mb-0">
-                  <h3 className="mb-1.5 px-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em]">
+                  <h3 className="mb-1.5 px-1 font-sans type-overline font-semibold tracking-[0.14em]">
                     <span className="text-brand-gradient">{group.label}</span>
                   </h3>
                   <ul className="grid grid-cols-2 gap-1.5">
@@ -136,7 +136,7 @@ export default function BottomNav() {
                             to={to}
                             onClick={() => setMoreOpen(false)}
                             aria-current={active ? 'page' : undefined}
-                            className={`flex min-h-[44px] items-center gap-2 rounded-xl border px-2.5 py-1.5 text-[12.5px] font-medium transition active:scale-[0.98] ${
+                            className={`flex min-h-[44px] items-center gap-2 rounded-xl border px-2.5 py-1.5 type-body-sm font-medium transition active:scale-[0.98] ${
                               active ? 'border-magenta-200 bg-magenta-50/70 text-magenta-600' : 'border-plum-100 bg-white text-plum-800'
                             }`}
                           >

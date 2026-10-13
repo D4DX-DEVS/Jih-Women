@@ -181,12 +181,12 @@ export default function PresidentMessageModal({
         <header className="shrink-0 border-b border-magenta-100/80 py-4 ps-5 pe-16 sm:py-5 sm:ps-8 sm:pe-20">
           <h2
             id={titleId}
-            className="responsive-copy font-display text-[1.15rem] font-semibold leading-snug sm:text-[1.4rem]"
+            className="responsive-copy type-heading-sm"
           >
             <GradientText>{label}</GradientText>
           </h2>
           {heading && heading !== label && (
-            <p className="responsive-copy mt-0.5 text-[12.5px] leading-snug text-ink-muted sm:text-[13.5px]">{heading}</p>
+            <p className="responsive-copy mt-0.5 type-caption leading-snug text-ink-muted">{heading}</p>
           )}
         </header>
 
@@ -209,19 +209,19 @@ export default function PresidentMessageModal({
               )}
               <div className="min-w-0">
                 {name && (
-                  <span className="user-text block font-display text-[15px] font-semibold text-plum-800 sm:text-[17px]">
+                  <span className="user-text block type-title-lg text-plum-800">
                     <GradientText>{name}</GradientText>
                   </span>
                 )}
                 {designation && (
-                  <span className="user-text block text-[12px] text-ink-muted sm:text-[13px]">{designation}</span>
+                  <span className="user-text block type-caption text-ink-muted">{designation}</span>
                 )}
               </div>
             </div>
           )}
 
           <div
-            className="prose-content text-[14px] leading-[1.85] sm:text-[15.5px] sm:leading-[2]"
+            className="prose-content leading-[1.85] sm:leading-[2]"
             dangerouslySetInnerHTML={{ __html: body }}
           />
         </div>

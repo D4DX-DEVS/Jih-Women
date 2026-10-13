@@ -80,7 +80,7 @@ export default function SectionTabs({ content: { intro, sections } }: { content:
                 buttons.current[i]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
               }}
               onKeyDown={(e) => onKeyDown(e, i)}
-              className={`user-text shrink-0 whitespace-nowrap rounded-xl px-3.5 py-2 text-start md:whitespace-normal text-[12.5px] font-semibold leading-snug ring-1 transition sm:text-[13.5px] md:py-2.5 ${
+              className={`user-text shrink-0 whitespace-nowrap rounded-xl px-3.5 py-2 text-start md:whitespace-normal type-body-sm font-semibold leading-snug ring-1 transition md:py-2.5 ${
                 i === current
                   ? 'bg-magenta-500 text-white shadow-soft ring-magenta-500'
                   : 'bg-white text-plum-800 ring-inset ring-plum-100 hover:bg-magenta-50 hover:text-magenta-600 hover:ring-magenta-200'

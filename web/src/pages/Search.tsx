@@ -46,7 +46,7 @@ export default function Search() {
           ) : !data?.results.length ? (
             <EmptyState message={s('noResults')} />
           ) : (
-            <ul className="divide-y divide-plum-100 overflow-hidden rounded-2xl border border-plum-100 bg-white shadow-soft sm:rounded-3xl">
+            <ul className="divide-y divide-plum-100 overflow-hidden rounded-2xl border border-plum-100 bg-white shadow-soft sm:rounded-2xl">
               {data.results.map((result, i) => (
                 <li key={`${result.kind}-${result.slug}-${i}`}>
                   <Link
@@ -67,10 +67,10 @@ export default function Search() {
                       <span className="h-11 w-[3.25rem] shrink-0 rounded-lg bg-magenta-50 sm:h-14 sm:w-16 sm:rounded-xl" />
                     )}
                     <span className="min-w-0">
-                      <span className="block text-[10.5px] uppercase tracking-wider text-magenta-500 sm:text-[11px]">
+                      <span className="block type-overline tracking-wider text-magenta-500">
                         {s(KIND_LABEL[result.kind] ?? result.kind)}
                       </span>
-                      <span className="mt-0.5 block truncate font-display text-[13.5px] font-semibold sm:text-[15px]">
+                      <span className="mt-0.5 block truncate type-title">
                         <GradientText>{t(result.title, lang)}</GradientText>
                       </span>
                     </span>
