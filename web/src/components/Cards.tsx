@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 import {
   ArrowUpRight,
   Calendar,
+  Clock,
   Download,
   FileText,
   MapPin,
@@ -16,7 +17,9 @@ import { t } from '../lib/i18n';
 import {
   formatBytes,
   formatDate,
+  formatDateRange,
   formatDay,
+  isExternalUrl,
   youtubeId,
   youtubeThumb,
 } from '../lib/format';
@@ -52,10 +55,13 @@ function Placeholder({ className = '' }: { className?: string }) {
 export function PostCard({
   post,
   compact = false,
+  small = false,
   view = 'card',
 }: {
   post: MediaPost;
   compact?: boolean;
+  /** Tablet and desktop only: tighter padding and type, for a four-across listing */
+  small?: boolean;
   /** Phones only (see useViewMode): `card` is a small tile for a three-up grid, `list` a compact row */
   view?: ViewMode;
 }) {
@@ -93,9 +99,9 @@ export function PostCard({
   return (
     <Link
       to={to}
-      className={`card-hover group flex overflow-hidden border border-plum-100 bg-white shadow-soft sm:flex-col sm:rounded-3xl ${
-        row ? 'rounded-xl' : 'flex-col rounded-lg'
-      }`}
+      className={`card-hover group flex overflow-hidden border border-plum-100 bg-white shadow-soft sm:flex-col ${
+        small ? 'sm:rounded-2xl' : 'sm:rounded-3xl'
+      } ${row ? 'rounded-xl' : 'flex-col rounded-lg'}`}
     >
       {post.coverImage ? (
         <div className={`relative overflow-hidden sm:aspect-[16/10] ${pic}`}>
@@ -110,7 +116,9 @@ export function PostCard({
         <Placeholder className={`sm:aspect-[16/10] ${pic}`} />
       )}
       <div
-        className={`flex min-w-0 flex-1 flex-col sm:justify-start sm:p-5 ${row ? 'justify-center p-2.5' : 'p-1.5'}`}
+        className={`flex min-w-0 flex-1 flex-col sm:justify-start ${small ? 'sm:p-3.5' : 'sm:p-5'} ${
+          row ? 'justify-center p-2.5' : 'p-1.5'
+        }`}
       >
         {/* Dates read in English on every card; the title and preview stay in the site language */}
         <div
@@ -121,23 +129,27 @@ export function PostCard({
           {formatDate(post.publishedAt, 'en')}
         </div>
         <h3
-          className={`font-display font-semibold text-plum-800 transition group-hover:text-magenta-600 sm:mt-2 sm:line-clamp-2 sm:text-lg sm:leading-snug ${
-            row ? 'mt-0.5 line-clamp-2 text-[13px] leading-snug' : 'mt-0.5 line-clamp-3 text-[11px] leading-tight'
-          }`}
+          className={`font-display font-semibold text-plum-800 transition group-hover:text-magenta-600 sm:line-clamp-2 sm:leading-snug ${
+            small ? 'sm:mt-1.5 sm:text-[15px]' : 'sm:mt-2 sm:text-lg'
+          } ${row ? 'mt-0.5 line-clamp-2 text-[13px] leading-snug' : 'mt-0.5 line-clamp-3 text-[11px] leading-tight'}`}
         >
           <GradientText>{t(post.title, lang)}</GradientText>
         </h3>
         {/* A short preview only; the full story is on the detail page */}
         {t(post.excerpt, lang) && (
           <p
-            className={`leading-relaxed text-ink-muted sm:mt-2 sm:line-clamp-2 sm:block sm:text-sm ${
-              row ? 'mt-0.5 line-clamp-1 text-[11.5px]' : 'hidden'
-            }`}
+            className={`leading-relaxed text-ink-muted sm:line-clamp-2 sm:block ${
+              small ? 'sm:mt-1.5 sm:text-[12.5px]' : 'sm:mt-2 sm:text-sm'
+            } ${row ? 'mt-0.5 line-clamp-1 text-[11.5px]' : 'hidden'}`}
           >
             {t(post.excerpt, lang)}
           </p>
         )}
-        <span className="mt-auto hidden items-center gap-1.5 pt-4 text-[13px] font-semibold text-magenta-600 sm:inline-flex">
+        <span
+          className={`mt-auto hidden items-center gap-1.5 font-semibold text-magenta-600 sm:inline-flex ${
+            small ? 'pt-2.5 text-[12px]' : 'pt-4 text-[13px]'
+          }`}
+        >
           {h('readMore')}
           <ArrowUpRight size={14} />
         </span>
@@ -148,55 +160,167 @@ export function PostCard({
 
 /* ---------------- events ---------------- */
 
-export function EventCard({ event, view = 'card' }: { event: OrgEvent; view?: ViewMode }) {
+/**
+ * The event's poster (or, for older records, its cover image), shown whole and undistorted
+ * inside a fixed frame (`inset` is the breathing room around it), on a soft plain ground.
+ * A missing or broken image falls back to a plain date tile, never a broken-image icon.
+ */
+function EventPoster({
+  src,
+  alt,
+  day,
+  month,
+  className = '',
+  inset = 'inset-0',
+}: {
+  src: string;
+  alt: string;
+  day: string;
+  month: string;
+  className?: string;
+  inset?: string;
+}) {
+  // The caller keys this by `src`, so a swapped poster gets a fresh attempt
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) {
+    return (
+      <div
+        aria-hidden="true"
+        className={`relative flex flex-col items-center justify-center gap-1 overflow-hidden bg-plum-800 text-white ${className}`}
+      >
+        <span
+          className="absolute inset-0 opacity-[0.08]"
+          style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.9) 1px, transparent 0)',
+            backgroundSize: '22px 22px',
+          }}
+        />
+        <span className="absolute -end-10 -top-10 h-40 w-40 rounded-full bg-magenta-500/30 blur-3xl" />
+        <Calendar size={22} className="relative text-magenta-300" />
+        <span className="relative font-display text-3xl font-bold leading-none sm:text-4xl">{day}</span>
+        <span className="relative text-xs font-medium uppercase tracking-[0.18em] text-magenta-300">{month}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`relative overflow-hidden bg-plum-50 ${className}`}>
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+        onError={() => setFailed(true)}
+        className={`absolute h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.04] ${inset}`}
+      />
+      <span className="absolute start-2 top-2 flex flex-col items-center rounded-lg bg-plum-800 px-2 py-1 text-white shadow-soft">
+        <span className="font-display text-sm font-bold leading-none">{day}</span>
+        <span className="mt-0.5 text-[9px] font-medium uppercase tracking-wider text-magenta-300">{month}</span>
+      </span>
+    </div>
+  );
+}
+
+/**
+ * One event on the Events page. The whole card is a single link to the event page (the
+ * title link is stretched over it); the Register button sits above that link, so it works
+ * on its own. Registration is only offered on upcoming events (`past` is the page's tab).
+ * Phones can switch to `list`: a compact row with a small poster beside the details.
+ */
+export function EventCard({
+  event,
+  view = 'card',
+  past = false,
+}: {
+  event: OrgEvent;
+  view?: ViewMode;
+  past?: boolean;
+}) {
   const { lang, path, s } = useSite();
   const { day, month } = formatDay(event.startDate, lang);
   const row = view === 'list';
 
+  const name = t(event.title, lang);
+  const venue = t(event.venue, lang);
+  const src = event.posterImage || event.coverImage;
+  const to = path(`/events/${event.slug}`);
+
+  // Same rule as the event page: an external form wins, otherwise the built-in RSVP form
+  const externalRegistration = !past && isExternalUrl(event.registrationUrl);
+  const builtInRegistration = !past && !externalRegistration && event.registrationEnabled;
+  const registerClass =
+    'relative z-10 inline-flex shrink-0 items-center justify-center rounded-full bg-magenta-500 px-3.5 py-1.5 text-[12px] font-semibold text-white shadow-pink transition hover:bg-magenta-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 focus-visible:ring-offset-2 sm:px-4 sm:text-[13px]';
+
   return (
-    <Link
-      to={path(`/events/${event.slug}`)}
-      className={`card-hover group flex min-w-0 border border-plum-100 bg-white shadow-soft sm:flex-row sm:gap-5 sm:rounded-3xl sm:p-5 ${
-        row ? 'gap-2.5 rounded-xl p-2' : 'flex-col gap-1.5 rounded-lg p-2'
+    <article
+      className={`card-hover group relative flex min-w-0 border border-plum-100 bg-white shadow-soft has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-magenta-500 ${
+        row ? 'gap-3 rounded-xl p-2' : 'flex-col overflow-hidden rounded-2xl sm:rounded-3xl'
       }`}
     >
-      <div
-        className={`flex shrink-0 items-center justify-center bg-plum-800 text-white sm:h-[74px] sm:w-[70px] sm:flex-col sm:gap-0 sm:self-auto sm:rounded-2xl sm:px-0 sm:py-0 ${
-          row ? 'h-10 w-10 flex-col rounded-lg' : 'gap-1 self-start rounded-md px-2 py-1'
-        }`}
-      >
-        <span className={`font-display font-bold leading-none sm:text-2xl ${row ? 'text-[15px]' : 'text-[13px]'}`}>{day}</span>
-        <span className="text-[9px] uppercase tracking-wide text-magenta-300 sm:mt-1 sm:text-[11px]">{month}</span>
-      </div>
-      <div className="min-w-0 flex-1">
+      <EventPoster
+        key={src}
+        src={src}
+        alt={name}
+        day={day}
+        month={month}
+        /* a short, fixed-height frame so every poster reads as the same tidy thumbnail */
+        className={row ? 'aspect-[3/4] w-20 shrink-0 self-start rounded-lg sm:w-24' : 'h-44 w-full sm:h-48'}
+        inset={row ? 'inset-0' : 'inset-3'}
+      />
+
+      <div className={`flex min-w-0 flex-1 flex-col ${row ? 'py-0.5 pe-1' : 'p-4'}`}>
         <h3
-          className={`font-display font-semibold text-plum-800 transition group-hover:text-magenta-600 sm:line-clamp-2 sm:text-[17px] sm:leading-snug ${
-            row ? 'line-clamp-2 text-[13px] leading-snug' : 'line-clamp-3 text-[11px] leading-tight'
+          className={`font-display font-semibold text-plum-800 transition group-hover:text-magenta-600 ${
+            row ? 'text-[14px] leading-snug' : 'text-[15px] leading-snug sm:text-[16px]'
           }`}
         >
-          <GradientText>{t(event.title, lang)}</GradientText>
+          {/* after:inset-0 stretches this link over the whole card */}
+          <Link to={to} className="outline-none after:absolute after:inset-0 after:content-['']">
+            <span className="line-clamp-2 [overflow-wrap:anywhere]">
+              <GradientText>{name}</GradientText>
+            </span>
+          </Link>
         </h3>
-        <div className={`text-ink-muted sm:mt-2 sm:space-y-1 sm:text-[13px] ${row ? 'mt-0.5 space-y-0 text-[11.5px]' : 'mt-1 space-y-0 text-[10px]'}`}>
+
+        <ul className={`text-ink-muted ${row ? 'mt-1 space-y-0.5 text-[12px]' : 'mt-3 space-y-1.5 text-[13px]'}`}>
+          <li className="flex items-start gap-2">
+            <Calendar size={14} className="mt-0.5 shrink-0 text-magenta-500" />
+            <span>{formatDateRange(event.startDate, event.endDate, lang)}</span>
+          </li>
           {event.timeLabel && (
-            <div className="flex items-center gap-1.5">
-              <Calendar size={13} className="shrink-0 text-magenta-500" />
-              <span className={row ? '' : 'truncate'}>{event.timeLabel}</span>
-            </div>
+            <li className="flex items-start gap-2">
+              <Clock size={14} className="mt-0.5 shrink-0 text-magenta-500" />
+              <span>{event.timeLabel}</span>
+            </li>
           )}
-          {t(event.venue, lang) && (
-            <div className={`items-center gap-1.5 sm:flex ${row ? 'flex' : 'hidden'}`}>
-              <MapPin size={13} className="shrink-0 text-magenta-500" />
-              <span className="line-clamp-1">{t(event.venue, lang)}</span>
-            </div>
+          {venue && (
+            <li className="flex items-start gap-2">
+              <MapPin size={14} className="mt-0.5 shrink-0 text-magenta-500" />
+              <span className="line-clamp-2 [overflow-wrap:anywhere]">{venue}</span>
+            </li>
+          )}
+        </ul>
+
+        <div className={`mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-2 ${row ? 'pt-2' : 'pt-4'}`}>
+          <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-magenta-600">
+            {s('viewDetails')}
+            <ArrowUpRight size={14} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </span>
+          {externalRegistration && (
+            <a href={event.registrationUrl} target="_blank" rel="noopener noreferrer" className={registerClass}>
+              {s('registerNow')}
+            </a>
+          )}
+          {builtInRegistration && (
+            <Link to={to} className={registerClass}>
+              {s('registerNow')}
+            </Link>
           )}
         </div>
-        {event.registrationEnabled && (
-          <span className="mt-3 hidden rounded-full bg-magenta-500/12 px-3 py-1 text-[11px] font-semibold text-magenta-500 sm:inline-block">
-            {s('registerNow')}
-          </span>
-        )}
       </div>
-    </Link>
+    </article>
   );
 }
 
@@ -308,13 +432,14 @@ export function ProgramCard({
 }) {
   const { lang, path, s } = useSite();
   const row = view === 'list';
-  return (
-    <Link
-      to={path(`/programs/${program.slug}`)}
-      className={`card-hover group relative flex overflow-hidden border border-plum-100 bg-white shadow-soft sm:flex-col sm:rounded-3xl ${
-        row ? 'rounded-xl' : 'flex-col rounded-lg'
-      }`}
-    >
+  // A programme with its own website opens it in a new tab; without one the card goes to
+  // the programme page. Only well-formed http(s) addresses count as a website.
+  const external = isExternalUrl(program.externalUrl);
+  const cardClass = `card-hover group relative flex overflow-hidden border border-plum-100 bg-white shadow-soft sm:flex-col sm:rounded-3xl ${
+    row ? 'rounded-xl' : 'flex-col rounded-lg'
+  }`;
+  const card = (
+    <>
       {program.logoUrl ? (
         /* The programme's logo (its only managed image), whole and centred; multiply
            lets white or near-white logo backgrounds melt into the card */
@@ -358,10 +483,20 @@ export function ProgramCard({
             row ? 'mt-1.5 inline-flex gap-1 text-[11.5px]' : 'hidden'
           }`}
         >
-          {program.externalUrl ? t(program.externalLabel, 'en') || s('visitWebsite') : s('viewDetails')}
+          {external ? t(program.externalLabel, 'en') || s('visitWebsite') : s('viewDetails')}
           <ArrowUpRight size={14} />
         </span>
       </div>
+    </>
+  );
+
+  return external ? (
+    <a href={program.externalUrl} target="_blank" rel="noopener noreferrer" className={cardClass}>
+      {card}
+    </a>
+  ) : (
+    <Link to={path(`/programs/${program.slug}`)} className={cardClass}>
+      {card}
     </Link>
   );
 }

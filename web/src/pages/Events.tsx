@@ -47,27 +47,41 @@ export function EventsIndex() {
     { key: 'past', label: s('pastEvents') },
   ];
 
+  // The previous list stays on screen (dimmed) while the next one loads, then the new
+  // one fades in; the grid is keyed by its events so it only replays when they change.
+  const listKey = data?.items.map((event) => event._id).join('|') ?? '';
+
   return (
     <>
       <PageHeader
+        compact
+        titleSize="md"
         title={pageTitle('events')}
         breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('events') }]}
       />
       <Section tone="mist">
         <Container>
           <ViewToggle />
-          <div className="mb-4 flex gap-1.5 sm:mb-8 sm:gap-2">
+          <div
+            role="tablist"
+            aria-label={pageTitle('events')}
+            className="mb-5 inline-flex max-w-full rounded-full border border-plum-100 bg-white p-1 shadow-soft sm:mb-8"
+          >
             {tabs.map((tab) => (
               <button
                 key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={scope === tab.key}
+                aria-controls="events-panel"
                 onClick={() => {
                   setScope(tab.key);
                   setPage(1);
                 }}
-                className={`rounded-full px-4 py-1.5 text-[13px] font-semibold transition sm:px-5 sm:py-2.5 sm:text-sm ${
+                className={`rounded-full px-4 py-2 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 sm:px-6 sm:py-2.5 sm:text-sm ${
                   scope === tab.key
-                    ? 'bg-magenta-500 text-white shadow-soft'
-                    : 'border border-plum-200 text-ink-muted hover:border-magenta-300'
+                    ? 'bg-magenta-500 text-white shadow-pink'
+                    : 'text-plum-800 hover:bg-magenta-50 hover:text-magenta-600'
                 }`}
               >
                 {tab.label}
@@ -75,22 +89,29 @@ export function EventsIndex() {
             ))}
           </div>
 
-          {loading ? (
-            <ListSkeleton variant="rows" />
-          ) : error ? (
-            <ErrorState message={error} onRetry={reload} />
-          ) : !data?.items.length ? (
-            <EmptyState />
-          ) : (
-            <>
-              <div className={`grid gap-2 sm:grid-cols-1 sm:gap-4 md:grid-cols-2 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
-                {data.items.map((event) => (
-                  <EventCard key={event._id} event={event} view={view} />
-                ))}
-              </div>
-              <Pagination page={data.page} pages={data.pages} onPage={setPage} />
-            </>
-          )}
+          <div id="events-panel" role="tabpanel" aria-busy={loading}>
+            {loading && !data ? (
+              <ListSkeleton variant="rows" />
+            ) : error ? (
+              <ErrorState message={error} onRetry={reload} />
+            ) : !data?.items.length ? (
+              <EmptyState message={s(scope === 'upcoming' ? 'noUpcomingEvents' : 'noPastEvents')} />
+            ) : (
+              <>
+                <div
+                  key={listKey}
+                  className={`animate-fade-in grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${
+                    view === 'list' ? 'gap-2.5 sm:gap-6' : 'gap-4 sm:gap-6'
+                  } ${loading ? 'pointer-events-none opacity-50 transition-opacity' : ''}`}
+                >
+                  {data.items.map((event) => (
+                    <EventCard key={event._id} event={event} view={view} past={data.scope === 'past'} />
+                  ))}
+                </div>
+                <Pagination page={data.page} pages={data.pages} onPage={setPage} />
+              </>
+            )}
+          </div>
         </Container>
       </Section>
     </>

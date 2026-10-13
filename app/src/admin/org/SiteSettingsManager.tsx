@@ -94,7 +94,7 @@ const SECTION_FIELDS: FieldDef[] = [
   { kind: 'toggle', path: 'sections.slider', label: 'Sliding images' },
   { kind: 'toggle', path: 'sections.programBanners', label: 'Programme banner strip' },
   { kind: 'toggle', path: 'sections.presidentMessage', label: "President's message" },
-  { kind: 'toggle', path: 'sections.focusAreas', label: 'Focus areas' },
+  { kind: 'toggle', path: 'sections.focusAreas', label: 'Focus areas (home page and About Us)' },
   { kind: 'toggle', path: 'sections.campaigns', label: 'Campaigns' },
   { kind: 'toggle', path: 'sections.updates', label: 'Updates' },
   { kind: 'toggle', path: 'sections.featuredArticles', label: 'Featured articles' },

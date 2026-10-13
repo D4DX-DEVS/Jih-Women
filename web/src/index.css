@@ -337,6 +337,51 @@
   }
 }
 
+/* President's message popup: a quick fade and gentle scale in, a shorter fade out.
+   The component unmounts it EXIT_MS after data-state flips to "closed". */
+@keyframes pm-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pm-backdrop[data-state='open'] {
+  animation: pm-fade 0.2s ease-out both;
+}
+
+.pm-backdrop[data-state='closed'] {
+  animation: pm-fade 0.18s ease-in reverse both;
+}
+
+.pm-dialog[data-state='open'] {
+  animation: pm-rise 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.pm-dialog[data-state='closed'] {
+  animation: pm-rise 0.18s ease-in reverse both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-backdrop,
+  .pm-dialog {
+    animation: none !important;
+  }
+}
+
 @keyframes skeleton-sweep {
   from {
     background-position: 100% 0;

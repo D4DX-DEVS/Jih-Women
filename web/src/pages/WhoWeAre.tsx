@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { ArrowRight, Download } from 'lucide-react';
+import { ArrowRight, ChevronDown, Download, Target } from 'lucide-react';
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
@@ -18,8 +19,25 @@ import {
 import { DetailSkeleton, ListSkeleton } from '../components/PageSkeletons';
 import { useViewMode } from '../lib/view';
 import ContentSections from '../components/ContentCards';
+import FocusStrip from '../components/FocusStrip';
 import NotFound from './NotFound';
-import type { PageDoc } from '../lib/types';
+import type { FocusArea, HomePayload, PageDoc } from '../lib/types';
+
+const FOCUS_PANEL_ID = 'about-focus';
+
+/**
+ * The admin-managed Focus areas for the About Us page: the same content and the same
+ * ON/OFF switch (`settings.sections.focusAreas`) as the home page Focus strip.
+ * Empty while the switch is off (nothing is requested then), while loading, or when
+ * there are no focus areas, so the page shows no Focus button in those cases.
+ */
+function useFocusAreas(): FocusArea[] {
+  const { data: site } = useSite();
+  const on = Boolean(site) && site?.settings.sections?.focusAreas !== false;
+  const { data } = useApi<HomePayload>(on ? '/api/site/home' : null);
+  if (!on || data?.settings?.sections?.focusAreas === false) return [];
+  return data?.focusAreas ?? [];
+}
 
 export function WhoWeAreIndex() {
   const { lang, path, s, h } = useSite();
@@ -28,6 +46,10 @@ export function WhoWeAreIndex() {
   const { data, loading, error, reload } = useApi<{ items: PageDoc[] }>(
     '/api/site/pages?section=who-we-are'
   );
+  const focusAreas = useFocusAreas();
+  const [focusOpen, setFocusOpen] = useState(false);
+  const hasFocus = focusAreas.length > 0;
+  const hasItems = !loading && !error && Boolean(data?.items.length);
 
   return (
     <>
@@ -38,6 +60,34 @@ export function WhoWeAreIndex() {
       />
       <Section tone="mist" className="pt-3 sm:pt-6 md:pt-9">
         <Container>
+          {hasFocus && (
+            <>
+              {/* Focus button; on phones it shares a row with the Cards/List switch */}
+              <div className="mb-2.5 flex items-start justify-between gap-2 sm:mb-5">
+                <button
+                  type="button"
+                  onClick={() => setFocusOpen((open) => !open)}
+                  aria-expanded={focusOpen}
+                  aria-controls={FOCUS_PANEL_ID}
+                  className={`inline-flex h-[34px] items-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-all active:scale-[0.97] sm:h-10 sm:gap-2 sm:px-5 sm:text-sm ${
+                    focusOpen
+                      ? 'bg-magenta-500 text-white shadow-pink hover:bg-magenta-600'
+                      : 'border border-magenta-500/30 bg-white text-magenta-600 hover:bg-magenta-50'
+                  }`}
+                >
+                  <Target size={15} />
+                  {h('focus')}
+                  <ChevronDown size={14} className={`transition-transform ${focusOpen ? 'rotate-180' : ''}`} />
+                </button>
+                <div className="ml-auto [&>div]:mb-0">{hasItems && <ViewToggle />}</div>
+              </div>
+              {focusOpen && (
+                <div className="mb-3 sm:mb-6">
+                  <FocusStrip id={FOCUS_PANEL_ID} areas={focusAreas} />
+                </div>
+              )}
+            </>
+          )}
           {loading ? (
             <ListSkeleton />
           ) : error ? (
@@ -46,7 +96,7 @@ export function WhoWeAreIndex() {
             <EmptyState />
           ) : (
             <>
-              <ViewToggle />
+              {!hasFocus && <ViewToggle />}
               <div className={`grid gap-2 sm:grid-cols-1 sm:gap-5 md:grid-cols-2 ${row ? 'grid-cols-1' : 'grid-cols-3'}`}>
                 {data.items.map((page) => (
                   <Link

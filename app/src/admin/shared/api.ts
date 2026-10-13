@@ -43,7 +43,10 @@ export async function apiJson<T>(path: string, opts: ApiOptions = {}): Promise<T
   const data = await res.json().catch(() => ({}));
 
   if (res.status === 401) {
-    const err: ApiErrorShape = new Error('Your session has expired. Please sign in again.');
+    // Without a token this is a failed sign-in, not an expired session.
+    const err: ApiErrorShape = new Error(
+      opts.token ? 'Your session has expired. Please sign in again.' : data.error || 'Invalid username or password'
+    );
     err.code = 401;
     throw err;
   }

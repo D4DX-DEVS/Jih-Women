@@ -2763,8 +2763,7 @@ function FeedbackManager({
                   </td>
                 </tr>
               ) : (
-                list.items.map((fb) => (
-                  <>
+                list.items.flatMap((fb) => [
                     <tr key={fb._id}>
                       <td>
                         <div className="font-semibold">{fb.name || '—'}</div>
@@ -2804,8 +2803,8 @@ function FeedbackManager({
                           </button>
                         </div>
                       </td>
-                    </tr>
-                    {expanded === fb._id && (
+                    </tr>,
+                    expanded === fb._id && (
                       <tr key={`${fb._id}-expanded`} className="bg-black/[0.03]">
                         <td colSpan={9} className="px-5 py-4">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -2836,9 +2835,8 @@ function FeedbackManager({
                           </div>
                         </td>
                       </tr>
-                    )}
-                  </>
-                ))
+                    ),
+                ])
               )}
             </tbody>
           </table>

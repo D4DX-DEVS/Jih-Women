@@ -1,8 +1,17 @@
 const mongoose = require('mongoose');
 const { localized } = require('./common');
 
+// Which group of leaders a person belongs to. Leaders saved before categories existed
+// have no value stored and are treated as state leaders (see the public leaders route).
+const LEADER_CATEGORIES = ['state', 'district', 'party'];
+
 const leaderSchema = new mongoose.Schema(
   {
+    category: {
+      type: String,
+      enum: { values: LEADER_CATEGORIES, message: 'Choose State, District or Party leaders as the category.' },
+      default: 'state',
+    },
     name: localized({ required: true, maxlength: 200 }),
     designation: localized({ maxlength: 200 }),
     bio: localized({ maxlength: 20000 }),
@@ -24,3 +33,4 @@ const leaderSchema = new mongoose.Schema(
 leaderSchema.index({ isCurrent: -1, order: 1, termFrom: -1 });
 
 module.exports = mongoose.model('Leader', leaderSchema);
+module.exports.LEADER_CATEGORIES = LEADER_CATEGORIES;

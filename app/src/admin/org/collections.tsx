@@ -3,6 +3,7 @@ import { emptyLocalized } from '../shared/types';
 import type { Localized } from '../shared/types';
 import type { CollectionConfig, ColumnDef } from './CollectionManager';
 import type { Doc } from './fields';
+import FocusVisibilityToggle from './FocusVisibilityToggle';
 import YouTubeChannelImport from './YouTubeChannelImport';
 
 /* ---------------- column helpers ---------------- */
@@ -207,15 +208,29 @@ export const CAMPAIGNS: CollectionConfig = {
 export const PAGES: CollectionConfig = {
   key: 'pages',
   endpoint: '/api/admin/cms/pages',
-  label: 'Pages',
+  label: 'About Us',
+  noun: 'pages',
   singular: 'Page',
-  description: 'Who We Are sub-pages (Ideology, Our Values, Constitution, Our Legacy) and other standalone pages.',
+  description: 'About Us sub-pages (Ideology, Our Values, Constitution, Our Legacy) and other standalone pages.',
   reorderable: true,
   filters: [{ param: 'section', label: 'Section', options: [
-    { value: 'who-we-are', label: 'Who We Are' },
+    // The stored value stays 'who-we-are': it is the public URL and API section key
+    { value: 'who-we-are', label: 'About Us' },
     { value: 'general', label: 'General' },
   ] }],
-  columns: [loc('title', 'Page'), str('slug', 'Slug'), str('section', 'Section')],
+  columns: [
+    loc('title', 'Page'),
+    str('slug', 'Slug'),
+    {
+      label: 'Section',
+      className: 'max-w-[190px]',
+      render: (row) => (
+        <span className="cell-truncate text-foreground/70">
+          {row.section === 'who-we-are' ? 'About Us' : row.section === 'general' ? 'General' : (row.section as string) || '—'}
+        </span>
+      ),
+    },
+  ],
   blank: () => ({
     title: emptyLocalized(),
     summary: emptyLocalized(),
@@ -232,7 +247,7 @@ export const PAGES: CollectionConfig = {
     { kind: 'row', fields: [
       slugField,
       { kind: 'select', path: 'section', label: 'Section', options: [
-        { value: 'who-we-are', label: 'Who We Are' },
+        { value: 'who-we-are', label: 'About Us' },
         { value: 'general', label: 'General' },
       ] },
     ] },
@@ -310,33 +325,61 @@ export const DEPARTMENTS: CollectionConfig = {
 export const PROGRAMS: CollectionConfig = {
   key: 'programs',
   endpoint: '/api/admin/cms/programs',
-  label: 'Programmes',
+  label: 'Highlights',
   singular: 'Programme',
-  description: 'WES, Proficia, Thamheed, Safa Nagar and other programmes.',
+  description: 'WES, Proficia, Thamheed, Safa Nagar and other programmes. A programme with a poster also appears in the Programs section of the home page.',
   reorderable: true,
   filters: [{ param: 'isMajor', label: 'Type', options: [
     { value: 'true', label: 'Major programme' },
     { value: 'false', label: 'Other' },
   ] }],
-  columns: [logo('logoUrl'), loc('title', 'Programme'), str('slug', 'Slug'), flag('isMajor', 'Major')],
-  /* The form edits and sends only name, description and logo. Everything else stored
-     on a programme (slug, cover/banner images, objectives, schedule, gallery, videos,
-     downloads, external link, type, order) is left as it is; a new programme gets the
-     model defaults (published, major, order 0, slug from the name). The backend
-     accepts the same fields, plus the list's Published toggle. */
-  editable: ['title', 'overview', 'logoUrl', 'gallery'],
+  columns: [logo('logoUrl'), img('posterImage', 'Poster'), loc('title', 'Programme'), str('slug', 'Slug'), flag('isMajor', 'Major')],
+  /* The form edits and sends only name, short description, description, poster, logo,
+     external website URL and gallery. Everything else stored on a programme (slug,
+     cover/banner images, objectives, schedule, videos, downloads, link label, type,
+     order) is left as it is; a new programme gets the model defaults (published, major,
+     order 0, slug from the name). The backend accepts the same fields, plus the list's
+     Published toggle. */
+  editable: ['title', 'tagline', 'overview', 'posterImage', 'logoUrl', 'externalUrl', 'gallery'],
   modalSize: 'lg',
   blank: () => ({
     title: emptyLocalized(),
+    tagline: emptyLocalized(),
     overview: emptyLocalized(),
+    posterImage: '',
     logoUrl: '',
+    externalUrl: '',
     gallery: [],
   }),
   fields: [
     { kind: 'heading', label: 'Programme information' },
     { kind: 'localized', path: 'title', label: 'Programme name', required: true, onlyLang: 'ml' },
+    {
+      kind: 'localized',
+      path: 'tagline',
+      label: 'Short description',
+      multiline: true,
+      rows: 2,
+      hint: 'One or two lines, shown under the poster on the home page and at the top of the programme page.',
+    },
     { kind: 'rich', path: 'overview', label: 'Description' },
+    {
+      kind: 'text',
+      path: 'externalUrl',
+      label: 'External Website URL',
+      placeholder: 'https://example.org',
+      hint: 'Optional. When set, clicking this programme on the website opens this address in a new tab instead of the programme page. Must start with http:// or https://. Clear it to go back to the programme page.',
+    },
     { kind: 'heading', label: 'Media' },
+    {
+      kind: 'asset',
+      path: 'posterImage',
+      label: 'Poster',
+      folder: 'programs',
+      fit: 'poster',
+      hint: 'Shown in the Programs section of the home page, with the programme name beneath it. Leave empty to keep the programme off the poster grid.',
+      recommend: '1200px wide at the poster’s natural shape (portrait 4:5 or 3:4 works best). Shown whole in a 4:5 frame, never cropped. JPG, PNG or WebP.',
+    },
     {
       kind: 'asset',
       path: 'logoUrl',
@@ -359,19 +402,46 @@ export const PROGRAMS: CollectionConfig = {
   ],
 };
 
+/** Values match the backend's LEADER_CATEGORIES (backend/models/Leader.js). */
+const LEADER_CATEGORY_OPTIONS = [
+  { value: 'state', label: 'State Leaders' },
+  { value: 'district', label: 'District Leaders' },
+  { value: 'party', label: 'Party Leaders' },
+];
+
 export const LEADERS: CollectionConfig = {
   key: 'leaders',
   endpoint: '/api/admin/cms/leaders',
   label: 'Leaders',
   singular: 'Leader',
-  description: 'Current leadership and past leadership (Meeqathi) posters.',
+  description: 'State, district and party leaders: current leadership and past leadership (Meeqathi) posters. Each leader belongs to one category, shown as its own tab on the website.',
   reorderable: true,
-  filters: [{ param: 'isCurrent', label: 'Term', options: [
-    { value: 'true', label: 'Current' },
-    { value: 'false', label: 'Past' },
-  ] }],
-  columns: [img('photo', 'Photo'), loc('name', 'Name'), loc('designation', 'Designation'), str('termLabel', 'Term'), flag('isCurrent', 'Current')],
+  filters: [
+    { param: 'category', label: 'Category', options: LEADER_CATEGORY_OPTIONS },
+    { param: 'isCurrent', label: 'Term', options: [
+      { value: 'true', label: 'Current' },
+      { value: 'false', label: 'Past' },
+    ] },
+  ],
+  columns: [
+    img('photo', 'Photo'),
+    loc('name', 'Name'),
+    loc('designation', 'Designation'),
+    {
+      label: 'Category',
+      className: 'w-[150px]',
+      // Leaders saved before categories existed have none and are shown as state leaders
+      render: (row) => (
+        <span className="text-foreground/70">
+          {LEADER_CATEGORY_OPTIONS.find((o) => o.value === (row.category || 'state'))?.label ?? '—'}
+        </span>
+      ),
+    },
+    str('termLabel', 'Term'),
+    flag('isCurrent', 'Current'),
+  ],
   blank: () => ({
+    category: 'state',
     name: emptyLocalized(),
     designation: emptyLocalized(),
     bio: emptyLocalized(),
@@ -383,6 +453,13 @@ export const LEADERS: CollectionConfig = {
     published: true,
   }),
   fields: [
+    {
+      kind: 'select',
+      path: 'category',
+      label: 'Category',
+      options: LEADER_CATEGORY_OPTIONS,
+      hint: 'Which tab of the Leaders page this person appears under.',
+    },
     { kind: 'localized', path: 'name', label: 'Name', required: true },
     { kind: 'localized', path: 'designation', label: 'Designation' },
     { kind: 'rich', path: 'bio', label: 'Biography' },
@@ -405,62 +482,70 @@ export const LEADERS: CollectionConfig = {
 export const EVENTS: CollectionConfig = {
   key: 'events',
   endpoint: '/api/admin/cms/events',
-  label: 'Events',
-  singular: 'Event',
-  description: 'Upcoming and past events. Anything dated in the future shows under Upcoming automatically.',
-  columns: [img('coverImage'), loc('title', 'Event'), date('startDate', 'Date'), loc('venue', 'Venue'), flag('registrationEnabled', 'RSVP')],
+  label: 'Event Poster',
+  noun: 'event posters',
+  singular: 'Poster',
+  description:
+    'Posters shown in the Events section of the home page: upcoming events first, then the most recent past ones. Hide a poster with its Published switch, or delete it to remove it for good.',
+  /* The form manages the poster, its title and the event date, and sends only those.
+     Everything else stored on an event (summary, description, venue, speakers, gallery,
+     downloads, registration settings, slug) is left as it is, so existing events keep
+     their pages. The start date is required by the event model, so it stays on the form
+     and defaults to today. */
+  editable: ['title', 'startDate', 'posterImage'],
+  modalSize: 'md',
+  columns: [
+    {
+      label: 'Poster',
+      className: 'w-[96px]',
+      // Older events may have only a cover image; the home page falls back to it too
+      render: (row) => {
+        const src = (row.posterImage || row.coverImage) as string | undefined;
+        return src ? (
+          <span className="flex h-14 w-11 items-center justify-center rounded-lg border border-[#e6e8f0] bg-white p-0.5">
+            <img src={src} alt="" className="h-auto max-h-full w-auto max-w-full object-contain" />
+          </span>
+        ) : (
+          <div className="grid h-14 w-11 place-items-center rounded-lg border border-dashed border-[#d3d7e4] text-[9px] text-foreground/30">
+            —
+          </div>
+        );
+      },
+    },
+    loc('title', 'Title'),
+    date('startDate', 'Event date'),
+  ],
   blank: () => ({
     title: emptyLocalized(),
-    summary: emptyLocalized(),
-    description: emptyLocalized(),
-    venue: emptyLocalized(),
-    slug: '',
-    startDate: '',
-    endDate: '',
-    timeLabel: '',
-    mapUrl: '',
-    district: '',
-    coverImage: '',
+    startDate: new Date().toISOString(),
     posterImage: '',
-    speakers: [],
-    gallery: [],
-    downloads: [],
-    registrationEnabled: false,
-    registrationUrl: '',
-    featured: false,
-    published: true,
   }),
   fields: [
-    { kind: 'localized', path: 'title', label: 'Event title', required: true },
-    slugField,
-    { kind: 'localized', path: 'summary', label: 'Summary', multiline: true, rows: 3 },
-    { kind: 'rich', path: 'description', label: 'Description' },
-    { kind: 'heading', label: 'When & where' },
-    { kind: 'row', fields: [
-      { kind: 'date', path: 'startDate', label: 'Start date', required: true },
-      { kind: 'date', path: 'endDate', label: 'End date' },
-    ] },
-    { kind: 'row', fields: [
-      { kind: 'text', path: 'timeLabel', label: 'Time', placeholder: '10:00 AM – 4:00 PM' },
-      { kind: 'text', path: 'district', label: 'District' },
-    ] },
-    { kind: 'localized', path: 'venue', label: 'Venue' },
-    { kind: 'text', path: 'mapUrl', label: 'Google Maps link' },
-    { kind: 'heading', label: 'Media' },
-    { kind: 'row', fields: [
-      { kind: 'asset', path: 'coverImage', label: 'Cover image', folder: 'events', recommend: '1920×1080px (16:9). Used as the full-width page banner, where the left third is darkened — keep the subject centred.' },
-      { kind: 'asset', path: 'posterImage', label: 'Poster', folder: 'events', recommend: '1600px wide at the poster\u2019s natural shape (portrait 3:4 or 4:5 works best). Shown uncropped.' },
-    ] },
-    { kind: 'people', path: 'speakers', label: 'Speakers', folder: 'events', recommend: '800×800px (1:1) square. Cropped to a circle, so centre the face and crop tight.' },
-    { kind: 'gallery', path: 'gallery', label: 'Gallery', folder: 'events', recommend: '1600px on the long edge, any shape. Grid tiles crop to a square so keep the subject centred; the lightbox shows the full frame. Video: MP4 (H.264), 1080p.' },
-    { kind: 'attachments', path: 'downloads', label: 'Downloads', folder: 'events', recommend: 'PDF preferred; DOC, DOCX, XLS and XLSX are also accepted. The file size is shown to visitors, so compress scans before uploading.' },
-    { kind: 'heading', label: 'Registration' },
-    { kind: 'toggle', path: 'registrationEnabled', label: 'Accept RSVPs on the website', description: 'Shows a registration form on the event page' },
-    { kind: 'text', path: 'registrationUrl', label: 'External registration URL', hint: 'Use this instead when registration happens on another site.' },
-    { kind: 'row', fields: [
-      { kind: 'toggle', path: 'featured', label: 'Featured' },
-      publishedField,
-    ] },
+    {
+      kind: 'asset',
+      path: 'posterImage',
+      label: 'Poster',
+      folder: 'events',
+      fit: 'poster',
+      required: true,
+      accept: 'image/jpeg,image/png,image/webp',
+      hint: 'JPG, PNG or WebP. To replace a poster, upload a new image here and save.',
+      recommend: '1600px wide at the poster\u2019s natural shape (portrait 3:4 or 4:5 works best). Shown whole, never cropped.',
+    },
+    {
+      kind: 'localized',
+      path: 'title',
+      label: 'Poster title',
+      required: true,
+      hint: 'A short name for the event. Used as the poster\u2019s caption and alternative text.',
+    },
+    {
+      kind: 'date',
+      path: 'startDate',
+      label: 'Event date',
+      required: true,
+      hint: 'Posters of upcoming events are listed first on the home page, soonest first.',
+    },
   ],
 };
 
@@ -529,7 +614,7 @@ export const MEDIA_POSTS: CollectionConfig = {
 export const VIDEOS: CollectionConfig = {
   key: 'videos',
   endpoint: '/api/admin/cms/videos',
-  label: 'Videos & Podcasts',
+  label: 'Videos',
   singular: 'Item',
   description: 'YouTube videos (played inside the website) and podcast episodes. Up to three featured videos show on the home page, in this order.',
   reorderable: true,
@@ -778,10 +863,13 @@ const FOCUS_ICON_OPTIONS = [
 export const FOCUS_AREAS: CollectionConfig = {
   key: 'focus-areas',
   endpoint: '/api/admin/cms/focus-areas',
-  label: 'Focus Areas',
+  label: 'Focus',
+  noun: 'focus areas',
   singular: 'Focus area',
-  description: 'The icon strip on the home page — Education, Empowerment, Social Service and so on.',
+  description:
+    'The icon strip on the home page and the Focus button on the About Us page — Education, Empowerment, Social Service and so on.',
   reorderable: true,
+  extra: (props) => <FocusVisibilityToggle {...props} />,
   columns: [str('icon', 'Icon'), loc('title', 'Title'), loc('description', 'Description')],
   blank: () => ({
     title: emptyLocalized(),

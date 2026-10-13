@@ -8,12 +8,12 @@ const Page = require('../models/Page');
 const Department = require('../models/Department');
 const Program = require('../models/Program');
 const Leader = require('../models/Leader');
+const { LEADER_CATEGORIES } = require('../models/Leader');
 const OrgEvent = require('../models/OrgEvent');
 const EventRegistration = require('../models/EventRegistration');
 const MediaPost = require('../models/MediaPost');
 const { MEDIA_POST_TYPES } = require('../models/MediaPost');
 const VideoItem = require('../models/VideoItem');
-const { relatedVideosFor } = require('../utils/relatedVideos');
 const Publication = require('../models/Publication');
 const Album = require('../models/Album');
 const DownloadItem = require('../models/DownloadItem');
@@ -66,6 +66,41 @@ router.get('/bootstrap', async (_req, res) => {
 // ── Home page payload ────────────────────────────────────────────────────────
 const HOME_VIDEOS = 3;
 const HOME_PHOTOS = 9;
+const HOME_EVENT_POSTERS = 12;
+
+/**
+ * Posters for the home Events section: every published event with a poster (or, for
+ * older records, a cover image), upcoming ones first (soonest first) and then the most
+ * recent past ones. An uploaded poster therefore never silently stays off the page
+ * because of its date; the admin hides it by unpublishing or deleting it.
+ */
+async function homeEventPosters() {
+  const hasImage = {
+    ...PUBLISHED,
+    $or: [
+      { posterImage: { $exists: true, $nin: ['', null] } },
+      { coverImage: { $exists: true, $nin: ['', null] } },
+    ],
+  };
+  const fields = 'title slug startDate endDate timeLabel posterImage coverImage';
+  // Date-only values are stored at midnight UTC, so an event dated today counts as upcoming all day
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  const [upcoming, past] = await Promise.all([
+    OrgEvent.find({ ...hasImage, startDate: { $gte: today } })
+      .select(fields)
+      .sort({ startDate: 1 })
+      .limit(HOME_EVENT_POSTERS)
+      .lean(),
+    OrgEvent.find({ ...hasImage, startDate: { $lt: today } })
+      .select(fields)
+      .sort({ startDate: -1 })
+      .limit(HOME_EVENT_POSTERS)
+      .lean(),
+  ]);
+  return [...upcoming, ...past].slice(0, HOME_EVENT_POSTERS);
+}
 
 /** The latest published videos (newest publish date first) for the home Featured Video row. */
 function homeVideos() {
@@ -106,7 +141,7 @@ router.get('/home', async (_req, res) => {
     const [
       settings, sliders, campaigns, updates, upcomingEvents,
       featuredArticles, featuredVideos, publications,
-      focusAreas, programBanners, galleryPhotos,
+      focusAreas, programBanners, programPosters, eventPosters, galleryPhotos,
     ] = await Promise.all([
       getSiteSetting(),
       Slider.find(PUBLISHED).sort({ order: 1, createdAt: -1 }).lean(),
@@ -141,6 +176,13 @@ router.get('/home', async (_req, res) => {
         .sort({ order: 1 })
         .limit(6)
         .lean(),
+      // Programmes with an uploaded poster fill the poster grid in the Programs section
+      Program.find({ ...PUBLISHED, posterImage: { $exists: true, $nin: ['', null] } })
+        .select('title tagline slug posterImage externalUrl order')
+        .sort({ order: 1, createdAt: -1 })
+        .limit(12)
+        .lean(),
+      homeEventPosters(),
       homePhotos(),
     ]);
 
@@ -155,6 +197,8 @@ router.get('/home', async (_req, res) => {
       publications,
       focusAreas,
       programBanners,
+      programPosters,
+      eventPosters,
       galleryPhotos,
     });
   } catch (err) {
@@ -253,22 +297,29 @@ router.get('/programs/:slug', async (req, res) => {
   try {
     const doc = await Program.findOne({ ...PUBLISHED, slug: req.params.slug }).lean();
     if (!doc) return res.status(404).json({ error: 'This programme is not available.' });
-    // Videos whose titles name this programme (see utils/relatedVideos)
-    const relatedVideos = await relatedVideosFor(VideoItem, doc, { published: PUBLISHED });
-    return res.json({ ...doc, relatedVideos });
+    return res.json(doc);
   } catch (err) {
     return fail(res, err, 'We could not open this programme. Please try again.');
   }
 });
 
 // ── Leaders ──────────────────────────────────────────────────────────────────
-router.get('/leaders', async (_req, res) => {
+// Optional ?category=state|district|party narrows the list to one group of leaders.
+// Leaders saved before categories existed have no category and count as state leaders.
+router.get('/leaders', async (req, res) => {
   try {
+    const category = req.query.category;
+    if (category !== undefined && category !== '' && !LEADER_CATEGORIES.includes(category)) {
+      return res.status(400).json({ error: 'Unknown leader category.' });
+    }
+    const scope = category ? { category: category === 'state' ? { $in: ['state', null] } : category } : {};
+    const withCategory = (leader) => ({ ...leader, category: leader.category || 'state' });
+
     const [current, past] = await Promise.all([
-      Leader.find({ ...PUBLISHED, isCurrent: true }).sort({ order: 1 }).lean(),
-      Leader.find({ ...PUBLISHED, isCurrent: false }).sort({ termFrom: -1, order: 1 }).lean(),
+      Leader.find({ ...PUBLISHED, ...scope, isCurrent: true }).sort({ order: 1 }).lean(),
+      Leader.find({ ...PUBLISHED, ...scope, isCurrent: false }).sort({ termFrom: -1, order: 1 }).lean(),
     ]);
-    return res.json({ current, past });
+    return res.json({ current: current.map(withCategory), past: past.map(withCategory) });
   } catch (err) {
     return fail(res, err, 'We could not load the leadership list. Please try again.');
   }
