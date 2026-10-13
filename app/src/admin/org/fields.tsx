@@ -10,6 +10,7 @@ import {
   PeopleEditor,
   Toggle,
 } from '../shared/ui';
+import LinkPicker from './LinkPicker';
 import { emptyLocalized } from '../shared/types';
 import type { Attachment, Bullet, Localized, MediaItem, Person } from '../shared/types';
 
@@ -17,8 +18,9 @@ export type Doc = Record<string, unknown>;
 
 export type FieldDef =
   | { kind: 'localized'; path: string; label: string; required?: boolean; multiline?: boolean; rows?: number; hint?: string; onlyLang?: 'ml' | 'en' }
-  | { kind: 'rich'; path: string; label: string; hint?: string }
+  | { kind: 'rich'; path: string; label: string; hint?: string; sections?: false }
   | { kind: 'text'; path: string; label: string; placeholder?: string; hint?: string; required?: boolean }
+  | { kind: 'link'; path: string; label: string; emptyLabel: string; hint?: string }
   | { kind: 'number'; path: string; label: string; hint?: string; required?: boolean }
   | { kind: 'date'; path: string; label: string; hint?: string; required?: boolean }
   | { kind: 'select'; path: string; label: string; options: { value: string; label: string }[]; hint?: string; required?: boolean }
@@ -118,6 +120,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
           key={key}
           label={def.label}
           hint={def.hint}
+          allowSections={def.sections !== false}
           value={(getPath(doc, def.path) as Localized) ?? emptyLocalized()}
           onChange={(v) => set(def.path, v)}
         />
@@ -133,6 +136,19 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
             onChange={(e) => set(def.path, e.target.value)}
           />
         </Field>
+      );
+
+    case 'link':
+      return (
+        <LinkPicker
+          key={key}
+          label={def.label}
+          hint={def.hint}
+          emptyLabel={def.emptyLabel}
+          token={token}
+          value={(getPath(doc, def.path) as string) ?? ''}
+          onChange={(v) => set(def.path, v)}
+        />
       );
 
     case 'number':

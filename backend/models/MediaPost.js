@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { RICH_BODY_MAX } = require('./common');
 const { localized, attachmentSchema, mediaItemSchema, autoSlug } = require('./common');
 
 const MEDIA_POST_TYPES = [
@@ -20,7 +21,7 @@ const mediaPostSchema = new mongoose.Schema(
     title: localized({ required: true, maxlength: 400 }),
     slug: { type: String, trim: true, unique: true, index: true },
     excerpt: localized({ maxlength: 1000 }),
-    body: localized({ maxlength: 60000 }),
+    body: localized({ maxlength: RICH_BODY_MAX }),
     coverImage: { type: String, trim: true, default: '' },
     gallery: { type: [mediaItemSchema], default: [] },
     downloads: { type: [attachmentSchema], default: [] },

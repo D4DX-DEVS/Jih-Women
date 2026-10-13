@@ -17,11 +17,11 @@ import {
   Container,
   ErrorState,
   GradientText,
-  Loading,
   ManagedSectionHeading,
   Section,
   SectionLogo,
 } from '../components/Primitives';
+import { HomeSkeleton } from '../components/PageSkeletons';
 import {
   CampaignCard,
   Lightbox,
@@ -51,7 +51,7 @@ export default function Home() {
   const { data, loading, error, reload } = useApi<HomePayload>('/api/site/home');
   const [playing, setPlaying] = useState<VideoItem | null>(null);
 
-  if (loading) return <Loading />;
+  if (loading) return <HomeSkeleton />;
   if (error) {
     return (
       <Container className="py-20">

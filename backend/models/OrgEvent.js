@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { RICH_BODY_MAX } = require('./common');
 const {
   localized,
   attachmentSchema,
@@ -12,7 +13,7 @@ const orgEventSchema = new mongoose.Schema(
     title: localized({ required: true, maxlength: 300 }),
     slug: { type: String, trim: true, unique: true, index: true },
     summary: localized({ maxlength: 1000 }),
-    description: localized({ maxlength: 60000 }),
+    description: localized({ maxlength: RICH_BODY_MAX }),
 
     startDate: { type: Date, required: [true, 'Event start date is required'], index: true },
     endDate: { type: Date },

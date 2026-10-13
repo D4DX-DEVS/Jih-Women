@@ -1,9 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Info } from 'lucide-react';
+import { ChevronDown, ChevronUp, Info, Trash2 } from 'lucide-react';
 import { uploadAsset } from './api';
 import type { Attachment, Bullet, Localized, MediaItem, Person } from './types';
 import { LANGUAGES, emptyLocalized } from './types';
+import { flattenSections, isBlankHtml, newSectionId, parseSections, serializeSections } from './sections';
+import type { Section, SectionsDraft } from './sections';
 
 /* ---------------- primitives ---------------- */
 
@@ -242,6 +244,18 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onClose: () => void;
 }) {
+  // Escape closes only this dialog: it can sit inside another modal (capture phase,
+  // so that modal's own Escape handler never sees the key)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      onClose();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [onClose]);
+
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="glass-strong w-full max-w-md p-6">
@@ -341,10 +355,13 @@ export function RichText({
   value,
   onChange,
   placeholder,
+  compact = false,
 }: {
   value: string;
   onChange: (html: string) => void;
   placeholder?: string;
+  /** Shorter editing area, for editors stacked inside a section list */
+  compact?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -362,9 +379,14 @@ export function RichText({
     onChange(ref.current?.innerHTML ?? '');
   };
 
+  // The box is height-capped: the toolbar stays put and only the text scrolls.
   return (
-    <div className="overflow-hidden rounded-lg border border-[#d3d7e4] bg-white">
-      <div className="flex flex-wrap gap-0.5 border-b border-[#e6e8f0] bg-[#f8f9fc] p-1.5">
+    <div
+      className={`flex flex-col overflow-hidden rounded-lg border border-[#d3d7e4] bg-white ${
+        compact ? 'max-h-[min(50vh,20rem)]' : 'max-h-[min(60vh,32rem)]'
+      }`}
+    >
+      <div className="flex shrink-0 flex-wrap gap-0.5 border-b border-[#e6e8f0] bg-[#f8f9fc] p-1.5">
         {RICH_COMMANDS.map((c) => (
           <button
             key={c.label}
@@ -406,8 +428,97 @@ export function RichText({
         data-placeholder={placeholder}
         onInput={(e) => onChange((e.target as HTMLDivElement).innerHTML)}
         onBlur={(e) => onChange((e.target as HTMLDivElement).innerHTML)}
-        className="admin-richtext min-h-[160px] px-3.5 py-3 text-[13.5px] outline-none"
+        className="admin-richtext slim-scroll min-h-[160px] flex-1 overflow-y-auto px-3.5 py-3 text-[13.5px] outline-none"
       />
+    </div>
+  );
+}
+
+function SectionsEditor({
+  value,
+  onChange,
+}: {
+  value: SectionsDraft;
+  onChange: (next: SectionsDraft) => void;
+}) {
+  const { intro, sections } = value;
+  const [deleting, setDeleting] = useState<Section | null>(null);
+  const setSections = (next: Section[]) => onChange({ intro, sections: next });
+  const patch = (id: string, change: Partial<Section>) =>
+    setSections(sections.map((s) => (s.id === id ? { ...s, ...change } : s)));
+
+  const move = (from: number, to: number) => {
+    const next = [...sections];
+    next.splice(to, 0, next.splice(from, 1)[0]);
+    setSections(next);
+  };
+
+  const removeSection = (section: Section) => setSections(sections.filter((s) => s.id !== section.id));
+  // An empty section goes straight away; one with content asks first
+  const remove = (section: Section) => (isBlankHtml(section.html) ? removeSection(section) : setDeleting(section));
+
+  const iconBtn =
+    'grid h-8 w-8 shrink-0 place-items-center rounded-lg text-foreground/45 transition hover:bg-black/[0.06] hover:text-foreground disabled:pointer-events-none disabled:opacity-30';
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border border-[#e6e8f0] bg-[#f8f9fc] p-3">
+        <div className="mb-2">
+          <div className="text-[12.5px] font-semibold text-foreground/70">Intro (optional)</div>
+          <p className="mt-0.5 text-[12px] leading-relaxed text-foreground/50">
+            Shown above the section buttons and stays the same whichever section is open.
+          </p>
+        </div>
+        <RichText compact value={intro} onChange={(html) => onChange({ intro: html, sections })} />
+      </div>
+      {sections.map((section, i) => (
+        <div key={section.id} className="rounded-xl border border-[#e6e8f0] bg-[#f8f9fc] p-3">
+          <div className="mb-2 flex items-center gap-1.5">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-[12px] font-semibold text-[#e6187e] ring-1 ring-inset ring-[#e6e8f0]">
+              {i + 1}
+            </span>
+            <input
+              className="input min-w-0 flex-1"
+              placeholder="Section title (shown as a button on the site)"
+              value={section.title}
+              onChange={(e) => patch(section.id, { title: e.target.value })}
+            />
+            <button type="button" className={iconBtn} aria-label="Move section up" disabled={i === 0} onClick={() => move(i, i - 1)}>
+              <ChevronUp size={16} />
+            </button>
+            <button
+              type="button"
+              className={iconBtn}
+              aria-label="Move section down"
+              disabled={i === sections.length - 1}
+              onClick={() => move(i, i + 1)}
+            >
+              <ChevronDown size={16} />
+            </button>
+            <button type="button" className={`${iconBtn} hover:!text-red-500`} aria-label="Delete section" onClick={() => remove(section)}>
+              <Trash2 size={15} />
+            </button>
+          </div>
+          <RichText compact value={section.html} onChange={(html) => patch(section.id, { html })} />
+        </div>
+      ))}
+      <button
+        type="button"
+        className="pill pill-outline text-sm"
+        onClick={() => setSections([...sections, { id: newSectionId(), title: '', html: '' }])}
+      >
+        + Add section
+      </button>
+      {deleting && (
+        <ConfirmDialog
+          title="Delete this section?"
+          description={`${deleting.title.trim() ? `“${deleting.title.trim()}” and` : 'This section and'} everything written in it will be removed once you save.`}
+          confirmLabel="Delete section"
+          tone="danger"
+          onConfirm={() => removeSection(deleting)}
+          onClose={() => setDeleting(null)}
+        />
+      )}
     </div>
   );
 }
@@ -417,38 +528,90 @@ export function BilingualRichText({
   value,
   onChange,
   hint,
+  allowSections = true,
 }: {
   label: string;
   value: Localized | undefined;
   onChange: (v: Localized) => void;
   hint?: string;
+  /** Offer the sectioned (button-per-section) layout; off for short single-block fields */
+  allowSections?: boolean;
 }) {
   const current = value ?? emptyLocalized();
   const [lang, setLang] = useState<keyof Localized>('ml');
+  // Per language: the intro and section list while in sections mode, null for the plain editor.
+  // Mode follows what is stored, so existing sectioned content opens as sections.
+  const [drafts, setDrafts] = useState<Record<keyof Localized, SectionsDraft | null>>(() => ({
+    ml: allowSections ? parseSections(current.ml ?? '') : null,
+    en: allowSections ? parseSections(current.en ?? '') : null,
+  }));
+  const draft = drafts[lang];
+  const [confirmSingle, setConfirmSingle] = useState(false);
+
+  const setDraft = (next: SectionsDraft | null, html: string) => {
+    setDrafts((d) => ({ ...d, [lang]: next }));
+    onChange({ ...current, [lang]: html });
+  };
+
+  const enableSections = () => {
+    const first: SectionsDraft = { intro: '', sections: [{ id: newSectionId(), title: '', html: current[lang] ?? '' }] };
+    setDraft(first, serializeSections(first));
+  };
+
+  const flatten = () => draft && setDraft(null, flattenSections(draft));
+
+  // Titled sections ask first: their titles become headings and the buttons on the site go away
+  const disableSections = () => {
+    if (draft?.sections.some((s) => s.title.trim())) setConfirmSingle(true);
+    else flatten();
+  };
+
+  const segment = (active: boolean) =>
+    `rounded-md px-3 py-1 text-[11.5px] font-medium transition ${
+      active ? 'bg-white text-[#e6187e] shadow-sm' : 'text-foreground/55 hover:text-foreground'
+    }`;
 
   return (
     <Field label={label} hint={hint}>
-      <div className="mb-2 inline-flex gap-1 rounded-lg bg-[#f1f2f7] p-1">
-        {LANGUAGES.map((l) => (
-          <button
-            key={l.code}
-            type="button"
-            onClick={() => setLang(l.code)}
-            className={`rounded-md px-3 py-1 text-[11.5px] font-medium transition ${
-              lang === l.code
-                ? 'bg-white text-[#e6187e] shadow-sm'
-                : 'text-foreground/55 hover:text-foreground'
-            }`}
-          >
-            {l.label}
-          </button>
-        ))}
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="inline-flex gap-1 rounded-lg bg-[#f1f2f7] p-1">
+          {LANGUAGES.map((l) => (
+            <button key={l.code} type="button" onClick={() => setLang(l.code)} className={segment(lang === l.code)}>
+              {l.label}
+            </button>
+          ))}
+        </div>
+        {allowSections && (
+          <div className="inline-flex gap-1 rounded-lg bg-[#f1f2f7] p-1" title="Advanced: split the content into sections">
+            <button type="button" onClick={draft ? disableSections : undefined} className={segment(!draft)}>
+              Single editor
+            </button>
+            <button type="button" onClick={draft ? undefined : enableSections} className={segment(!!draft)}>
+              Sections
+            </button>
+          </div>
+        )}
       </div>
-      <RichText
-        key={lang}
-        value={current[lang] ?? ''}
-        onChange={(html) => onChange({ ...current, [lang]: html })}
-      />
+      {draft ? (
+        <>
+          <p className="mb-2 text-[12px] leading-relaxed text-foreground/50">
+            Each section becomes a button on the page; visitors pick one to read. Sections and intro are
+            set up separately for each language.
+          </p>
+          <SectionsEditor key={lang} value={draft} onChange={(next) => setDraft(next, serializeSections(next))} />
+        </>
+      ) : (
+        <RichText key={lang} value={current[lang] ?? ''} onChange={(html) => onChange({ ...current, [lang]: html })} />
+      )}
+      {confirmSingle && (
+        <ConfirmDialog
+          title="Switch back to a single editor?"
+          description="Section titles become headings in one block of text, and the section buttons on the site go away."
+          confirmLabel="Switch"
+          onConfirm={flatten}
+          onClose={() => setConfirmSingle(false)}
+        />
+      )}
     </Field>
   );
 }

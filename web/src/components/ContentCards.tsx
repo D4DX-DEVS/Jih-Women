@@ -1,9 +1,17 @@
 import { useMemo } from 'react';
 import type { LucideIcon } from 'lucide-react';
+import { parseSections } from '../lib/sections';
+import { useRevealOnScroll } from '../lib/reveal';
 import { PanelSection, RichText } from './Primitives';
+import SectionTabs from './SectionTabs';
+import { MoreContentSkeleton } from './Skeleton';
 
 /** One card's worth of the page body. `heading` and `badge` are lifted from the content itself. */
 type ContentSection = { heading: string; badge: string; html: string; textLength: number };
+
+/* A long page shows this much text (characters of HTML) at first and adds as much again
+   each time the reader scrolls near the end */
+const REVEAL_CHARS = 6000;
 
 const SEPARATOR = /^[-–—_*•]{3,}$/;
 /* "01 | Title", "2. Title" or "3) Title" on a line of its own */
@@ -100,12 +108,29 @@ export default function ContentSections({
   firstTitle?: string;
   firstIcon?: LucideIcon;
 }) {
-  const sections = useMemo(() => splitContentSections(html), [html]);
+  const tabs = useMemo(() => parseSections(html), [html]);
+  const sections = useMemo(() => (tabs ? [] : splitContentSections(html)), [tabs, html]);
+  // Where each reveal step ends, as a count of sections (every step holds about REVEAL_CHARS)
+  const stops = useMemo(() => {
+    const ends: number[] = [];
+    let used = 0;
+    sections.forEach((section, i) => {
+      used += section.html.length;
+      if (used >= REVEAL_CHARS || i === sections.length - 1) {
+        ends.push(i + 1);
+        used = 0;
+      }
+    });
+    return ends;
+  }, [sections]);
+  const { shown, more, marker } = useRevealOnScroll(stops.length, sections);
+  // Editor-defined sections replace the automatic split: one button per section
+  if (tabs) return <SectionTabs content={tabs} />;
   if (!sections.length) return null;
 
   return (
     <>
-      {sections.map((section, i) => {
+      {sections.slice(0, stops[shown - 1] ?? sections.length).map((section, i) => {
         const heading = section.heading || (i === 0 ? firstTitle : undefined);
         return (
           <PanelSection
@@ -118,6 +143,11 @@ export default function ContentSections({
           </PanelSection>
         );
       })}
+      {more && (
+        <div ref={marker}>
+          <MoreContentSkeleton />
+        </div>
+      )}
     </>
   );
 }

@@ -93,6 +93,8 @@ export type SectionContent = {
   heading?: Localized;
   description?: Localized;
   logo?: string;
+  /** Where the section's Read More button goes: a site path or a full URL */
+  linkUrl?: string;
 };
 
 export type FocusArea = {

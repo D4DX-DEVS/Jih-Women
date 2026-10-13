@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { RICH_BODY_MAX } = require('./common');
 const { localized, autoSlug } = require('./common');
 
 const PUBLICATION_TYPES = ['book', 'article', 'booklet', 'pdf'];
@@ -16,7 +17,7 @@ const publicationSchema = new mongoose.Schema(
     author: localized({ maxlength: 200 }),
     publisher: localized({ maxlength: 200 }),
     description: localized({ maxlength: 20000 }),
-    body: localized({ maxlength: 60000 }),
+    body: localized({ maxlength: RICH_BODY_MAX }),
 
     coverImage: { type: String, trim: true, default: '' },
     fileUrl: { type: String, trim: true, default: '' },

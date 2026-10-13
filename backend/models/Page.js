@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { RICH_BODY_MAX } = require('./common');
 const { localized, attachmentSchema, autoSlug } = require('./common');
 
 const PAGE_SECTIONS = ['who-we-are', 'general'];
@@ -9,7 +10,7 @@ const pageSchema = new mongoose.Schema(
     slug: { type: String, trim: true, unique: true, index: true },
     section: { type: String, enum: PAGE_SECTIONS, default: 'general', index: true },
     summary: localized({ maxlength: 1000 }),
-    body: localized({ maxlength: 60000 }),
+    body: localized({ maxlength: RICH_BODY_MAX }),
     heroImage: { type: String, trim: true, default: '' },
     downloads: { type: [attachmentSchema], default: [] },
     order: { type: Number, default: 0 },

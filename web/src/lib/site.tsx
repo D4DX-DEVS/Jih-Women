@@ -12,6 +12,10 @@ function resolveLang(pathname: string, paramLang: string | undefined): Lang {
   return DEFAULT_LANG;
 }
 
+function langPath(lang: Lang, to: string): string {
+  return `/${lang}${to.startsWith('/') ? to : `/${to}`}`.replace(/\/$/, '') || `/${lang}`;
+}
+
 type SiteContextValue = {
   lang: Lang;
   data: NavPayload | null;
@@ -28,10 +32,13 @@ type SiteContextValue = {
   /** Admin-managed section heading block, each field falling back to `defaults`.
       Label and heading are English; the description follows the active language. */
   section: (key: string, defaults?: SectionDefaults) => ResolvedSection;
+  /** Turns an admin-entered link into props for Button / anchors: a site path (with or
+      without a language prefix) becomes `to`, a full URL becomes `href`. */
+  link: (url: string) => { to?: string; href?: string };
 };
 
 type SectionDefaults = { label?: string; heading?: string; description?: string };
-type ResolvedSection = { label: string; heading: string; description: string; logo: string };
+type ResolvedSection = { label: string; heading: string; description: string; logo: string; linkUrl: string };
 
 /* Managed text is read in the active language only — a missing English value
    uses the built-in English default rather than showing the Malayalam text. */
@@ -63,7 +70,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
       lang,
       data,
       loading,
-      path: (to: string) => `/${lang}${to.startsWith('/') ? to : `/${to}`}`.replace(/\/$/, '') || `/${lang}`,
+      path: (to: string) => langPath(lang, to),
       s: (key: string) => str(key, 'en'),
       h: (key: string) => str(key, 'en'),
       pageTitle: (key: string) =>
@@ -77,7 +84,14 @@ export function SiteProvider({ children }: { children: ReactNode }) {
           heading: managed(content?.heading, 'en') || managed(content?.heading, 'ml') || defaults.heading || '',
           description: managed(content?.description, lang) || defaults.description || '',
           logo: content?.logo?.trim() || '',
+          linkUrl: content?.linkUrl?.trim() || '',
         };
+      },
+      link: (url: string) => {
+        const target = url.trim();
+        if (/^(https?:|mailto:|tel:)/i.test(target)) return { href: target };
+        // A path saved with its own language prefix still follows the visitor's language
+        return { to: langPath(lang, target.replace(/^\/(ml|en)(?=\/|$)/, '')) };
       },
     }),
     [lang, data, loading]

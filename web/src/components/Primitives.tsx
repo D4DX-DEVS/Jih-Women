@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { Download, LayoutGrid, List } from 'lucide-react';
@@ -5,8 +6,11 @@ import type { LucideIcon } from 'lucide-react';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
 import { formatBytes } from '../lib/format';
+import { parseSections } from '../lib/sections';
 import { useViewMode } from '../lib/view';
 import type { Attachment, Lang } from '../lib/types';
+import SectionTabs from './SectionTabs';
+import LazyHtml from './LazyHtml';
 
 /**
  * The site's one content width: top bar, header, page banners, page content and
@@ -192,6 +196,32 @@ export function Rule({ className = '' }: { className?: string }) {
   return <span className={`block h-0.5 w-9 rounded-full bg-magenta-500 sm:h-[3px] sm:w-12 ${className}`} />;
 }
 
+/** A text link to an admin-managed target: `to` is a site path, `href` a full URL (opens in a new tab). */
+export function ManagedLink({
+  to,
+  href,
+  className,
+  children,
+}: {
+  to?: string;
+  href?: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  if (to) {
+    return (
+      <Link to={to} className={className}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <a href={href} target="_blank" rel="noreferrer" className={className}>
+      {children}
+    </a>
+  );
+}
+
 export function Button({
   to,
   href,
@@ -330,16 +360,6 @@ export function PageHeader({
   );
 }
 
-export function Loading({ label }: { label?: string }) {
-  const { s } = useSite();
-  return (
-    <div className="flex flex-col items-center justify-center gap-2 py-10 text-ink-faint sm:gap-3 sm:py-20">
-      <span className="h-6 w-6 animate-spin sm:h-7 sm:w-7 rounded-full border-2 border-magenta-100 border-t-magenta-500" />
-      <span className="text-[13px] sm:text-sm">{label ?? s('loading')}</span>
-    </div>
-  );
-}
-
 export function EmptyState({ message }: { message?: string }) {
   const { s } = useSite();
   return (
@@ -368,8 +388,12 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
 }
 
 export function RichText({ html, className = '' }: { html: string; className?: string }) {
+  // Section-wise content (set up in the admin panel) shows as one button per section
+  const sections = useMemo(() => parseSections(html), [html]);
   if (!html) return null;
-  return <div className={`prose-content ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
+  if (sections) return <SectionTabs content={sections} />;
+  // Long bodies load a piece at a time as the reader scrolls
+  return <LazyHtml html={html} className={`prose-content ${className}`} />;
 }
 
 /**
@@ -458,7 +482,7 @@ export function ContentPanel({
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border border-plum-100 bg-gradient-to-b from-white to-[#fbf8fd] shadow-soft sm:rounded-2xl ${className}`}
+      className={`relative overflow-clip rounded-xl border border-plum-100 bg-gradient-to-b from-white to-[#fbf8fd] shadow-soft sm:rounded-2xl ${className}`}
     >
       <span className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r sm:h-1 from-magenta-500 via-magenta-400 to-plum-500" aria-hidden="true" />
       <span

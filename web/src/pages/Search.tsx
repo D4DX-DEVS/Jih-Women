@@ -7,10 +7,10 @@ import {
   EmptyState,
   ErrorState,
   GradientText,
-  Loading,
   PageHeader,
   Section,
 } from '../components/Primitives';
+import { ListSkeleton } from '../components/PageSkeletons';
 import type { SearchResult } from '../lib/types';
 
 const KIND_LABEL: Record<string, string> = {
@@ -40,7 +40,7 @@ export default function Search() {
       <Section tone="mist">
         <Container className="max-w-3xl">
           {loading ? (
-            <Loading />
+            <ListSkeleton variant="rows" />
           ) : error ? (
             <ErrorState message={error} onRetry={reload} />
           ) : !data?.results.length ? (

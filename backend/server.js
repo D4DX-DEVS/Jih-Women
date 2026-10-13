@@ -33,9 +33,10 @@ app.use(
   })
 );
 
-// CMS documents carry rich-text bodies, so the JSON body limit is larger than
+// CMS documents carry rich-text bodies (a long page is several hundred KB of
+// Malayalam, 3 bytes a character), so the JSON body limit is much larger than
 // the 100kb the registration API needed.
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth', authRoutes);
 

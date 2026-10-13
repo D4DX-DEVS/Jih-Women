@@ -11,12 +11,12 @@ import {
   EmptyState,
   ErrorState,
   GradientText,
-  Loading,
   PageHeader,
   PanelSection,
   Section,
   ViewToggle,
 } from '../components/Primitives';
+import { DetailSkeleton, ListSkeleton } from '../components/PageSkeletons';
 import { useViewMode } from '../lib/view';
 import ContentSections from '../components/ContentCards';
 import FocusStrip from '../components/FocusStrip';
@@ -89,7 +89,7 @@ export function WhoWeAreIndex() {
             </>
           )}
           {loading ? (
-            <Loading />
+            <ListSkeleton />
           ) : error ? (
             <ErrorState message={error} onRetry={reload} />
           ) : !data?.items.length ? (
@@ -153,7 +153,7 @@ export function PageDetail() {
   );
 
   if (notFound) return <NotFound />;
-  if (loading) return <Loading />;
+  if (loading) return <DetailSkeleton />;
   if (error) {
     return (
       <Container className="py-20">

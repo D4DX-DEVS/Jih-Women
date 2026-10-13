@@ -7,11 +7,11 @@ import {
   EmptyState,
   ErrorState,
   GradientText,
-  Loading,
   ManagedSectionHeading,
   Section,
   ViewToggle,
 } from '../components/Primitives';
+import { ListSkeleton } from '../components/PageSkeletons';
 import { LeaderCard } from '../components/Cards';
 import { useViewMode } from '../lib/view';
 import type { Leader, LeaderCategory } from '../lib/types';
@@ -80,7 +80,7 @@ export default function Leaders() {
               ))}
             </div>
             {loading ? (
-              <Loading />
+              <ListSkeleton variant="people" />
             ) : error ? (
               <ErrorState message={error} onRetry={reload} />
             ) : !current.length && !past.length ? (

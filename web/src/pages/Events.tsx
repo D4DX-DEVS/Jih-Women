@@ -18,7 +18,6 @@ import {
   DownloadList,
   EmptyState,
   ErrorState,
-  Loading,
   PageHeader,
   Pagination,
   PanelAsideHeading,
@@ -28,6 +27,7 @@ import {
   Section,
   ViewToggle,
 } from '../components/Primitives';
+import { DetailSkeleton, ListSkeleton } from '../components/PageSkeletons';
 import { EventCard, GalleryGrid } from '../components/Cards';
 import { useViewMode } from '../lib/view';
 import NotFound from './NotFound';
@@ -91,7 +91,7 @@ export function EventsIndex() {
 
           <div id="events-panel" role="tabpanel" aria-busy={loading}>
             {loading && !data ? (
-              <Loading />
+              <ListSkeleton variant="rows" />
             ) : error ? (
               <ErrorState message={error} onRetry={reload} />
             ) : !data?.items.length ? (
@@ -126,7 +126,7 @@ export function EventDetail() {
   );
 
   if (notFound) return <NotFound />;
-  if (loading) return <Loading />;
+  if (loading) return <DetailSkeleton />;
   if (error) {
     return (
       <Container className="py-20">

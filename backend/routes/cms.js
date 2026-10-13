@@ -151,6 +151,75 @@ router.patch('/site-settings', async (req, res) => {
   }
 });
 
+// ── Link targets ─────────────────────────────────────────────────────────────
+// Every public page an admin can point a "Read More" button at, grouped for the
+// admin's link picker. Paths follow web/src/App.tsx, without the language prefix.
+// Only published records are offered: the public API 404s on drafts.
+const SITE_PAGES = [
+  ['Home', '/'],
+  ['About Us (all pages)', '/who-we-are'],
+  ['Departments', '/departments'],
+  ['Programmes', '/programs'],
+  ['Leaders', '/leaders'],
+  ['Events', '/events'],
+  ['News', '/media/news'],
+  ['Press releases', '/media/press-release'],
+  ['Statements', '/media/statement'],
+  ['Interviews', '/media/interview'],
+  ['Speeches', '/media/speech'],
+  ['Videos', '/media/videos'],
+  ['Podcasts', '/media/podcasts'],
+  ['Photo gallery', '/media/gallery'],
+  ['Downloads', '/media/downloads'],
+  ['Publications', '/publications'],
+  ['External links', '/links'],
+  ['Contact Us', '/contact'],
+];
+
+const LINK_TARGET_LIMIT = 200;
+
+router.get('/link-targets', async (_req, res) => {
+  try {
+    const list = (Model, sort) =>
+      Model.find({ published: true }).select('title slug type section').sort(sort).limit(LINK_TARGET_LIMIT).lean();
+    const [pages, departments, programs, events, campaigns, posts, publications, albums] = await Promise.all([
+      list(Page, { section: 1, order: 1 }),
+      list(Department, { order: 1 }),
+      list(Program, { order: 1 }),
+      list(OrgEvent, { startDate: -1 }),
+      list(Campaign, { order: 1, startDate: -1 }),
+      list(MediaPost, { publishedAt: -1 }),
+      list(Publication, { order: 1, publishedAt: -1 }),
+      list(Album, { order: 1, eventDate: -1 }),
+    ]);
+
+    // English titles lead on the public site; Malayalam is the fallback
+    const items = (docs, prefix) =>
+      docs.map((d) => ({
+        label: d.title?.en?.trim() || d.title?.ml || d.slug,
+        path: `${prefix(d)}/${d.slug}`,
+      }));
+    const fixed = (prefix) => () => prefix;
+
+    const groups = [
+      { label: 'Site pages', items: SITE_PAGES.map(([label, path]) => ({ label, path })) },
+      { label: 'About Us pages', items: items(pages.filter((p) => p.section === 'who-we-are'), fixed('/who-we-are')) },
+      { label: 'Other pages', items: items(pages.filter((p) => p.section !== 'who-we-are'), fixed('/who-we-are')) },
+      { label: 'Departments', items: items(departments, fixed('/departments')) },
+      { label: 'Programmes', items: items(programs, fixed('/programs')) },
+      { label: 'Events', items: items(events, fixed('/events')) },
+      { label: 'Campaigns', items: items(campaigns, fixed('/campaigns')) },
+      { label: 'News & statements', items: items(posts, (d) => `/media/${d.type}`) },
+      { label: 'Publications', items: items(publications, fixed('/publications')) },
+      { label: 'Photo albums', items: items(albums, fixed('/media/gallery')) },
+    ].filter((g) => g.items.length > 0);
+
+    return res.json({ groups });
+  } catch (err) {
+    return sendMongooseError(res, err, 'Failed to load the list of pages');
+  }
+});
+
 // ── Content collections ──────────────────────────────────────────────────────
 router.use(
   '/sliders',
