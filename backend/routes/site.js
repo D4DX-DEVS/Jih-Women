@@ -141,7 +141,7 @@ router.get('/home', async (_req, res) => {
     const [
       settings, sliders, campaigns, updates, upcomingEvents,
       featuredArticles, featuredVideos, publications,
-      focusAreas, programBanners, programPosters, eventPosters, galleryPhotos,
+      focusAreas, programBanners, eventPosters, galleryPhotos,
     ] = await Promise.all([
       getSiteSetting(),
       Slider.find(PUBLISHED).sort({ order: 1, createdAt: -1 }).lean(),
@@ -167,21 +167,17 @@ router.get('/home', async (_req, res) => {
       Publication.find(PUBLISHED).sort({ order: 1, publishedAt: -1 }).limit(6).lean(),
       FocusArea.find(PUBLISHED).sort({ order: 1 }).limit(8).lean(),
       // $ne alone also matches documents where the field is absent
-      // Programmes with a logo (or an older banner) appear in the home logo strip
+      // Programmes with a logo (or an older banner) appear in the home logo strip. All of
+      // them: the strip scrolls, and a cap silently dropped whichever programme came last
       Program.find({
         ...PUBLISHED,
         $or: [{ logoUrl: { $exists: true, $nin: ['', null] } }, { bannerImage: { $exists: true, $nin: ['', null] } }],
       })
         .select('title slug bannerImage logoUrl externalUrl order')
         .sort({ order: 1 })
-        .limit(6)
         .lean(),
-      // Programmes with an uploaded poster fill the poster grid in the Programs section
-      Program.find({ ...PUBLISHED, posterImage: { $exists: true, $nin: ['', null] } })
-        .select('title tagline slug posterImage externalUrl order')
-        .sort({ order: 1, createdAt: -1 })
-        .limit(12)
-        .lean(),
+      // A programme's poster belongs to its own page (GET /programs/:slug), so the home
+      // payload carries none
       homeEventPosters(),
       homePhotos(),
     ]);
@@ -197,7 +193,6 @@ router.get('/home', async (_req, res) => {
       publications,
       focusAreas,
       programBanners,
-      programPosters,
       eventPosters,
       galleryPhotos,
     });

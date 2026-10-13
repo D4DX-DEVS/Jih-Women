@@ -1,8 +1,9 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import {
   ArrowRight,
   CalendarDays,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Maximize2,
@@ -19,6 +20,7 @@ import {
   GradientText,
   ManagedSectionHeading,
   Section,
+  SECTION_Y,
   SectionLogo,
 } from '../components/Primitives';
 import { HomeSkeleton } from '../components/PageSkeletons';
@@ -30,7 +32,6 @@ import {
   VideoPlayerModal,
 } from '../components/Cards';
 import FocusStrip from '../components/FocusStrip';
-import PresidentMessageModal, { type PresidentPopupMode } from '../components/PresidentMessageModal';
 import Reveal from '../components/Reveal';
 import { useViewMode } from '../lib/view';
 import type {
@@ -39,7 +40,6 @@ import type {
   MediaPost,
   OrgEvent,
   ProgramBanner,
-  ProgramPoster,
   PresidentMessage,
   Slide,
   VideoItem,
@@ -63,9 +63,8 @@ export default function Home() {
 
   const { sections, presidentMessage } = data.settings;
   const banners = (data.programBanners ?? []).filter((b) => Boolean(b.logoUrl || b.bannerImage));
-  // Programme posters uploaded in the admin share the Programs section with the logo strip
-  const posters = (data.programPosters ?? []).filter((p) => Boolean(p.posterImage));
-  const showPrograms = sections.programBanners !== false && (banners.length > 0 || posters.length > 0);
+  // The strip is logos only: a programme's poster is shown on its own page, never here
+  const showPrograms = sections.programBanners !== false && banners.length > 0;
   // Event posters managed under Event Poster in the admin. An older backend only sends
   // `upcomingEvents`, so fall back to it rather than showing an empty Events section.
   const eventPosters = (data.eventPosters ?? data.upcomingEvents ?? []).filter((e) =>
@@ -80,9 +79,9 @@ export default function Home() {
     <>
       {sections.slider && data.sliders.length > 0 && <Hero slides={data.sliders} />}
 
-      {showPrograms && <ProgramBanners banners={banners} posters={posters} />}
+      {showPrograms && <ProgramBanners banners={banners} />}
 
-      <section className="bg-mist py-4 sm:py-7 md:py-9">
+      <section className={`bg-mist ${SECTION_Y}`}>
         <Container className="space-y-5">
           <Reveal>
             <PresidentAndEvents message={showPresident ? presidentMessage : null} events={eventPosters} />
@@ -95,7 +94,7 @@ export default function Home() {
         </Container>
       </section>
 
-      <section className="bg-white py-4 sm:py-7 md:py-9">
+      <section className={`bg-white ${SECTION_Y}`}>
         <Container>
           <Reveal>
             <NewsBand posts={data.updates} />
@@ -104,7 +103,7 @@ export default function Home() {
       </section>
 
       {data.featuredVideos.length > 0 && (
-        <section className="border-t border-plum-100/70 bg-white pb-5 pt-4 sm:pb-8 sm:pt-7 md:pb-10 md:pt-9">
+        <section className={`border-t border-plum-100/70 bg-white ${SECTION_Y}`}>
           <Container>
             <Reveal>
               <VideoRow videos={data.featuredVideos} onPlay={setPlaying} />
@@ -114,7 +113,7 @@ export default function Home() {
       )}
 
       {(data.galleryPhotos?.length ?? 0) > 0 && (
-        <section className="border-t border-plum-100/70 bg-white pb-5 pt-4 sm:pb-8 sm:pt-7 md:pb-10 md:pt-9">
+        <section className={`border-t border-plum-100/70 bg-white ${SECTION_Y}`}>
           <Container>
             <PhotoGallery photos={data.galleryPhotos!} />
           </Container>
@@ -284,7 +283,7 @@ function Hero({ slides }: { slides: Slide[] }) {
 /* ─────────────────────── programme banner strip ─────────────────────── */
 
 /* Fewest logos one marquee copy may hold. Sparse lists are repeated up to this so a
-   single copy is wider than the widest strip (1280px container ÷ ~212px per logo),
+   single copy is wider than the widest strip (1200px container ÷ ~212px per logo),
    otherwise an empty gap would trail the list before the loop restarts. */
 const MARQUEE_MIN_TILES = 8;
 /* Drift speed of the programme strip, in px per second. */
@@ -460,11 +459,10 @@ function useDriftStrip<V extends HTMLElement, T extends HTMLElement>(speedPxPerS
    page shows "Highlights" in its place; any other wording an editor sets is shown as written. */
 const SHIPPED_STRIP_HEADINGS = new Set(['Programs', 'പദ്ധതികൾ']);
 
-function ProgramBanners({ banners, posters }: { banners: ProgramBanner[]; posters: ProgramPoster[] }) {
+function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
   const { path, section, h } = useSite();
   const heading = section('homePrograms', { heading: h('highlights') });
   const title = SHIPPED_STRIP_HEADINGS.has(heading.heading) ? h('highlights') : heading.heading;
-  const hasStrip = banners.length > 0;
   const repeat = Math.ceil(MARQUEE_MIN_TILES / Math.max(1, banners.length));
   const loop = Array.from({ length: repeat }, () => banners).flat();
 
@@ -515,94 +513,31 @@ function ProgramBanners({ banners, posters }: { banners: ProgramBanner[]; poster
             (repeated) list sit side by side and the offset wraps by one copy width, so the
             loop is seamless in both directions. Hover, focus and dragging pause the drift;
             reduced-motion users get no drift. */}
-        {hasStrip && (
-          <div className="flex items-center gap-1.5 md:gap-3">
-            <MarqueeArrow dir={-1} onClick={() => nudge(-1)} />
-            <div
-              ref={viewportRef}
-              // Edges fade out so logos glide in and out instead of being sliced off
-              className="min-w-0 flex-1 cursor-grab touch-pan-y select-none overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_8%,#000_92%,transparent)]"
-              {...viewportProps}
-            >
-              <ul ref={trackRef} className="flex w-max will-change-transform">
-                {[0, 1].map((copy) =>
-                  loop.map((banner, i) => {
-                    const hidden = copy === 1 || i >= banners.length;
-                    return (
-                      <li key={`${copy}-${i}`} className="shrink-0 px-2 sm:px-5 lg:px-4" aria-hidden={hidden || undefined}>
-                        {renderTile(banner, hidden)}
-                      </li>
-                    );
-                  })
-                )}
-              </ul>
-            </div>
-            <MarqueeArrow dir={1} onClick={() => nudge(1)} />
+        <div className="flex items-center gap-1.5 md:gap-3">
+          <MarqueeArrow dir={-1} onClick={() => nudge(-1)} />
+          <div
+            ref={viewportRef}
+            // Edges fade out so logos glide in and out instead of being sliced off
+            className="min-w-0 flex-1 cursor-grab touch-pan-y select-none overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_8%,#000_92%,transparent)]"
+            {...viewportProps}
+          >
+            <ul ref={trackRef} className="flex w-max will-change-transform">
+              {[0, 1].map((copy) =>
+                loop.map((banner, i) => {
+                  const hidden = copy === 1 || i >= banners.length;
+                  return (
+                    <li key={`${copy}-${i}`} className="shrink-0 px-2 sm:px-5 lg:px-4" aria-hidden={hidden || undefined}>
+                      {renderTile(banner, hidden)}
+                    </li>
+                  );
+                })
+              )}
+            </ul>
           </div>
-        )}
-        {posters.length > 0 && (
-          <div className={hasStrip ? 'mt-4 sm:mt-7' : 'mt-2 sm:mt-0'}>
-            <ProgramPosterGrid posters={posters} />
-          </div>
-        )}
+          <MarqueeArrow dir={1} onClick={() => nudge(1)} />
+        </div>
       </Container>
     </section>
-  );
-}
-
-/* Programme posters managed under Highlights in the admin. Each is shown whole — contained
-   in a 4:5 frame, never cropped or stretched — with the programme name and short
-   description beneath; it links to the programme page (or its external site). */
-function ProgramPosterGrid({ posters }: { posters: ProgramPoster[] }) {
-  const { lang, path } = useSite();
-
-  return (
-    <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
-      {posters.map((poster) => {
-        const name = t(poster.title, lang);
-        const blurb = poster.tagline ? t(poster.tagline, lang) : '';
-        const cls =
-          'group flex h-full flex-col overflow-hidden rounded-xl border border-plum-100/80 bg-white shadow-card transition hover:-translate-y-0.5 hover:border-magenta-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-magenta-400';
-        const body = (
-          <>
-            {/* The image fills the frame absolutely: a percentage height would not resolve
-                against an aspect-ratio box, and a tall poster would stretch the card. */}
-            <span className="relative block aspect-[4/5] w-full overflow-hidden bg-mist">
-              <img
-                src={poster.posterImage}
-                alt={name}
-                loading="lazy"
-                draggable={false}
-                className="absolute inset-0 h-full w-full object-contain transition duration-300 group-hover:scale-[1.02]"
-              />
-            </span>
-            <span className="block px-2.5 py-2 sm:px-3.5 sm:py-3">
-              <span className="line-clamp-2 block font-display text-[12.5px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:text-[14.5px]">
-                {name}
-              </span>
-              {blurb && (
-                <span className="mt-0.5 line-clamp-2 block text-[11px] leading-snug text-ink-muted sm:text-[12.5px]">
-                  {blurb}
-                </span>
-              )}
-            </span>
-          </>
-        );
-        return (
-          <li key={poster._id} className="min-w-0">
-            {isExternalUrl(poster.externalUrl) ? (
-              <a href={poster.externalUrl} target="_blank" rel="noopener noreferrer" className={cls}>
-                {body}
-              </a>
-            ) : (
-              <Link to={path(`/programs/${poster.slug}`)} className={cls}>
-                {body}
-              </Link>
-            )}
-          </li>
-        );
-      })}
-    </ul>
   );
 }
 
@@ -622,85 +557,11 @@ function Eyebrow({ children, logo }: { children: React.ReactNode; logo?: string 
   );
 }
 
-/** How long the pointer must rest on the president's message before it floats open */
-const HOVER_OPEN_MS = 150;
-
-/* President's message (left) beside the event posters (right), as one card; stacked on
+/* President's message (left) beside the event poster (right), as one card; stacked on
    narrower screens. Either part is left out when it has nothing to show. */
 function PresidentAndEvents({ message, events }: { message: PresidentMessage | null; events: OrgEvent[] }) {
   const { lang, section, h } = useSite();
-  // How the full message is showing: floating while the pointer is over it, or pinned (modal)
-  const [popup, setPopup] = useState<PresidentPopupMode | null>(null);
-  const [hovered, setHovered] = useState(false);
-  const openTimer = useRef<number | undefined>(undefined);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  // After a close, a pointer still resting on the message must not reopen it: hovering is
-  // off until the pointer has been somewhere else
-  const armed = useRef(true);
-  const rearm = useRef<((e: PointerEvent) => void) | null>(null);
-  const pointer = useRef<{ x: number; y: number } | null>(null);
-  const isOpen = popup !== null;
-
-  useEffect(
-    () => () => {
-      window.clearTimeout(openTimer.current);
-      if (rearm.current) document.removeEventListener('pointermove', rearm.current);
-    },
-    []
-  );
-
-  // While the popup is up it covers the message, so remember where the pointer is
-  useEffect(() => {
-    if (!isOpen) return;
-    const track = (e: PointerEvent) => {
-      pointer.current = { x: e.clientX, y: e.clientY };
-    };
-    document.addEventListener('pointermove', track, { passive: true });
-    return () => document.removeEventListener('pointermove', track);
-  }, [isOpen]);
-
-  const overTrigger = (x: number, y: number) => {
-    const r = triggerRef.current?.getBoundingClientRect();
-    return Boolean(r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom);
-  };
-
-  // Touch has no hover: a tap pins the popup instead (see the button's onClick)
-  const hoverIn = (e: React.PointerEvent) => {
-    if (e.pointerType === 'touch') return;
-    pointer.current = { x: e.clientX, y: e.clientY };
-    setHovered(true);
-    if (popup !== null || !armed.current) return;
-    window.clearTimeout(openTimer.current);
-    openTimer.current = window.setTimeout(() => setPopup((p) => p ?? 'hover'), HOVER_OPEN_MS);
-  };
-  const hoverOut = (e: React.PointerEvent) => {
-    if (e.pointerType === 'touch') return;
-    setHovered(false);
-    window.clearTimeout(openTimer.current);
-  };
-  const pin = () => {
-    window.clearTimeout(openTimer.current);
-    setPopup('pinned');
-  };
-  const closePopup = () => {
-    window.clearTimeout(openTimer.current);
-    setPopup(null);
-    if (rearm.current) document.removeEventListener('pointermove', rearm.current);
-    rearm.current = null;
-    const p = pointer.current;
-    // Pointer elsewhere (it left, so the popup closed): hovering stays live
-    armed.current = !(p && overTrigger(p.x, p.y));
-    if (armed.current) return;
-    const onMove = (e: PointerEvent) => {
-      if (overTrigger(e.clientX, e.clientY)) return;
-      armed.current = true;
-      document.removeEventListener('pointermove', onMove);
-      rearm.current = null;
-    };
-    rearm.current = onMove;
-    document.addEventListener('pointermove', onMove);
-  };
-  const president = section('homePresident', { label: h('presidentMessage') });
+  const president =section('homePresident', { label: h('presidentMessage') });
   const label = president.label;
   const heading = message ? t(message.heading, 'en') || label : '';
   const body = message ? t(message.message, lang) : '';
@@ -731,8 +592,8 @@ function PresidentAndEvents({ message, events }: { message: PresidentMessage | n
                 )}
                 {name && (
                   <figcaption className="mt-1.5 text-center sm:mt-2.5">
-                    <span className="block font-display text-[13px] font-semibold text-plum-800 sm:text-[14px]"><GradientText>{name}</GradientText></span>
-                    {designation && <span className="block text-[11px] text-ink-muted sm:text-[11.5px]">{designation}</span>}
+                    <span className="block type-title text-plum-800"><GradientText>{name}</GradientText></span>
+                    {designation && <span className="block type-meta text-ink-muted">{designation}</span>}
                   </figcaption>
                 )}
               </figure>
@@ -742,27 +603,12 @@ function PresidentAndEvents({ message, events }: { message: PresidentMessage | n
                   &ldquo;
                 </span>
                 {heading !== label && (
-                  <h2 className="responsive-copy relative ps-6 font-display text-[1rem] font-semibold leading-snug text-magenta-500 sm:ps-7 sm:text-[1.2rem] md:text-[1.35rem]">
+                  <h2 className="responsive-copy relative ps-6 type-heading-sm text-magenta-500 sm:ps-7">
                     <GradientText>{heading}</GradientText>
                   </h2>
                 )}
-                {body && <MessagePreview html={body} />}
+                {body && <MessagePreview html={body} label={label} />}
               </div>
-
-              {/* Stretched over the portrait and text: the pointer resting on the block floats the
-                  full message; a tap, click or Enter pins it open */}
-              {body && (
-                <button
-                  ref={triggerRef}
-                  type="button"
-                  onPointerEnter={hoverIn}
-                  onPointerLeave={hoverOut}
-                  onClick={pin}
-                  aria-haspopup="dialog"
-                  aria-label={`${h('readMore')}: ${label}`}
-                  className="absolute -inset-2 z-10 cursor-pointer rounded-2xl transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 [@media(hover:hover)]:hover:bg-white/30"
-                />
-              )}
             </div>
           </div>
         )}
@@ -773,38 +619,27 @@ function PresidentAndEvents({ message, events }: { message: PresidentMessage | n
               message ? 'border-t border-magenta-100/80 lg:border-s lg:border-t-0' : ''
             }`}
           >
-            <EventPosters events={events} beside={Boolean(message)} />
+            <EventPosters events={events} />
           </div>
         )}
       </div>
-
-      {popup && message && body && (
-        <PresidentMessageModal
-          mode={popup}
-          triggerHovered={hovered}
-          label={label}
-          heading={heading}
-          body={body}
-          name={name}
-          designation={designation}
-          photo={message.photo}
-          onPin={pin}
-          onClose={closePopup}
-        />
-      )}
     </div>
   );
 }
 
 /* The message as a short preview: capped in height, fading out only when it is cut off.
-   The whole message opens in PresidentMessageModal. */
-function MessagePreview({ html }: { html: string }) {
+   Read More opens the whole message in place; Read Less folds it back to the preview. */
+function MessagePreview({ html, label }: { html: string; label: string }) {
+  const { h } = useSite();
+  const id = useId();
   const ref = useRef<HTMLDivElement>(null);
   const [cut, setCut] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
+  // Measured only while folded: the open message is never cut, and `cut` must outlast it
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || expanded) return;
     const measure = () => setCut(el.scrollHeight > el.clientHeight + 1);
     measure();
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
@@ -812,16 +647,38 @@ function MessagePreview({ html }: { html: string }) {
     // Web fonts change the line count once they load
     document.fonts?.ready.then(measure);
     return () => observer?.disconnect();
-  }, [html]);
+  }, [html, expanded]);
+
+  const toggle = () => {
+    // Folding a long message pulls the page up: keep the message on screen
+    if (expanded) requestAnimationFrame(() => ref.current?.scrollIntoView({ block: 'nearest' }));
+    setExpanded(!expanded);
+  };
 
   return (
-    <div
-      ref={ref}
-      className={`prose-content relative mt-1.5 max-h-[9rem] overflow-hidden ps-6 text-[12.5px] leading-[1.7] sm:mt-2 sm:max-h-[12.5rem] sm:ps-7 sm:text-[14px] sm:leading-[1.85] ${
-        cut ? '[mask-image:linear-gradient(to_bottom,black_75%,transparent)]' : ''
-      }`}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    <>
+      <div
+        ref={ref}
+        id={id}
+        className={`prose-content type-body-sm relative mt-1.5 scroll-mt-24 ps-6 leading-[1.7] sm:mt-2 sm:ps-7 sm:leading-[1.85] ${
+          expanded ? '' : 'max-h-[9rem] overflow-hidden sm:max-h-[12.5rem]'
+        } ${cut && !expanded ? '[mask-image:linear-gradient(to_bottom,black_75%,transparent)]' : ''}`}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+      {cut && (
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={expanded}
+          aria-controls={id}
+          aria-label={`${h(expanded ? 'readLess' : 'readMore')}: ${label}`}
+          className="relative ms-6 mt-2 inline-flex items-center gap-1 rounded py-1 type-caption font-semibold text-magenta-600 transition hover:text-magenta-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 sm:ms-7 sm:mt-3"
+        >
+          {h(expanded ? 'readLess' : 'readMore')}
+          <ChevronDown size={14} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        </button>
+      )}
+    </>
   );
 }
 
@@ -829,42 +686,31 @@ function MessagePreview({ html }: { html: string }) {
    page shows "Events" in its place; any other wording an editor sets is shown as written. */
 const SHIPPED_EVENTS_HEADINGS = new Set(['Upcoming Events', 'വരാനിരിക്കുന്ന പരിപാടികൾ']);
 
-/* Event posters (Event Poster in the admin), each shown whole in a 3:4 frame with its
-   title and date beneath. Two across on phones, three from sm, four from md; beside the
-   president's message (lg and up) the column is narrow, so two across. When there are
-   more than fit the row scrolls sideways (swipe, trackpad or the arrows). */
-function EventPosters({ events, beside }: { events: OrgEvent[]; beside: boolean }) {
+/* Event posters (Event Poster in the admin), one at a time: the poster is shown whole in
+   a 3:4 frame with nothing beneath it, and links to the event page for the details. The
+   backend sends upcoming events first (soonest first) and then the most recent past
+   ones, so the first poster is the next event; the arrows step through the others. */
+function EventPosters({ events }: { events: OrgEvent[] }) {
   const { lang, path, s, h, section } = useSite();
   const heading = section('homeEvents', { heading: h('events') });
   const title = SHIPPED_EVENTS_HEADINGS.has(heading.heading) ? h('events') : heading.heading;
-  const railRef = useRef<HTMLUListElement>(null);
-  const [overflowing, setOverflowing] = useState(false);
+  const [index, setIndex] = useState(0);
+  // A reloaded list may be shorter than the poster last shown
+  const current = Math.min(index, events.length - 1);
+  const event = events[current];
+  const name = t(event.title, lang);
 
-  // Arrows only appear when the posters do not all fit in the row
-  useEffect(() => {
-    const measure = () => {
-      const rail = railRef.current;
-      if (rail) setOverflowing(rail.scrollWidth > rail.clientWidth + 1);
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [events.length]);
-
-  const slide = (dir: 1 | -1) => {
-    const rail = railRef.current;
-    if (rail) rail.scrollBy({ left: dir * rail.clientWidth, behavior: 'smooth' });
-  };
+  const step = (dir: 1 | -1) => setIndex((current + dir + events.length) % events.length);
 
   return (
     <div className="flex min-w-0 flex-col">
       <div className="flex min-w-0 items-center justify-between gap-3">
         <Eyebrow logo={heading.logo}>{title}</Eyebrow>
         <div className="flex shrink-0 items-center gap-3">
-          {overflowing && <RailArrows onPrev={() => slide(-1)} onNext={() => slide(1)} />}
+          {events.length > 1 && <RailArrows onPrev={() => step(-1)} onNext={() => step(1)} />}
           <Link
             to={path('/events')}
-            className="-my-2 inline-flex shrink-0 items-center gap-1 whitespace-nowrap py-2 text-[10.5px] font-medium text-ink-muted transition hover:text-magenta-600 sm:text-[11px]"
+            className="-my-2 inline-flex shrink-0 items-center gap-1 whitespace-nowrap py-2 type-meta font-medium text-ink-muted transition hover:text-magenta-600"
           >
             {s('viewAll')}
             <ArrowRight size={13} />
@@ -872,51 +718,24 @@ function EventPosters({ events, beside }: { events: OrgEvent[]; beside: boolean 
         </div>
       </div>
 
-      {/* auto margins on the first and last poster centre a short row, and collapse to
-          nothing once the row overflows, so scrolling still reaches every poster */}
-      <ul
-        ref={railRef}
-        className="no-scrollbar mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-1 sm:mt-4 sm:gap-4 [&>li:first-child]:ms-auto [&>li:last-child]:me-auto"
+      {/* key: the fade replays for each poster */}
+      <Link
+        key={event._id}
+        to={path(`/events/${event.slug}`)}
+        aria-label={name}
+        className="group mx-auto mt-3 block w-full max-w-[200px] animate-fade-in rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-magenta-400 sm:mt-4 sm:max-w-[240px]"
       >
-        {events.map((event) => {
-          const src = event.posterImage || event.coverImage;
-          const name = t(event.title, lang);
-          const when = [formatDate(event.startDate, lang), event.timeLabel].filter(Boolean).join(' · ');
-          return (
-            <li
-              key={event._id}
-              /* two across on phones (the next poster peeks in), three from sm, four from md */
-              className={`w-[calc((100%-0.75rem)/2.15)] shrink-0 snap-start sm:w-[calc((100%-2rem)/3)] md:w-[calc((100%-3rem)/4)] ${
-                beside ? 'lg:w-[calc((100%-1rem)/2)]' : ''
-              }`}
-            >
-              <Link to={path(`/events/${event.slug}`)} className="group flex flex-col">
-                {/* object-contain: posters are shown whole, never cropped or stretched */}
-                <span className="relative block aspect-[3/4] w-full overflow-hidden rounded-xl border border-plum-100/80 bg-white shadow-soft">
-                  <img
-                    src={src}
-                    alt={name}
-                    loading="lazy"
-                    draggable={false}
-                    className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
-                  />
-                </span>
-                <span className="mt-2 block text-center sm:mt-2.5">
-                  <span className="line-clamp-2 block font-display text-[12.5px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:text-[14.5px]">
-                    <GradientText>{name}</GradientText>
-                  </span>
-                  {when && (
-                    <span className="mt-0.5 flex items-center justify-center gap-1.5 text-[11px] text-ink-muted sm:mt-1 sm:text-[12.5px]">
-                      <CalendarDays size={12} className="shrink-0 text-magenta-500" />
-                      {when}
-                    </span>
-                  )}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+        {/* object-contain: the poster is shown whole, never cropped or stretched */}
+        <span className="relative block aspect-[3/4] w-full overflow-hidden rounded-xl border border-plum-100/80 bg-white shadow-soft">
+          <img
+            src={event.posterImage || event.coverImage}
+            alt={name}
+            loading="lazy"
+            draggable={false}
+            className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+          />
+        </span>
+      </Link>
     </div>
   );
 }
@@ -942,7 +761,7 @@ function BandHeading({
   const heading = { ...stored, heading: shipped.includes(stored.heading) ? label : stored.heading };
   return (
     <div className="mb-2.5 flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 sm:mb-3.5 sm:gap-y-1.5">
-      <h3 className="band-label flex shrink-0 items-center gap-2 whitespace-nowrap font-sans text-[12px] font-semibold uppercase tracking-[0.1em] text-magenta-500 sm:text-[14px] sm:tracking-[0.12em] md:text-[15px]">
+      <h3 className="band-label flex shrink-0 items-center gap-2 whitespace-nowrap font-sans type-eyebrow font-semibold uppercase tracking-[0.1em] text-magenta-500 sm:tracking-[0.12em]">
         {heading.logo && <SectionLogo src={heading.logo} />}
         <span className="brand-rule-start w-5 sm:w-7" />
         <span className="text-brand-gradient">{heading.heading}</span>
@@ -950,7 +769,7 @@ function BandHeading({
       </h3>
       <Link
         to={to}
-        className="-my-2 inline-flex shrink-0 items-center gap-1 whitespace-nowrap py-2 text-[10.5px] font-medium text-ink-muted transition hover:text-magenta-600 sm:text-[11px]"
+        className="-my-2 inline-flex shrink-0 items-center gap-1 whitespace-nowrap py-2 type-meta font-medium text-ink-muted transition hover:text-magenta-600"
       >
         {actionLabel}
         <ArrowRight size={13} />
@@ -1192,7 +1011,7 @@ function NewsBand({ posts }: { posts: MediaPost[] }) {
         to={path('/media/news')}
       />
       {latest.length === 0 ? (
-        <p className="py-5 text-center text-[12.5px] text-ink-faint sm:py-8 sm:text-[13px]">{s('nothingHere')}</p>
+        <p className="py-5 text-center type-body-sm text-ink-faint sm:py-8">{s('nothingHere')}</p>
       ) : (
         <div
           className={`no-scrollbar -mx-3 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-3 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 ${desktopCols}`}
@@ -1214,19 +1033,19 @@ function NewsBand({ posts }: { posts: MediaPost[] }) {
                   )}
                 </span>
                 <span className="flex flex-1 flex-col p-2.5 sm:p-3">
-                  <span className="flex items-center gap-1.5 text-[10.5px] text-ink-faint sm:text-[11px]">
+                  <span className="flex items-center gap-1.5 type-meta text-ink-faint">
                     <CalendarDays size={12} />
                     {formatDate(post.publishedAt, lang)}
                   </span>
-                  <span className="mt-1 line-clamp-3 font-display text-[13px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:mt-1.5 sm:text-[15px]">
+                  <span className="mt-1 line-clamp-3 type-title text-plum-800 transition group-hover:text-magenta-600 sm:mt-1.5">
                     <GradientText>{t(post.title, lang)}</GradientText>
                   </span>
                   {t(post.excerpt, lang) && (
-                    <span className="mt-0.5 line-clamp-2 text-[11.5px] leading-relaxed text-ink-muted sm:mt-1 sm:text-[12.5px]">
+                    <span className="mt-0.5 line-clamp-2 type-caption leading-relaxed text-ink-muted sm:mt-1">
                       {t(post.excerpt, lang)}
                     </span>
                   )}
-                  <span className="mt-auto inline-flex items-center gap-1 pt-1.5 text-[11px] font-medium text-magenta-600 sm:pt-2.5 sm:text-[12px]">
+                  <span className="mt-auto inline-flex items-center gap-1 pt-1.5 type-caption font-medium text-magenta-600 sm:pt-2.5">
                     {h('readMore')}
                     <ArrowRight size={13} />
                   </span>
@@ -1270,7 +1089,7 @@ function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoIt
         </span>
       </span>
       {v.durationLabel && (
-        <span className="absolute bottom-1.5 end-1.5 z-10 rounded-md bg-ink/80 px-1.5 py-0.5 text-[10px] font-medium text-white sm:bottom-2 sm:end-2 sm:text-[11px]">
+        <span className="absolute bottom-1.5 end-1.5 z-10 rounded-md bg-ink/80 px-1.5 py-0.5 type-meta font-medium text-white sm:bottom-2 sm:end-2">
           {v.durationLabel}
         </span>
       )}
@@ -1304,21 +1123,21 @@ function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoIt
             >
               {thumb(v, true, true)}
               <span className="flex flex-1 flex-col p-3 sm:p-4">
-                <span className="line-clamp-2 block font-display text-[13px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:text-[15px] md:text-[16px]">
+                <span className="line-clamp-2 block type-title text-plum-800 transition group-hover:text-magenta-600">
                   <GradientText>{t(v.title, lang)}</GradientText>
                 </span>
                 {t(v.description, lang) && (
-                  <span className="mt-1 line-clamp-2 block text-[11.5px] leading-relaxed text-ink-muted sm:mt-1.5 sm:text-[13px]">
+                  <span className="mt-1 line-clamp-2 block type-caption leading-relaxed text-ink-muted sm:mt-1.5">
                     {t(v.description, lang)}
                   </span>
                 )}
                 <span className="mt-auto flex items-center justify-between gap-2 pt-2 sm:pt-3">
-                  <span className="inline-flex items-center gap-1 text-[11.5px] font-medium text-magenta-600 sm:text-[12.5px]">
+                  <span className="inline-flex items-center gap-1 type-caption font-medium text-magenta-600">
                     {s('watchVideo')}
                     <ArrowRight size={13} />
                   </span>
                   {v.publishedAt && (
-                    <span className="flex items-center gap-1 text-[10.5px] text-ink-faint sm:text-[11.5px]">
+                    <span className="flex items-center gap-1 type-meta text-ink-faint">
                       <CalendarDays size={11} />
                       {formatDate(v.publishedAt, lang)}
                     </span>
@@ -1335,16 +1154,16 @@ function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoIt
         >
           {thumb(videos[0], true)}
           <span className="min-w-0">
-            <span className="block font-display text-[14px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:text-[16px] md:text-[18px]">
+            <span className="block type-title-lg text-plum-800 transition group-hover:text-magenta-600">
               <GradientText>{t(videos[0].title, lang)}</GradientText>
             </span>
             {t(videos[0].description, lang) && (
-              <span className="mt-1 line-clamp-3 block text-[12px] leading-relaxed text-ink-muted sm:mt-1.5 sm:text-[13.5px]">
+              <span className="mt-1 line-clamp-3 block type-caption leading-relaxed text-ink-muted sm:mt-1.5">
                 {t(videos[0].description, lang)}
               </span>
             )}
             {videos[0].publishedAt && (
-              <span className="mt-2 flex items-center gap-1.5 text-[11.5px] text-ink-faint">
+              <span className="mt-2 flex items-center gap-1.5 type-meta text-ink-faint">
                 <CalendarDays size={12} />
                 {formatDate(videos[0].publishedAt, lang)}
               </span>
@@ -1408,8 +1227,9 @@ function PhotoGallery({ photos }: { photos: MediaItem[] }) {
         </span>
         <div
           ref={viewportRef}
-          // Photos run cleanly to the strip's edges (no edge fade)
-          className="w-full cursor-grab touch-pan-y select-none overflow-hidden py-1"
+          // Photos run cleanly to the strip's edges (no edge fade). The strip is a size
+          // container so desktop tiles can each take a fifth of its width.
+          className="w-full cursor-grab touch-pan-y select-none overflow-hidden py-1 [container-type:inline-size]"
           {...viewportProps}
         >
           <ul ref={trackRef} className="flex w-max will-change-transform">
@@ -1427,8 +1247,9 @@ function PhotoGallery({ photos }: { photos: MediaItem[] }) {
                       tabIndex={hidden ? -1 : undefined}
                       draggable={false}
                       aria-label={caption || `${h('photoGallery')} ${index + 1}`}
-                      /* 3:2 like event photos; pops in (fade + slight scale) on first view */
-                      className={`group relative block aspect-[3/2] h-28 overflow-hidden rounded-lg bg-plum-50 shadow-soft transition duration-700 ease-out motion-reduce:transition-none sm:h-52 sm:rounded-xl lg:h-60 ${
+                      /* 3:2 like event photos; pops in (fade + slight scale) on first view.
+                         On desktop five tiles fill the strip: a fifth of its width each, less the gap. */
+                      className={`group relative block aspect-[3/2] h-28 overflow-hidden rounded-lg bg-plum-50 shadow-soft transition duration-700 ease-out motion-reduce:transition-none sm:h-52 sm:rounded-xl lg:h-auto lg:w-[calc(20cqw-1rem)] ${
                         shown ? 'scale-100 opacity-100' : 'scale-[0.92] opacity-0'
                       }`}
                       style={{ transitionDelay: shown ? `${Math.min(order, 8) * 80}ms` : undefined }}
@@ -1445,7 +1266,7 @@ function PhotoGallery({ photos }: { photos: MediaItem[] }) {
                         <Maximize2 size={14} />
                       </span>
                       {caption && (
-                        <span className="user-text absolute inset-x-3 bottom-2.5 translate-y-2 text-start text-[12.5px] font-medium leading-snug text-white opacity-0 transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+                        <span className="user-text absolute inset-x-3 bottom-2.5 translate-y-2 text-start type-caption font-medium leading-snug text-white opacity-0 transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
                           {caption}
                         </span>
                       )}

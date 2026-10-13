@@ -1,4 +1,4 @@
-import type { Lang } from './types';
+import type { Lang, MediaItem } from './types';
 
 /* Dates always read in English ("17 August 2026"), whatever the site language;
    only the content itself follows the ML/EN toggle. The language argument is
@@ -73,6 +73,15 @@ export function whatsappHref(number: string): string {
   if (!digits) return '';
   const withCode = digits.length === 10 ? `91${digits}` : digits;
   return `https://wa.me/${withCode}`;
+}
+
+/**
+ * The gallery entries that can be shown: a missing list, blank entries and entries with
+ * no file address are dropped. An empty result means the page has no gallery to show.
+ */
+export function validMedia(items: readonly (MediaItem | null | undefined)[] | null | undefined): MediaItem[] {
+  if (!Array.isArray(items)) return [];
+  return items.filter((item): item is MediaItem => typeof item?.url === 'string' && item.url.trim() !== '');
 }
 
 /** True for an absolute http(s) URL — anything else must not be rendered as an outbound link. */

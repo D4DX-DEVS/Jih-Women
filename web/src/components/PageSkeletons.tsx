@@ -1,5 +1,5 @@
 import { useViewMode } from '../lib/view';
-import { Container, Section } from './Primitives';
+import { Container, Section, SECTION_Y } from './Primitives';
 import { Skeleton, Status, TextLines } from './Skeleton';
 
 /* ---------------------------- list pages ---------------------------- */
@@ -7,19 +7,30 @@ import { Skeleton, Status, TextLines } from './Skeleton';
 /**
  * The body of a list page while it loads. `cards` follows the card / list view the
  * visitor chose on phones, like the real cards; `rows` is for text-led rows (events,
- * search results, links); `people` is for portrait cards (leaders).
+ * search results, links); `people` is for portrait cards (leaders); `posters` is for the
+ * event posters, which become rows in the list view on phones.
  */
 export function ListSkeleton({
   variant = 'cards',
   count = 6,
 }: {
-  variant?: 'cards' | 'rows' | 'people';
+  variant?: 'cards' | 'rows' | 'people' | 'posters';
   count?: number;
 }) {
   const { view } = useViewMode();
   const list = view === 'list';
 
-  if (variant === 'rows') {
+  if (variant === 'posters' && !list) {
+    return (
+      <Status className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:gap-5">
+        {Array.from({ length: count }, (_, i) => (
+          <Skeleton key={i} className="aspect-[3/4] w-full rounded-xl sm:rounded-2xl" />
+        ))}
+      </Status>
+    );
+  }
+
+  if (variant === 'rows' || variant === 'posters') {
     return (
       <Status className="space-y-2.5 sm:space-y-4">
         {Array.from({ length: Math.min(count, 5) }, (_, i) => (
@@ -40,9 +51,9 @@ export function ListSkeleton({
 
   if (variant === 'people') {
     return (
-      <Status className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
+      <Status className="grid grid-cols-3 gap-2 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:gap-5">
         {Array.from({ length: Math.min(count, 8) }, (_, i) => (
-          <div key={i} className="overflow-hidden rounded-xl border border-plum-100 bg-white sm:rounded-3xl">
+          <div key={i} className="overflow-hidden rounded-xl border border-plum-100 bg-white sm:rounded-2xl">
             <Skeleton className="aspect-[4/5] w-full rounded-none" />
             <div className="space-y-2 p-3 sm:p-4">
               <Skeleton className="h-3.5 w-3/4 sm:h-4" />
@@ -59,7 +70,7 @@ export function ListSkeleton({
       {Array.from({ length: count }, (_, i) => (
         <div
           key={i}
-          className={`flex overflow-hidden border border-plum-100 bg-white sm:flex-col sm:rounded-3xl ${
+          className={`flex overflow-hidden border border-plum-100 bg-white sm:flex-col sm:rounded-2xl ${
             list ? 'rounded-xl' : 'flex-col rounded-lg'
           }`}
         >
@@ -86,13 +97,13 @@ export function DetailSkeleton() {
   return (
     <Status>
       <div className="bg-plum-800">
-        <Container className="py-4 sm:py-8 md:py-12">
+        <Container className="py-3 sm:py-6 md:py-7">
           <Skeleton dark className="mb-4 hidden h-3 w-44 md:block" />
           <Skeleton dark className="h-6 w-3/4 sm:h-9 sm:w-1/2" />
           <Skeleton dark className="mt-3 h-3 w-2/3 sm:w-1/3" />
         </Container>
       </div>
-      <Section tone="mist" className="pt-3 sm:pt-6 md:pt-9">
+      <Section tone="mist">
         <Container>
           <div className="space-y-5 rounded-xl border border-plum-100 bg-white p-3.5 sm:space-y-7 sm:rounded-2xl sm:p-7 md:p-9">
             <TextLines lines={4} />
@@ -126,9 +137,9 @@ export function HomeSkeleton() {
         </Container>
       </div>
 
-      <section className="bg-mist py-4 sm:py-7 md:py-9">
+      <section className={`bg-mist ${SECTION_Y}`}>
         <Container>
-          <div className="grid gap-5 rounded-2xl border border-plum-100 bg-white p-3.5 sm:gap-8 sm:rounded-3xl sm:p-6 md:p-8 lg:grid-cols-2">
+          <div className="grid gap-5 rounded-2xl border border-plum-100 bg-white p-3.5 sm:gap-8 sm:rounded-2xl sm:p-6 md:p-8 lg:grid-cols-2">
             <div className="space-y-3 sm:space-y-4">
               <Skeleton className="h-3 w-24" />
               <Skeleton className="h-6 w-4/5 sm:h-8" />
@@ -146,7 +157,7 @@ export function HomeSkeleton() {
         </Container>
       </section>
 
-      <section className="bg-white py-4 sm:py-7 md:py-9">
+      <section className={`bg-white ${SECTION_Y}`}>
         <Container>
           <Skeleton className="mb-3 h-3 w-32 sm:mb-4" />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5">

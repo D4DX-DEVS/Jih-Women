@@ -1,10 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { ArrowLeft, ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
 import { Dialog, DialogPortal, DialogClose } from '@/components/ui/dialog';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 
 const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
+// Three rows of five on desktop
+const PAGE_SIZE = 15;
 
 type GalleryImage = {
   _id: string;
@@ -14,22 +16,166 @@ type GalleryImage = {
   type?: 'image' | 'video';
 };
 
+type Pagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+};
+
+/**
+ * Page numbers to offer around the current page: the first and last page, the
+ * current one with `siblings` neighbours each side, and 'gap' for a skipped run.
+ */
+function pageItems(current: number, total: number, siblings: number): (number | 'gap')[] {
+  const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+  const edge = 3 + siblings * 2;
+  if (total <= edge + 2) return range(1, total);
+  const left = Math.max(current - siblings, 1);
+  const right = Math.min(current + siblings, total);
+  if (left <= 2) return [...range(1, edge), 'gap', total];
+  if (right >= total - 1) return [1, 'gap', ...range(total - edge + 1, total)];
+  return [1, 'gap', ...range(left, right), 'gap', total];
+}
+
+function GalleryPagination({
+  page,
+  totalPages,
+  onPage,
+}: {
+  page: number;
+  totalPages: number;
+  onPage: (page: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+
+  const button =
+    'inline-flex h-9 min-w-9 items-center justify-center rounded-full border text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 sm:h-10 sm:min-w-10';
+  const idle =
+    'border-white/15 bg-white/5 text-white/70 hover:border-white/30 hover:bg-white/10 hover:text-white';
+  const step = `${button} ${idle} gap-1.5 sm:px-4 disabled:pointer-events-none disabled:opacity-35`;
+
+  // Phones get the short list (no neighbours) so the row never wraps
+  const numbers = (siblings: number, visibility: string) => (
+    <ul className={`items-center gap-1 sm:gap-1.5 ${visibility}`}>
+      {pageItems(page, totalPages, siblings).map((item, i) =>
+        item === 'gap' ? (
+          <li key={`gap-${i}`} aria-hidden="true" className="w-5 text-center text-sm text-white/35 sm:w-6">
+            …
+          </li>
+        ) : (
+          <li key={item}>
+            <button
+              type="button"
+              onClick={() => onPage(item)}
+              aria-label={`Page ${item}`}
+              aria-current={item === page ? 'page' : undefined}
+              className={`${button} px-2.5 ${
+                item === page ? 'border-primary bg-primary font-semibold text-primary-foreground' : idle
+              }`}
+            >
+              {item}
+            </button>
+          </li>
+        )
+      )}
+    </ul>
+  );
+
+  return (
+    <nav aria-label="Gallery pages" className="mt-8 flex items-center justify-center gap-1 sm:mt-10 sm:gap-1.5">
+      <button
+        type="button"
+        onClick={() => onPage(page - 1)}
+        disabled={page <= 1}
+        aria-label="Previous page"
+        className={step}
+      >
+        <ChevronLeft size={16} />
+        <span className="hidden sm:inline">Previous</span>
+      </button>
+      {numbers(0, 'flex sm:hidden')}
+      {numbers(1, 'hidden sm:flex')}
+      <button
+        type="button"
+        onClick={() => onPage(page + 1)}
+        disabled={page >= totalPages}
+        aria-label="Next page"
+        className={step}
+      >
+        <span className="hidden sm:inline">Next</span>
+        <ChevronRight size={16} />
+      </button>
+    </nav>
+  );
+}
+
 export default function GalleryPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [images, setImages] = useState<GalleryImage[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  // Which request last settled, and how. Anything else is still loading.
+  const [settled, setSettled] = useState<{ key: string; failed: boolean } | null>(null);
+  const [retry, setRetry] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  // The page lives in the URL (?page=2), so back/forward and shared links work
+  const page = Math.max(1, parseInt(searchParams.get('page') ?? '', 10) || 1);
+
+  const goToPage = useCallback(
+    (next: number, replace = false) => {
+      setSearchParams(next > 1 ? { page: String(next) } : {}, { replace });
+    },
+    [setSearchParams]
+  );
+
+  const requestKey = `${page}:${retry}`;
+  const loading = settled?.key !== requestKey;
+  const error = !loading && Boolean(settled?.failed);
+
+  // Fetch only the requested page; a request for a page left behind is cancelled
   useEffect(() => {
-    fetch(`${API_URL}/api/gallery`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data.images)) setImages(data.images);
+    const controller = new AbortController();
+
+    fetch(`${API_URL}/api/gallery?page=${page}&limit=${PAGE_SIZE}`, { signal: controller.signal })
+      .then((r) => {
+        if (!r.ok) throw new Error(`Gallery request failed (${r.status})`);
+        return r.json();
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+      .then((data) => {
+        const list: GalleryImage[] = Array.isArray(data.images) ? data.images : [];
+        const meta: Pagination = data.pagination ?? {
+          page: 1,
+          limit: PAGE_SIZE,
+          total: list.length,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPrevPage: false,
+        };
+        setImages(list);
+        setPagination(meta);
+        setSettled({ key: requestKey, failed: false });
+        setLightboxOpen(false);
+        setActiveIndex(0);
+        // The server answers a page past the end with the last page
+        if (meta.page !== page) goToPage(meta.page, true);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setSettled({ key: requestKey, failed: true });
+      });
+
+    return () => controller.abort();
+  }, [page, requestKey, goToPage]);
+
+  const changePage = (next: number) => {
+    if (next === page) return;
+    goToPage(next);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const openLightbox = (index: number) => {
     setActiveIndex(index);
@@ -57,6 +203,8 @@ export default function GalleryPage() {
   }, [lightboxOpen, prev, next]);
 
   const activeImage = images[activeIndex];
+  // Nothing fetched yet: show the full-page spinner rather than a dimmed grid
+  const firstLoad = loading && !pagination;
 
   return (
     <div className="min-h-screen" style={{ background: 'rgb(8, 1, 18)' }}>
@@ -74,28 +222,52 @@ export default function GalleryPage() {
           <h1 className="font-['Syne'] text-sm font-semibold text-white tracking-tight">
             WES 2026 — Gallery
           </h1>
-          {images.length > 0 && (
-            <span className="ml-auto text-xs text-white/35">{images.length} items</span>
+          {pagination && pagination.total > 0 && (
+            <span className="ml-auto text-xs text-white/35">{pagination.total} items</span>
           )}
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {loading && (
-          <div className="flex items-center justify-center py-32">
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10" aria-busy={loading}>
+        {firstLoad && (
+          <div className="flex items-center justify-center py-32" role="status" aria-label="Loading gallery">
             <div className="h-8 w-8 rounded-full border-2 border-white/20 border-t-white/70 animate-spin" />
           </div>
         )}
 
-        {!loading && images.length === 0 && (
+        {!loading && error && (
+          <div className="flex flex-col items-center justify-center gap-4 py-32 text-center" role="alert">
+            <p className="text-white/50 text-sm">We could not load the gallery. Please try again.</p>
+            <button
+              type="button"
+              onClick={() => setRetry((n) => n + 1)}
+              className="rounded-full border border-white/20 bg-white/5 px-5 py-2 text-sm text-white/80 transition-all hover:border-white/30 hover:bg-white/10 hover:text-white"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && images.length === 0 && (
           <div className="flex flex-col items-center justify-center py-32 text-center">
             <p className="text-white/40 text-sm">No media yet. Check back soon.</p>
           </div>
         )}
 
-        {!loading && images.length > 0 && (
-          <div className="columns-1 gap-3 min-[480px]:columns-2 sm:gap-4 md:columns-3 lg:columns-4">
+        {/* While the next page loads, the current one stays in place, dimmed, under a spinner */}
+        {loading && !firstLoad && (
+          <div className="absolute inset-x-0 top-32 z-[1] flex justify-center" role="status" aria-label="Loading page">
+            <div className="h-8 w-8 rounded-full border-2 border-white/20 border-t-white/70 animate-spin" />
+          </div>
+        )}
+
+        {!firstLoad && !error && images.length > 0 && (
+          <div
+            className={`columns-1 gap-3 min-[480px]:columns-2 sm:gap-4 md:columns-3 lg:columns-5 transition-opacity duration-200 ${
+              loading ? 'pointer-events-none opacity-40' : ''
+            }`}
+          >
             {images.map((img, i) => (
               <button
                 key={img._id}
@@ -135,6 +307,10 @@ export default function GalleryPage() {
             ))}
           </div>
         )}
+
+        {pagination && (
+          <GalleryPagination page={page} totalPages={pagination.totalPages} onPage={changePage} />
+        )}
       </div>
 
       {/* Lightbox */}
@@ -145,24 +321,25 @@ export default function GalleryPage() {
             style={{ background: 'rgba(4, 0, 12, 0.92)', backdropFilter: 'blur(12px)' }}
           >
             <DialogPrimitive.Content
-              className="relative flex max-h-[92vh] max-w-5xl w-full flex-col items-center focus:outline-none"
+              className="relative flex max-h-[92vh] max-w-5xl flex-col items-center focus:outline-none"
               aria-label="Gallery lightbox"
+              aria-describedby={undefined}
             >
-              {/* Close */}
-              <DialogClose className="absolute -right-2 -top-10 z-10 rounded-full bg-white/10 p-2 text-white/70 transition-all hover:bg-white/20 hover:text-white">
-                <X size={18} />
-              </DialogClose>
+              {/* Radix needs a title for screen readers; nothing to show on screen */}
+              <DialogPrimitive.Title className="sr-only">Gallery lightbox</DialogPrimitive.Title>
 
-              {/* Media — image or video */}
+              {/* Media — image or video. The box wraps the media exactly (caps in viewport units:
+                  the screen less the padding and the caption row), so the close button sits on
+                  its top corner and a click or tap on the backdrop beside it closes the viewer */}
               {activeImage && (
-                <div className="relative w-full">
+                <div className="relative min-h-32 min-w-32">
                   {activeImage.type === 'video' ? (
                     <video
                       key={activeImage._id}
                       src={activeImage.imageUrl}
                       controls
                       autoPlay
-                      className="max-h-[80vh] w-full rounded-[18px] shadow-[0_30px_80px_rgba(0,0,0,0.7)]"
+                      className="block max-h-[min(80vh,calc(100dvh-6rem))] w-[min(64rem,calc(100vw-2rem))] rounded-[18px] shadow-[0_30px_80px_rgba(0,0,0,0.7)]"
                       aria-label={activeImage.caption || `WES 2026 video ${activeIndex + 1}`}
                     />
                   ) : (
@@ -170,10 +347,18 @@ export default function GalleryPage() {
                       key={activeImage._id}
                       src={activeImage.imageUrl}
                       alt={activeImage.caption || `WES 2026 photo ${activeIndex + 1}`}
-                      className="max-h-[80vh] w-full rounded-[18px] object-contain shadow-[0_30px_80px_rgba(0,0,0,0.7)]"
+                      className="block max-h-[min(80vh,calc(100dvh-6rem))] max-w-[min(64rem,calc(100vw-2rem))] rounded-[18px] object-contain shadow-[0_30px_80px_rgba(0,0,0,0.7)]"
                       loading="eager"
                     />
                   )}
+
+                  {/* Close */}
+                  <DialogClose
+                    aria-label="Close"
+                    className="absolute right-2 top-2 z-10 grid h-9 w-9 place-items-center rounded-full border border-white/30 bg-black/55 text-white backdrop-blur-sm transition-all hover:bg-black/75 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:right-3 sm:top-3 sm:h-10 sm:w-10"
+                  >
+                    <X size={20} />
+                  </DialogClose>
 
                   {/* Prev / Next */}
                   {images.length > 1 && (

@@ -76,10 +76,10 @@ export default function Footer() {
                     className="h-12 w-auto max-w-[190px] shrink-0 rounded-lg bg-white/95 object-contain object-left px-2.5 py-2"
                   />
                   <span className="leading-[1.3]">
-                    <span className="block whitespace-normal text-[11px] font-bold uppercase tracking-[0.15em] text-magenta-300 sm:whitespace-nowrap">
+                    <span className="block whitespace-normal type-overline font-bold tracking-[0.15em] text-magenta-300 sm:whitespace-nowrap">
                       {str('footerWing', 'en')}
                     </span>
-                    <span className="block whitespace-normal text-[9.5px] font-semibold uppercase tracking-[0.15em] text-white/55 sm:whitespace-nowrap">
+                    <span className="block whitespace-normal type-micro font-semibold uppercase tracking-[0.15em] text-white/55 sm:whitespace-nowrap">
                       {str('footerKerala', 'en')}
                     </span>
                   </span>
@@ -170,7 +170,7 @@ export default function Footer() {
 
       {/* data-back-to-top-avoid: the back-to-top button lifts above this bar when it is on screen */}
       <div className="relative border-t border-white/10" data-back-to-top-avoid>
-        <Container className="flex flex-col items-center justify-between gap-1 py-2.5 text-center text-[11.5px] text-white/50 sm:flex-row sm:text-start md:gap-2 md:py-3 md:text-[12.5px]">
+        <Container className="flex flex-col items-center justify-between gap-1 py-2.5 text-center type-meta text-white/50 sm:flex-row sm:text-start md:gap-2 md:py-3">
           {/* Copyright on the left, "Powered by" on the right */}
           <span className="hidden min-w-0 md:inline">
             © {new Date().getFullYear()} {siteName}. {str('allRightsReserved', 'en')}.
@@ -227,7 +227,7 @@ function StackedLogo({ src }: { src: string }) {
 
 function FooterHeading({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">
+    <div className="mb-3 type-overline font-semibold tracking-[0.18em] text-white">
       {children}
       <span className="mt-1.5 block h-0.5 w-8 rounded-full bg-magenta-500" />
     </div>
@@ -246,7 +246,7 @@ function FooterColumn({
   return (
     <div className={`min-w-0 ${className}`}>
       <FooterHeading>{title}</FooterHeading>
-      <ul className="space-y-1.5 text-[13.5px]">{children}</ul>
+      <ul className="space-y-1.5 type-nav">{children}</ul>
     </div>
   );
 }

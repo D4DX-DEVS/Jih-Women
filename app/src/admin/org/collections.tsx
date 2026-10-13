@@ -327,7 +327,7 @@ export const PROGRAMS: CollectionConfig = {
   endpoint: '/api/admin/cms/programs',
   label: 'Highlights',
   singular: 'Programme',
-  description: 'WES, Proficia, Thamheed, Safa Nagar and other programmes. A programme with a poster also appears in the Programs section of the home page.',
+  description: 'WES, Proficia, Thamheed, Safa Nagar and other programmes. A poster uploaded for a programme is shown on that programme’s own page.',
   reorderable: true,
   filters: [{ param: 'isMajor', label: 'Type', options: [
     { value: 'true', label: 'Major programme' },
@@ -360,7 +360,7 @@ export const PROGRAMS: CollectionConfig = {
       label: 'Short description',
       multiline: true,
       rows: 2,
-      hint: 'One or two lines, shown under the poster on the home page and at the top of the programme page.',
+      hint: 'One or two lines, shown at the top of the programme page.',
     },
     { kind: 'rich', path: 'overview', label: 'Description' },
     {
@@ -377,8 +377,8 @@ export const PROGRAMS: CollectionConfig = {
       label: 'Poster',
       folder: 'programs',
       fit: 'poster',
-      hint: 'Shown in the Programs section of the home page, with the programme name beneath it. Leave empty to keep the programme off the poster grid.',
-      recommend: '1200px wide at the poster’s natural shape (portrait 4:5 or 3:4 works best). Shown whole in a 4:5 frame, never cropped. JPG, PNG or WebP.',
+      hint: 'Shown beside the description on this programme’s own page (not on the home page). Leave empty and the page shows the logo there instead.',
+      recommend: '1200px wide at the poster’s natural shape (portrait 4:5 or 3:4 works best). Shown whole, never cropped. JPG, PNG or WebP.',
     },
     {
       kind: 'asset',
@@ -406,7 +406,7 @@ export const PROGRAMS: CollectionConfig = {
 const LEADER_CATEGORY_OPTIONS = [
   { value: 'state', label: 'State Leaders' },
   { value: 'district', label: 'District Leaders' },
-  { value: 'party', label: 'Party Leaders' },
+  { value: 'party', label: 'Past Leaders' },
 ];
 
 export const LEADERS: CollectionConfig = {
@@ -414,7 +414,7 @@ export const LEADERS: CollectionConfig = {
   endpoint: '/api/admin/cms/leaders',
   label: 'Leaders',
   singular: 'Leader',
-  description: 'State, district and party leaders: current leadership and past leadership (Meeqathi) posters. Each leader belongs to one category, shown as its own tab on the website.',
+  description: 'State, district and past leaders: current leadership and past leadership (Meeqathi) posters. Each leader belongs to one category, shown as its own tab on the website.',
   reorderable: true,
   filters: [
     { param: 'category', label: 'Category', options: LEADER_CATEGORY_OPTIONS },
@@ -458,7 +458,7 @@ export const LEADERS: CollectionConfig = {
       path: 'category',
       label: 'Category',
       options: LEADER_CATEGORY_OPTIONS,
-      hint: 'Which tab of the Leaders page this person appears under.',
+      hint: 'Which tab of the Leaders page this person appears under. Anyone not marked as current leadership appears under Past Leaders, whatever the category.',
     },
     { kind: 'localized', path: 'name', label: 'Name', required: true },
     { kind: 'localized', path: 'designation', label: 'Designation' },

@@ -97,7 +97,7 @@ export default function Header() {
     <>
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-[80] focus:rounded-full focus:bg-magenta-500 focus:px-5 focus:py-2 focus:text-sm focus:text-white"
+        className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-[80] focus:rounded-full focus:bg-magenta-500 focus:px-5 focus:py-2 focus:text-white type-body-sm"
       >
         {str('skipToContent', 'en')}
       </a>
@@ -106,7 +106,7 @@ export default function Header() {
           phones, where the header is a single slim bar */}
       <div className="hidden bg-plum-800 text-white md:block">
         <div className={SHELL}>
-        <div className="flex h-8 items-center justify-between gap-2 text-[12px] sm:gap-4">
+        <div className="flex h-8 items-center justify-between gap-2 type-meta sm:gap-4">
             <div className="flex min-w-0 flex-1 items-center gap-2">
               <Sparkles size={14} className="shrink-0 text-magenta-300" />
               <span className="truncate text-white/80">
@@ -147,7 +147,7 @@ export default function Header() {
         <div className={SHELL}>
         {/* Logo on the left; navigation and search grouped on the right. One height and
             width on every page (no per-page variants). */}
-        <div className="flex h-11 min-w-0 items-center justify-between gap-2 md:h-16 lg:h-20 xl:gap-6">
+        <div className="flex h-11 min-w-0 items-center justify-between gap-2 md:h-16 lg:h-[72px] xl:gap-6">
             <Link
               to={path('/')}
               className="flex shrink-0 items-center"
@@ -158,7 +158,7 @@ export default function Header() {
               <img
                 src="/logo.png"
                 alt={t(settings?.siteName, 'en') || "Women's Wing Kerala"}
-                className={`w-auto max-w-[60vw] object-contain object-left h-7 md:h-12 lg:h-16`}
+                className={`w-auto max-w-[60vw] object-contain object-left h-7 md:h-12 lg:h-14`}
               />
             </Link>
 
@@ -171,7 +171,7 @@ export default function Header() {
                   const underline = `pointer-events-none absolute inset-x-3.5 -bottom-0.5 h-0.5 origin-center rounded-full transition-transform duration-300 ${
                     active ? 'scale-x-100 bg-magenta-500' : 'scale-x-0 bg-magenta-300 group-hover:scale-x-100'
                   }`;
-                  const itemCls = `group relative flex items-center gap-1 whitespace-nowrap px-3.5 py-2 text-[14px] font-medium transition-colors ${
+                  const itemCls = `group relative flex items-center gap-1 whitespace-nowrap px-3.5 py-2 type-nav font-medium transition-colors ${
                     active || expanded ? 'text-magenta-500' : 'text-ink/75 hover:text-magenta-500'
                   }`;
                   if (!item.children) {
@@ -204,7 +204,7 @@ export default function Header() {
                             <Link
                               key={child.to}
                               to={child.to}
-                              className="block px-4 py-2.5 text-[13px] text-ink/70 transition hover:bg-magenta-50 hover:text-magenta-600"
+                              className="block px-4 py-2.5 type-caption text-ink/70 transition hover:bg-magenta-50 hover:text-magenta-600"
                             >
                               {child.label}
                             </Link>
@@ -252,7 +252,7 @@ export default function Header() {
                     placeholder={`${str('search', 'en')}...`}
                     aria-label={str('search', 'en')}
                     tabIndex={searchOpen ? 0 : -1}
-                    className={`min-w-0 flex-1 bg-transparent text-[14px] text-ink outline-none transition-opacity duration-200 placeholder:text-ink-faint [&::-webkit-search-cancel-button]:hidden ${
+                    className={`min-w-0 flex-1 bg-transparent type-nav text-ink outline-none transition-opacity duration-200 placeholder:text-ink-faint [&::-webkit-search-cancel-button]:hidden ${
                       searchOpen ? 'opacity-100 delay-100' : 'pointer-events-none opacity-0'
                     }`}
                   />
@@ -322,7 +322,7 @@ export default function Header() {
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={str('searchPlaceholder', 'en')}
                     aria-label={str('search', 'en')}
-                    className="min-w-0 flex-1 bg-transparent text-[14px] text-ink outline-none placeholder:text-ink-faint"
+                    className="min-w-0 flex-1 bg-transparent type-nav text-ink outline-none placeholder:text-ink-faint"
                   />
                 </form>
               </div>
@@ -332,7 +332,7 @@ export default function Header() {
               <nav aria-label={str('menu', 'en')} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
                 {menuGroups.map((group) => (
                   <section key={group.label} className="mb-5 last:mb-0">
-                    <h3 className="mb-2 px-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                    <h3 className="mb-2 px-1 font-sans type-overline font-semibold tracking-[0.14em] text-ink-faint">
                       {group.label}
                     </h3>
                     <ul className="divide-y divide-plum-100/70 overflow-hidden rounded-2xl border border-plum-100 bg-white">
@@ -345,7 +345,7 @@ export default function Header() {
                               // also closes when tapping the page already open (no route change)
                               onClick={() => setMobileOpen(false)}
                               aria-current={active ? 'page' : undefined}
-                              className={`flex min-h-[50px] items-center gap-3 px-3.5 py-2 text-[14.5px] font-medium transition ${
+                              className={`flex min-h-[50px] items-center gap-3 px-3.5 py-2 type-nav font-medium transition ${
                                 active ? 'bg-magenta-50/70 text-magenta-600' : 'text-plum-800 hover:bg-magenta-50/50'
                               }`}
                             >
@@ -367,7 +367,7 @@ export default function Header() {
 
               {socials.length > 0 && (
                 <div className="flex shrink-0 items-center justify-between gap-3 border-t border-plum-100 bg-white px-4 py-3">
-                  <span className="text-[12px] text-ink-muted">{str('followUsShort', 'en')}</span>
+                  <span className="type-caption text-ink-muted">{str('followUsShort', 'en')}</span>
                   <div className="flex items-center gap-2">
                     {socials.map(({ href, Icon, label }) => (
                       <a

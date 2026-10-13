@@ -3,13 +3,14 @@ const { localized } = require('./common');
 
 // Which group of leaders a person belongs to. Leaders saved before categories existed
 // have no value stored and are treated as state leaders (see the public leaders route).
+// `party` is the stored value of the group the site and admin label "Past Leaders".
 const LEADER_CATEGORIES = ['state', 'district', 'party'];
 
 const leaderSchema = new mongoose.Schema(
   {
     category: {
       type: String,
-      enum: { values: LEADER_CATEGORIES, message: 'Choose State, District or Party leaders as the category.' },
+      enum: { values: LEADER_CATEGORIES, message: 'Choose State, District or Past leaders as the category.' },
       default: 'state',
     },
     name: localized({ required: true, maxlength: 200 }),

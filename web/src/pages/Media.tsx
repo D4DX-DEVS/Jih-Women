@@ -4,7 +4,7 @@ import { CalendarDays, Download, ExternalLink as ExternalLinkIcon, Images } from
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
-import { formatDate } from '../lib/format';
+import { formatDate, validMedia } from '../lib/format';
 import {
   Container,
   ContentPanel,
@@ -49,7 +49,7 @@ function MediaHeading({ title }: { title: string }) {
   return (
     <div className="mb-3 flex items-center justify-center gap-2 sm:mb-6 sm:gap-3 md:mb-8">
       <span className="h-px w-6 shrink-0 bg-magenta-300 sm:w-12" aria-hidden="true" />
-      <h1 className="min-w-0 text-center font-display text-[1.15rem] font-semibold leading-tight text-plum-800 [overflow-wrap:anywhere] sm:text-[1.5rem] md:text-[1.9rem]">
+      <h1 className="min-w-0 text-center type-heading text-plum-800 [overflow-wrap:anywhere]">
         <GradientText>{title}</GradientText>
       </h1>
       <span className="h-px w-6 shrink-0 bg-magenta-300 sm:w-12" aria-hidden="true" />
@@ -78,7 +78,7 @@ export function MediaList() {
 
   return (
     <>
-      <Section tone="mist" className="pt-3 sm:pt-6 md:pt-8">
+      <Section tone="mist">
         <Container>
           <MediaHeading title={pageTitle(known.key)} />
           <ViewToggle />
@@ -90,7 +90,7 @@ export function MediaList() {
             <EmptyState />
           ) : (
             <>
-              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
                 {data.items.map((post) => (
                   <PostCard key={post._id} post={post} view={view} small />
                 ))}
@@ -141,7 +141,7 @@ export function MediaDetail() {
           {/* One content card: details, summary and story, then downloads and photos */}
           <ContentPanel>
             <PanelSection>
-              <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-plum-100/80 pb-2.5 text-[12px] text-ink-muted sm:mb-6 sm:gap-x-5 sm:gap-y-2 sm:pb-4 sm:text-[13px]">
+              <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-plum-100/80 pb-2.5 type-caption text-ink-muted sm:mb-6 sm:gap-x-5 sm:gap-y-2 sm:pb-4">
                 <span className="inline-flex items-center gap-1.5">
                   <CalendarDays size={14} className="text-magenta-500" />
                   {s('publishedOn')}: {formatDate(data.publishedAt, lang)}
@@ -159,7 +159,7 @@ export function MediaDetail() {
               </div>
 
               {t(data.excerpt, lang) && (
-                <p className="user-text mb-4 rounded-e-xl border-s-4 border-magenta-400 bg-magenta-50/50 py-2 pe-3 ps-3.5 text-[13.5px] font-medium leading-relaxed text-ink/80 sm:mb-7 sm:py-3 sm:pe-4 sm:ps-5 sm:text-[16px]">
+                <p className="user-text mb-4 rounded-e-xl border-s-4 border-magenta-400 bg-magenta-50/50 py-2 pe-3 ps-3.5 type-body-lg font-medium leading-relaxed text-ink/80 sm:mb-7 sm:py-3 sm:pe-4 sm:ps-5">
                   {t(data.excerpt, lang)}
                 </p>
               )}
@@ -171,7 +171,7 @@ export function MediaDetail() {
                   href={data.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-magenta-600 underline underline-offset-4 sm:mt-6 sm:text-sm"
+                  className="mt-4 inline-flex items-center gap-1.5 type-body-sm font-semibold text-magenta-600 underline underline-offset-4 sm:mt-6"
                 >
                   {s('source')}
                   <ExternalLinkIcon size={14} />
@@ -181,7 +181,7 @@ export function MediaDetail() {
               {data.tags?.length > 0 && (
                 <div className="mt-5 flex flex-wrap gap-1.5 sm:mt-8 sm:gap-2">
                   {data.tags.map((tag) => (
-                    <span key={tag} className="rounded-full bg-magenta-50 px-2.5 py-0.5 text-[11px] font-medium text-magenta-600 sm:px-3 sm:py-1 sm:text-[12px]">
+                    <span key={tag} className="rounded-full bg-magenta-50 px-2.5 py-0.5 type-meta font-medium text-magenta-600 sm:px-3 sm:py-1">
                       #{tag}
                     </span>
                   ))}
@@ -195,7 +195,7 @@ export function MediaDetail() {
               </PanelSection>
             )}
 
-            {data.gallery?.length > 0 && (
+            {validMedia(data.gallery).length > 0 && (
               <PanelSection title={h('gallery')} icon={Images}>
                 <GalleryGrid items={data.gallery} />
               </PanelSection>
@@ -208,7 +208,7 @@ export function MediaDetail() {
         <Section tone="white">
           <Container>
             <SectionHeading eyebrow={h('mediaCentre')} title={h('relatedPosts')} />
-            <div className={`grid gap-2 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+            <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
               {data.related.map((post) => (
                 <PostCard key={post._id} post={post} view={view} />
               ))}
@@ -235,7 +235,7 @@ export function VideosPage({ kind }: { kind: 'video' | 'podcast' }) {
 
   return (
     <>
-      <Section tone="mist" className="pt-3 sm:pt-6 md:pt-8">
+      <Section tone="mist">
         <Container>
           <MediaHeading title={label} />
           <ViewToggle />
@@ -269,12 +269,12 @@ export function AlbumsIndex() {
   const [page, setPage] = useState(1);
   const { view } = useViewMode();
   const { data, loading, error, reload } = useApi<Paged<Album>>(
-    `/api/site/albums?page=${page}&limit=12`
+    `/api/site/albums?page=${page}&limit=15`
   );
 
   return (
     <>
-      <Section tone="mist" className="pt-3 sm:pt-6 md:pt-8">
+      <Section tone="mist">
         <Container>
           <MediaHeading title={pageTitle('photoGallery')} />
           <ViewToggle />
@@ -286,7 +286,7 @@ export function AlbumsIndex() {
             <EmptyState />
           ) : (
             <>
-              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-5 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
                 {data.items.map((album) => (
                   <AlbumCard key={album._id} album={album} view={view} />
                 ))}
@@ -335,7 +335,7 @@ export function AlbumDetail() {
           {/* One content card holding the album's photos */}
           <ContentPanel>
             <PanelSection title={data.eventDate ? formatDate(data.eventDate, lang) : undefined} icon={CalendarDays}>
-              {data.items?.length ? <GalleryGrid items={data.items} /> : <EmptyState />}
+              {validMedia(data.items).length ? <GalleryGrid items={data.items} /> : <EmptyState />}
             </PanelSection>
           </ContentPanel>
         </Container>
@@ -362,7 +362,7 @@ export function DownloadsPage() {
 
   return (
     <>
-      <Section tone="mist" className="pt-3 sm:pt-6 md:pt-8">
+      <Section tone="mist">
         <Container>
           <MediaHeading title={pageTitle('downloads')} />
 
@@ -371,7 +371,7 @@ export function DownloadsPage() {
               <button
                 key={c.value}
                 onClick={() => setCategory(c.value)}
-                className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition sm:px-4 sm:py-2 sm:text-[13px] ${
+                className={`rounded-full px-3 py-1.5 type-caption font-semibold transition sm:px-4 sm:py-2 ${
                   category === c.value
                     ? 'bg-magenta-500 text-white'
                     : 'border border-plum-200 text-ink-muted hover:border-magenta-300'

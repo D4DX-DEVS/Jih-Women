@@ -4,7 +4,7 @@ import { BookOpen, ExternalLink as ExternalLinkIcon, Maximize2, Play } from 'luc
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
-import { isExternalUrl } from '../lib/format';
+import { isExternalUrl, validMedia } from '../lib/format';
 import {
   Button,
   Container,
@@ -18,7 +18,7 @@ import {
   ViewToggle,
 } from '../components/Primitives';
 import { DetailSkeleton, ListSkeleton } from '../components/PageSkeletons';
-import { Lightbox, ProgramCard } from '../components/Cards';
+import { Lightbox, PanelPoster, ProgramCard } from '../components/Cards';
 import Reveal from '../components/Reveal';
 import ContentSections from '../components/ContentCards';
 import { useViewMode } from '../lib/view';
@@ -37,8 +37,6 @@ export function ProgramsIndex() {
   return (
     <>
       <PageHeader
-        compact
-        titleSize="md"
         title={pageTitle('programs')}
         breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('programs') }]}
       />
@@ -55,8 +53,8 @@ export function ProgramsIndex() {
               <ViewToggle />
               {major.length > 0 && (
                 <>
-                  <ManagedSectionHeading size="sm" sectionKey="programsMajor" eyebrow={h('programs')} title={h('majorProgrammes')} />
-                  <div className={`grid ${cols} gap-2 sm:grid-cols-1 sm:gap-6 md:grid-cols-2 lg:grid-cols-3`}>
+                  <ManagedSectionHeading sectionKey="programsMajor" eyebrow={h('programs')} title={h('majorProgrammes')} />
+                  <div className={`grid ${cols} gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3`}>
                     {major.map((p) => (
                       <ProgramCard key={p._id} program={p} view={view} />
                     ))}
@@ -65,8 +63,8 @@ export function ProgramsIndex() {
               )}
               {others.length > 0 && (
                 <div className="mt-7 sm:mt-14">
-                  <ManagedSectionHeading size="sm" sectionKey="programsOther" eyebrow={h('programs')} title={h('otherProgrammes')} />
-                  <div className={`grid ${cols} gap-2 sm:grid-cols-1 sm:gap-6 md:grid-cols-2 lg:grid-cols-3`}>
+                  <ManagedSectionHeading sectionKey="programsOther" eyebrow={h('programs')} title={h('otherProgrammes')} />
+                  <div className={`grid ${cols} gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3`}>
                     {others.map((p) => (
                       <ProgramCard key={p._id} program={p} view={view} />
                     ))}
@@ -105,11 +103,23 @@ export function ProgramDetail() {
   // Every heading and label on the page is English; body text follows the site language.
   const title = t(data.title, 'en');
   const overview = t(data.overview, lang);
-  // A programme page is its description plus logo. Objectives, schedule, gallery,
-  // videos and downloads are no longer managed in the admin, so any values still
-  // stored for them are not shown.
+  // A programme page is its description plus its poster (or, without one, its logo).
+  // Objectives, schedule, videos and downloads are no longer managed in the admin, so
+  // any values still stored for them are not shown.
   const website = isExternalUrl(data.externalUrl) ? data.externalUrl : '';
-  const hasAside = Boolean(data.logoUrl || website);
+  const hasAside = Boolean(data.posterImage || data.logoUrl || website);
+  // Only photos that have a file; with none, the page has no Gallery section at all
+  const gallery = validMedia(data.gallery);
+  const logo = data.logoUrl ? (
+    <div className="flex h-12 w-full max-w-[140px] items-center justify-center sm:h-16 sm:max-w-[180px] md:h-20">
+      <img
+        src={data.logoUrl}
+        alt={title}
+        /* multiply lets white or near-white logo backgrounds melt into the panel */
+        className="h-auto max-h-full w-auto max-w-full object-contain mix-blend-multiply brightness-[1.04]"
+      />
+    </div>
+  ) : null;
 
   return (
     <>
@@ -117,8 +127,6 @@ export function ProgramDetail() {
           faded behind the title their lettering read as stray text. The cover still shows
           on the programme's card. */}
       <PageHeader
-        compact
-        titleSize="md"
         title={title}
         description={t(data.tagline, lang)}
         breadcrumb={[
@@ -131,7 +139,7 @@ export function ProgramDetail() {
       {website && (
         <div className="border-b border-plum-100 bg-magenta-500/10">
           <Container className="flex flex-wrap items-center justify-between gap-2 py-3 sm:gap-4 sm:py-5">
-            <p className="text-[13px] text-ink-muted sm:text-sm">{t(data.externalLabel, 'en') || s('visitWebsite')}</p>
+            <p className="type-body-sm text-ink-muted">{t(data.externalLabel, 'en') || s('visitWebsite')}</p>
             <Button href={website} variant="primary" size="sm">
               {s('visitWebsite')}
               <ExternalLinkIcon size={15} />
@@ -142,25 +150,20 @@ export function ProgramDetail() {
 
       <Section tone="mist">
         <Container>
-          {/* One content card: the description's sections, with the programme's logo
-              and link in the side column */}
+          {/* One content card: the description's sections, with the programme's poster
+              (its logo alone when no poster is uploaded) and link in the side column */}
           <ContentPanel
             aside={
               hasAside ? (
                 <div className="flex flex-col items-center text-center">
-                  {data.logoUrl && (
-                    <div className="flex h-12 w-full max-w-[140px] items-center justify-center sm:h-16 sm:max-w-[180px] md:h-20">
-                      <img
-                        src={data.logoUrl}
-                        alt={title}
-                        /* multiply lets white or near-white logo backgrounds melt into the panel */
-                        className="h-auto max-h-full w-auto max-w-full object-contain mix-blend-multiply brightness-[1.04]"
-                      />
-                    </div>
+                  {/* key: a replaced poster starts afresh instead of inheriting a failed load */}
+                  {data.posterImage ? (
+                    <PanelPoster key={data.posterImage} src={data.posterImage} alt={title} fallback={logo} />
+                  ) : (
+                    logo
                   )}
-                  <p className="user-text mt-1.5 text-[12.5px] font-semibold text-plum-800 sm:mt-2.5 sm:text-[13px]">{title}</p>
                   {website && (
-                    <Button href={website} variant="outline" size="sm" className="mt-2 sm:mt-3">
+                    <Button href={website} variant="outline" size="sm" className="mt-3 sm:mt-4">
                       {s('visitWebsite')}
                       <ExternalLinkIcon size={14} />
                     </Button>
@@ -172,10 +175,9 @@ export function ProgramDetail() {
             {overview ? <ContentSections html={overview} firstTitle={h('overview')} firstIcon={BookOpen} /> : <EmptyState />}
           </ContentPanel>
 
-          {/* This programme's own photos (Programme > Gallery in admin); hidden when empty */}
-          {(data.gallery?.filter((g) => g.url).length ?? 0) > 0 && (
-            <ProgramGallery items={data.gallery.filter((g) => g.url)} label={title} heading={h('gallery')} />
-          )}
+          {/* This programme's own photos (Programme > Gallery in admin). No photos: no
+              heading, no wrapper, no reserved space. key: a fresh start per programme */}
+          {gallery.length > 0 && <ProgramGallery key={data._id} items={gallery} heading={h('gallery')} />}
         </Container>
       </Section>
     </>
@@ -185,10 +187,12 @@ export function ProgramDetail() {
 /**
  * The picture inside a gallery tile. Photos fill the 3:2 tile (cropped); a very wide
  * banner or logo would lose its lettering that way, so once its shape is known it is
- * shown whole, on a soft blurred copy of itself.
+ * shown whole, on a soft blurred copy of itself. A file that will not load is retried
+ * from `fallbackSrc` (the full-size file behind a thumbnail), then reported as broken.
  */
-function TileImage({ src }: { src: string }) {
+function TileImage({ src: first, fallbackSrc, onBroken }: { src: string; fallbackSrc: string; onBroken: () => void }) {
   const [whole, setWhole] = useState(false);
+  const [src, setSrc] = useState(first);
   return (
     <>
       {whole && (
@@ -207,6 +211,7 @@ function TileImage({ src }: { src: string }) {
           const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
           if (w && h) setWhole(w / h > 2);
         }}
+        onError={() => (fallbackSrc && src !== fallbackSrc ? setSrc(fallbackSrc) : onBroken())}
         className={`relative h-full w-full transition-transform duration-700 ease-out group-hover:scale-[1.06] ${
           whole ? 'object-contain p-1.5 sm:p-2' : 'object-cover'
         }`}
@@ -216,17 +221,23 @@ function TileImage({ src }: { src: string }) {
 }
 
 /**
- * A programme's gallery as a grid (3 columns on phones and tablets, 4 on desktop; a
+ * A programme's gallery as a grid (3 columns on phones and tablets, 5 on desktop; a
  * single photo or a pair gets larger tiles). Tiles share one 3:2 shape (photos are
  * cropped to fit, never stretched), fade and scale in one after another as they scroll
  * into view, and zoom gently on hover. A short last row is centred under the rows
  * above it, never left stranded at one edge. A click opens the shared lightbox, which
- * shows the whole photo with prev/next.
+ * shows the whole photo with prev/next. A photo whose file cannot be loaded is left out;
+ * when none can be, the whole section (heading included) goes with them.
  */
-function ProgramGallery({ items, label, heading }: { items: MediaItem[]; label: string; heading: string }) {
+function ProgramGallery({ items: all, heading }: { items: MediaItem[]; heading: string }) {
   const { lang } = useSite();
   const [open, setOpen] = useState<number | null>(null);
+  const [broken, setBroken] = useState<ReadonlySet<number>>(new Set());
+  // `id` is the photo's place in the stored list, so a tile keeps its key when another drops out
+  const shown = all.map((item, id) => ({ item, id })).filter(({ id }) => !broken.has(id));
+  const items = shown.map(({ item }) => item);
   const count = items.length;
+  if (count === 0) return null;
   /* Each tile is a fixed share of the row (the calc() subtracts the gaps), so a flex row
      that wraps keeps every column the same width and `justify-center` centres the rows
      that are not full. The few-photos cases get bigger tiles so they do not look lost. */
@@ -235,15 +246,15 @@ function ProgramGallery({ items, label, heading }: { items: MediaItem[]; label: 
       ? 'w-full max-w-md'
       : count === 2
         ? 'w-[calc((100%-0.375rem)/2)] max-w-md sm:w-[calc((100%-0.75rem)/2)] lg:w-[calc((100%-1rem)/2)]'
-        : 'w-[calc((100%-0.75rem)/3)] sm:w-[calc((100%-1.5rem)/3)] lg:w-[calc((100%-3rem)/4)]';
+        : 'w-[calc((100%-0.75rem)/3)] sm:w-[calc((100%-1.5rem)/3)] lg:w-[calc((100%-4rem)/5)]';
   return (
     <section className="mt-6 sm:mt-10 md:mt-12">
-      <SectionHeading size="sm" eyebrow={label} title={heading} />
+      <SectionHeading title={heading} />
       <div className="flex flex-wrap justify-center gap-1.5 sm:gap-3 lg:gap-4">
-        {items.map((item, i) => {
+        {shown.map(({ item, id }, i) => {
           const caption = t(item.caption, lang);
           return (
-            <Reveal key={`${item.url}-${i}`} delay={Math.min(i, 8) * 60} className={tileWidth}>
+            <Reveal key={id} delay={Math.min(i, 8) * 60} className={tileWidth}>
               <button
                 type="button"
                 onClick={() => setOpen(i)}
@@ -259,14 +270,18 @@ function ProgramGallery({ items, label, heading }: { items: MediaItem[]; label: 
                   </>
                 ) : (
                   /* a lone photo or a pair is shown large, so use the full-size file */
-                  <TileImage src={count <= 2 ? item.url || item.thumbnailUrl : item.thumbnailUrl || item.url} />
+                  <TileImage
+                    src={count <= 2 ? item.url : item.thumbnailUrl || item.url}
+                    fallbackSrc={item.url}
+                    onBroken={() => setBroken((prev) => new Set(prev).add(id))}
+                  />
                 )}
                 <span className="absolute inset-0 bg-gradient-to-t from-plum-900/60 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                 <span className="absolute end-2 top-2 grid h-7 w-7 scale-75 place-items-center rounded-full bg-white/90 text-magenta-600 opacity-0 shadow-soft transition duration-300 group-hover:scale-100 group-hover:opacity-100">
                   <Maximize2 size={13} />
                 </span>
                 {caption && (
-                  <span className="user-text absolute inset-x-2.5 bottom-2 translate-y-2 text-start text-[12px] font-medium leading-snug text-white opacity-0 transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+                  <span className="user-text absolute inset-x-2.5 bottom-2 translate-y-2 text-start type-caption font-medium leading-snug text-white opacity-0 transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
                     {caption}
                   </span>
                 )}

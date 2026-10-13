@@ -115,16 +115,6 @@ export type ProgramBanner = {
   externalUrl: string;
 };
 
-/** A programme with an uploaded poster, shown in the home page Programs section */
-export type ProgramPoster = {
-  _id: string;
-  slug: string;
-  title: Localized;
-  tagline?: Localized;
-  posterImage: string;
-  externalUrl?: string;
-};
-
 export type Slide = {
   _id: string;
   title: Localized;
@@ -207,6 +197,8 @@ export type Program = {
   coverImage: string;
   logoUrl: string;
   bannerImage: string;
+  /** Poster uploaded in the admin, shown only on this programme's page; empty or missing when it has none */
+  posterImage?: string;
   gallery: MediaItem[];
   videos: VideoRef[];
   downloads: Attachment[];
@@ -366,7 +358,6 @@ export type HomePayload = {
   publications: Publication[];
   focusAreas: FocusArea[];
   programBanners: ProgramBanner[];
-  programPosters?: ProgramPoster[];
   /** Photos for the home Photo Gallery (album and programme gallery images) */
   galleryPhotos?: MediaItem[];
 };
