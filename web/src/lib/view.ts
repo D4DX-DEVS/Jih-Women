@@ -40,13 +40,18 @@ function subscribe(cb: () => void) {
 
 const isPhone = () => typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia(PHONE).matches;
 
+/** True on phone-width screens (below `sm`); follows rotation and window resizes. */
+export function usePhone() {
+  return useSyncExternalStore(subscribe, isPhone, () => false);
+}
+
 /**
  * The chosen listing layout, shared by every listing screen. `view` is what to render:
  * it is only ever 'list' on phones, so tablets and desktop always show the card layout
  * whatever was picked on a phone.
  */
 export function useViewMode() {
-  const phone = useSyncExternalStore(subscribe, isPhone, () => false);
+  const phone = usePhone();
   const chosen = useSyncExternalStore(subscribe, () => mode, () => 'card' as ViewMode);
   return { view: (phone ? chosen : 'card') as ViewMode, mode: chosen, setMode };
 }

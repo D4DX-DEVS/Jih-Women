@@ -8,7 +8,7 @@ const Page = require('../models/Page');
 const Department = require('../models/Department');
 const Program = require('../models/Program');
 const Leader = require('../models/Leader');
-const { LEADER_CATEGORIES } = require('../models/Leader');
+const { LEADER_CATEGORIES, leaderTerms } = require('../models/Leader');
 const OrgEvent = require('../models/OrgEvent');
 const EventRegistration = require('../models/EventRegistration');
 const MediaPost = require('../models/MediaPost');
@@ -82,7 +82,7 @@ async function homeEventPosters() {
       { coverImage: { $exists: true, $nin: ['', null] } },
     ],
   };
-  const fields = 'title slug startDate endDate timeLabel posterImage coverImage';
+  const fields = 'title slug startDate endDate timeLabel posterImage coverImage externalUrl';
   // Date-only values are stored at midnight UTC, so an event dated today counts as upcoming all day
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
@@ -308,7 +308,12 @@ router.get('/leaders', async (req, res) => {
       return res.status(400).json({ error: 'Unknown leader category.' });
     }
     const scope = category ? { category: category === 'state' ? { $in: ['state', null] } : category } : {};
-    const withCategory = (leader) => ({ ...leader, category: leader.category || 'state' });
+    // Records saved before periods existed report their old term as their only period
+    const withCategory = (leader) => ({
+      ...leader,
+      category: leader.category || 'state',
+      terms: leaderTerms(leader),
+    });
 
     const [current, past] = await Promise.all([
       Leader.find({ ...PUBLISHED, ...scope, isCurrent: true }).sort({ order: 1 }).lean(),

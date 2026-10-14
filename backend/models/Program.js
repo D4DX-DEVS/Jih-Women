@@ -68,6 +68,21 @@ const programSchema = new mongoose.Schema(
 );
 
 autoSlug(programSchema);
+
+// One gallery entry per file: a repeated submit or a photo picked twice cannot list the
+// same image twice. The first occurrence (and its caption) is kept, order unchanged.
+programSchema.pre('validate', function dedupeGallery() {
+  if (!this.isModified('gallery') || !Array.isArray(this.gallery)) return;
+  const seen = new Set();
+  const unique = this.gallery.filter((item) => {
+    const url = (item?.url ?? '').trim();
+    if (!url || seen.has(url)) return !url;
+    seen.add(url);
+    return true;
+  });
+  if (unique.length !== this.gallery.length) this.gallery = unique;
+});
+
 programSchema.index({ published: 1, isMajor: -1, order: 1 });
 
 module.exports = mongoose.model('Program', programSchema);

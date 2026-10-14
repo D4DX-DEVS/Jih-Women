@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import {
   ArrowRight,
@@ -13,7 +13,7 @@ import {
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
-import { formatDate, isExternalUrl, youtubeThumb } from '../lib/format';
+import { formatDate, youtubeThumb } from '../lib/format';
 import {
   Container,
   ErrorState,
@@ -26,6 +26,7 @@ import {
 import { HomeSkeleton } from '../components/PageSkeletons';
 import {
   CampaignCard,
+  EventPosterLink,
   Lightbox,
   PostCard,
   PublicationCard,
@@ -124,7 +125,7 @@ export default function Home() {
         <Section tone="white">
           <Container>
             <ManagedSectionHeading sectionKey="homeCampaigns" eyebrow={h('mediaCentre')} title={h('campaigns')} />
-            <div className="grid gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-5 lg:grid-cols-3">
               {data.campaigns.map((c, i) => (
                 <Reveal key={c._id} delay={Math.min(i, 6) * 60}>
                   <CampaignCard campaign={c} />
@@ -139,7 +140,7 @@ export default function Home() {
         <Section tone="deep">
           <Container>
             <ManagedSectionHeading sectionKey="homeFeaturedArticles" eyebrow={h('media')} title={h('featuredArticles')} />
-            <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+            <div className={`grid gap-2.5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-2'}`}>
               {data.featuredArticles.map((post, i) => (
                 <Reveal key={post._id} delay={Math.min(i, 6) * 60}>
                   <PostCard post={post} view={view} />
@@ -154,7 +155,7 @@ export default function Home() {
         <Section tone="white">
           <Container>
             <ManagedSectionHeading sectionKey="homePublications" eyebrow={h('publications')} title={h('publications')} />
-            <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3">
               {data.publications.map((p, i) => (
                 <Reveal key={p._id} delay={Math.min(i, 6) * 60}>
                   <PublicationCard publication={p} />
@@ -473,9 +474,10 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
 
   /** One programme logo; `hidden` marks a repeated copy (not focusable or announced). */
   const renderTile = (banner: ProgramBanner, hidden = false) => {
-    // A bare logo, no tile: fixed box, image contained so nothing is cropped or stretched
+    // A bare logo, no tile: fixed box, image contained so nothing is cropped or stretched.
+    // Phones show two across the strip (half its width each, less the padding).
     const cls =
-      'group flex h-9 w-[22vw] max-w-[88px] items-center justify-center rounded-lg sm:h-16 sm:w-[160px] sm:max-w-none lg:h-[72px] lg:w-[180px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-magenta-400';
+      'group flex h-12 w-[calc(50cqw-1rem)] items-center justify-center rounded-lg sm:h-16 sm:w-[160px] lg:h-[72px] lg:w-[180px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-magenta-400';
     const inner = (
       <img
         src={banner.logoUrl || banner.bannerImage}
@@ -488,11 +490,8 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
       />
     );
     const tabIndex = hidden ? -1 : undefined;
-    return isExternalUrl(banner.externalUrl) ? (
-      <a href={banner.externalUrl} target="_blank" rel="noopener noreferrer" className={cls} tabIndex={tabIndex} draggable={false}>
-        {inner}
-      </a>
-    ) : (
+    // Always the programme page: its website (if any) is linked below the content there
+    return (
       <Link to={path(`/programs/${banner.slug}`)} className={cls} tabIndex={tabIndex} draggable={false}>
         {inner}
       </Link>
@@ -517,8 +516,9 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
           <MarqueeArrow dir={-1} onClick={() => nudge(-1)} />
           <div
             ref={viewportRef}
-            // Edges fade out so logos glide in and out instead of being sliced off
-            className="min-w-0 flex-1 cursor-grab touch-pan-y select-none overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_8%,#000_92%,transparent)]"
+            // Edges fade out so logos glide in and out instead of being sliced off. A size
+            // container, so phone tiles can each take half of its width.
+            className="min-w-0 flex-1 cursor-grab touch-pan-y select-none overflow-hidden [container-type:inline-size] [mask-image:linear-gradient(to_right,transparent,#000_8%,#000_92%,transparent)]"
             {...viewportProps}
           >
             <ul ref={trackRef} className="flex w-max will-change-transform">
@@ -573,37 +573,38 @@ function PresidentAndEvents({ message, events }: { message: PresidentMessage | n
   return (
     <div className="relative overflow-hidden rounded-2xl border border-magenta-100/80 bg-gradient-to-br from-white via-magenta-50/50 to-plum-50 shadow-card sm:rounded-3xl">
       <span className="pointer-events-none absolute -end-20 -top-24 h-64 w-64 rounded-full bg-magenta-100/60 blur-3xl" />
-      <div className={`relative grid ${message && events.length > 0 ? 'lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]' : ''}`}>
+      {/* Desktop: the message takes the larger part of the card (about 70% on wide screens) */}
+      <div className={`relative grid ${message && events.length > 0 ? 'lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]' : ''}`}>
         {message && (
-          <div className="relative min-w-0 p-3.5 sm:p-6 md:p-8">
+          <div className="relative min-w-0 p-3.5 sm:p-6 md:p-8 xl:p-10">
             <Eyebrow logo={president.logo}>{label}</Eyebrow>
-            <div className="relative mt-2 grid gap-3 sm:mt-3 sm:gap-5 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-start">
+            <div className="relative mt-2 grid gap-3 sm:mt-4 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-start sm:gap-6 lg:mt-6 xl:grid-cols-[minmax(0,1fr)_170px] xl:gap-10">
               <figure className="relative mx-auto sm:order-last sm:mx-0">
                 {message.photo ? (
                   <img
                     src={message.photo}
                     alt={name}
-                    className="h-[120px] w-[100px] rounded-t-[3.5rem] rounded-b-xl border-[3px] border-white object-cover shadow-lift sm:h-[180px] sm:w-[150px] sm:rounded-t-[4.5rem] sm:rounded-b-2xl sm:border-4"
+                    className="h-[120px] w-[100px] rounded-t-[3.5rem] rounded-b-xl border-[3px] border-white object-cover shadow-lift sm:h-[180px] sm:w-[150px] sm:rounded-t-[4.5rem] sm:rounded-b-2xl sm:border-4 xl:h-[204px] xl:w-[170px] xl:rounded-t-[5rem]"
                   />
                 ) : (
-                  <div className="grid h-[120px] w-[100px] place-items-center rounded-t-[3.5rem] rounded-b-xl border-[3px] border-white bg-plum-100 text-plum-300 shadow-lift sm:h-[180px] sm:w-[150px] sm:rounded-t-[4.5rem] sm:rounded-b-2xl sm:border-4">
+                  <div className="grid h-[120px] w-[100px] place-items-center rounded-t-[3.5rem] rounded-b-xl border-[3px] border-white bg-plum-100 text-plum-300 shadow-lift sm:h-[180px] sm:w-[150px] sm:rounded-t-[4.5rem] sm:rounded-b-2xl sm:border-4 xl:h-[204px] xl:w-[170px] xl:rounded-t-[5rem]">
                     <Users size={36} />
                   </div>
                 )}
                 {name && (
-                  <figcaption className="mt-1.5 text-center sm:mt-2.5">
-                    <span className="block type-title text-plum-800"><GradientText>{name}</GradientText></span>
-                    {designation && <span className="block type-meta text-ink-muted">{designation}</span>}
+                  <figcaption className="mt-1.5 text-center sm:mt-3">
+                    <span className="block type-title-lg text-plum-800"><GradientText>{name}</GradientText></span>
+                    {designation && <span className="mt-0.5 block type-caption text-ink-muted">{designation}</span>}
                   </figcaption>
                 )}
               </figure>
 
               <div className="relative min-w-0">
-                <span className="pointer-events-none absolute -start-1 -top-2 font-display text-[2.4rem] leading-none text-magenta-200 sm:-top-3 sm:text-[3.2rem]">
+                <span className="pointer-events-none absolute -start-1 -top-2 font-display text-[2.4rem] leading-none text-magenta-200 sm:-top-3 sm:text-[3.2rem] lg:-start-2 lg:-top-4 lg:text-[4.25rem]">
                   &ldquo;
                 </span>
                 {heading !== label && (
-                  <h2 className="responsive-copy relative ps-6 type-heading-sm text-magenta-500 sm:ps-7">
+                  <h2 className="responsive-copy relative ps-6 type-heading-sm text-magenta-500 sm:ps-7 lg:ps-10">
                     <GradientText>{heading}</GradientText>
                   </h2>
                 )}
@@ -615,7 +616,7 @@ function PresidentAndEvents({ message, events }: { message: PresidentMessage | n
 
         {events.length > 0 && (
           <div
-            className={`relative min-w-0 p-3.5 sm:p-6 md:p-8 ${
+            className={`relative min-w-0 p-3.5 sm:p-6 md:p-8 lg:px-7 xl:px-8 ${
               message ? 'border-t border-magenta-100/80 lg:border-s lg:border-t-0' : ''
             }`}
           >
@@ -660,9 +661,9 @@ function MessagePreview({ html, label }: { html: string; label: string }) {
       <div
         ref={ref}
         id={id}
-        className={`prose-content type-body-sm relative mt-1.5 scroll-mt-24 ps-6 leading-[1.7] sm:mt-2 sm:ps-7 sm:leading-[1.85] ${
-          expanded ? '' : 'max-h-[9rem] overflow-hidden sm:max-h-[12.5rem]'
-        } ${cut && !expanded ? '[mask-image:linear-gradient(to_bottom,black_75%,transparent)]' : ''}`}
+        className={`prose-content type-body-lg relative mt-1.5 scroll-mt-24 ps-6 leading-[1.7] sm:mt-2 sm:ps-7 sm:leading-[1.85] lg:ps-10 ${
+          expanded ? '' : 'max-h-[9.5rem] overflow-hidden sm:max-h-[14rem] lg:max-h-[17.5rem]'
+        } ${cut && !expanded ? '[mask-image:linear-gradient(to_bottom,black_80%,transparent)]' : ''}`}
         dangerouslySetInnerHTML={{ __html: html }}
       />
       {cut && (
@@ -672,10 +673,10 @@ function MessagePreview({ html, label }: { html: string; label: string }) {
           aria-expanded={expanded}
           aria-controls={id}
           aria-label={`${h(expanded ? 'readLess' : 'readMore')}: ${label}`}
-          className="relative ms-6 mt-2 inline-flex items-center gap-1 rounded py-1 type-caption font-semibold text-magenta-600 transition hover:text-magenta-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 sm:ms-7 sm:mt-3"
+          className="relative ms-6 mt-3 inline-flex items-center gap-1.5 rounded-full border border-magenta-200 bg-white/70 px-4 py-1.5 type-caption font-semibold text-magenta-600 shadow-soft transition hover:border-magenta-300 hover:bg-white hover:text-magenta-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 sm:ms-7 sm:mt-4 sm:px-5 sm:py-2 lg:ms-10 lg:mt-5"
         >
           {h(expanded ? 'readLess' : 'readMore')}
-          <ChevronDown size={14} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          <ChevronDown size={15} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
         </button>
       )}
     </>
@@ -689,22 +690,62 @@ const SHIPPED_EVENTS_HEADINGS = new Set(['Upcoming Events', 'വരാനിര�
 /* Event posters (Event Poster in the admin), one at a time: the poster is shown whole in
    a 3:4 frame with nothing beneath it, and links to the event page for the details. The
    backend sends upcoming events first (soonest first) and then the most recent past
-   ones, so the first poster is the next event; the arrows step through the others. */
+   ones, so the first poster is the next event; the posters advance on their own every
+   few seconds (looping), and the arrows or a swipe step through them too. A poster with
+   its own link opens that link in a new tab instead (EventPosterLink). A mouse over
+   the column or keyboard focus inside it pauses the rotation, and prefers-reduced-motion
+   turns it off. */
+const EVENT_POSTER_INTERVAL = 4500;
+
 function EventPosters({ events }: { events: OrgEvent[] }) {
   const { lang, path, s, h, section } = useSite();
   const heading = section('homeEvents', { heading: h('events') });
   const title = SHIPPED_EVENTS_HEADINGS.has(heading.heading) ? h('events') : heading.heading;
   const [index, setIndex] = useState(0);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const touchXRef = useRef<number | null>(null);
+  const count = events.length;
   // A reloaded list may be shorter than the poster last shown
-  const current = Math.min(index, events.length - 1);
+  const current = Math.min(index, count - 1);
   const event = events[current];
   const name = t(event.title, lang);
 
-  const step = (dir: 1 | -1) => setIndex((current + dir + events.length) % events.length);
+  const step = (dir: 1 | -1) => setIndex((current + dir + count) % count);
+
+  // Auto-advance; the timer restarts on every move, so a poster stepped to by hand gets its full time
+  useEffect(() => {
+    if (count < 2 || hovered || focused) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const id = window.setTimeout(() => setIndex((i) => (Math.min(i, count - 1) + 1) % count), EVENT_POSTER_INTERVAL);
+    return () => window.clearTimeout(id);
+  }, [current, count, hovered, focused]);
+
+  // Fetch the next poster ahead of time so it fades in whole rather than loading in view
+  useEffect(() => {
+    if (count < 2) return;
+    const next = events[(current + 1) % count];
+    new window.Image().src = next.posterImage || next.coverImage || '';
+  }, [current, count, events]);
 
   return (
-    <div className="flex min-w-0 flex-col">
-      <div className="flex min-w-0 items-center justify-between gap-3">
+    <div
+      className="flex min-w-0 flex-col"
+      onPointerEnter={(e) => e.pointerType === 'mouse' && setHovered(true)}
+      onPointerLeave={(e) => e.pointerType === 'mouse' && setHovered(false)}
+      onFocus={(e) => setFocused((e.target as HTMLElement).matches(':focus-visible'))}
+      onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setFocused(false)}
+      onTouchStart={(e) => (touchXRef.current = e.touches[0].clientX)}
+      onTouchEnd={(e) => {
+        const start = touchXRef.current;
+        touchXRef.current = null;
+        if (start === null || count < 2) return;
+        const dx = e.changedTouches[0].clientX - start;
+        if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1);
+      }}
+    >
+      {/* Wraps rather than clipping View All when a long heading meets a narrow column */}
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <Eyebrow logo={heading.logo}>{title}</Eyebrow>
         <div className="flex shrink-0 items-center gap-3">
           {events.length > 1 && <RailArrows onPrev={() => step(-1)} onNext={() => step(1)} />}
@@ -718,12 +759,13 @@ function EventPosters({ events }: { events: OrgEvent[] }) {
         </div>
       </div>
 
-      {/* key: the fade replays for each poster */}
-      <Link
+      {/* key: the fade replays for each poster. Phones: the poster fills the column width;
+          from sm up the column is wide (or beside the message), so the poster is capped */}
+      <EventPosterLink
         key={event._id}
-        to={path(`/events/${event.slug}`)}
-        aria-label={name}
-        className="group mx-auto mt-3 block w-full max-w-[200px] animate-fade-in rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-magenta-400 sm:mt-4 sm:max-w-[240px]"
+        event={event}
+        aria-label={name || title}
+        className="group mx-auto mt-3 block w-full rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-magenta-400 motion-safe:animate-fade-in sm:mt-4 sm:max-w-[250px] lg:mt-6 lg:max-w-[270px]"
       >
         {/* object-contain: the poster is shown whole, never cropped or stretched */}
         <span className="relative block aspect-[3/4] w-full overflow-hidden rounded-xl border border-plum-100/80 bg-white shadow-soft">
@@ -735,7 +777,7 @@ function EventPosters({ events }: { events: OrgEvent[] }) {
             className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
           />
         </span>
-      </Link>
+      </EventPosterLink>
     </div>
   );
 }
@@ -794,211 +836,137 @@ function RailArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => void
   );
 }
 
-/* Home carousels (Videos): cards in view on desktop, the
-   repeated cards that make the loop seamless, and time per step in ms. */
-const CAROUSEL_PER_VIEW = 3;
-const CAROUSEL_INTERVAL = 4500;
-
-/* Stagger for cards popping up as a carousel first scrolls into view (static class
-   names so Tailwind generates them) */
-const POP_DELAYS = ['[animation-delay:0ms]', '[animation-delay:110ms]', '[animation-delay:220ms]', '[animation-delay:330ms]', '[animation-delay:440ms]'];
-
-/** What a carousel card needs: its sizing classes, and whether it is a loop copy. */
-type CarouselSlot = { className: string; clone: boolean };
+/* News shows at most this many posts, newest first. */
+const NEWS_COUNT = 4;
+/* Phones page through this many posts, two at a time. */
+const NEWS_MOBILE_COUNT = 6;
+const NEWS_PAGE_SIZE = 2;
 
 /**
- * A row of cards that loops seamlessly (the first cards are repeated after the last,
- * and the row snaps back to the start once they are in view). With `autoPlay` it also
- * slides one card along every few seconds; hover pauses that, and
- * prefers-reduced-motion turns it off. From sm it shows `tabletPerView` cards, from
- * lg three; phones keep a native swipe row, and a swipe on tablets moves the row.
+ * One news card. `compact` is the phone layout: two cards share the row, so the
+ * image is taller and the excerpt is dropped to keep the pair aligned.
  */
-function AutoCarousel<T>({
+function NewsCard({ post, compact = false }: { post: MediaPost; compact?: boolean }) {
+  const { lang, path, h } = useSite();
+  return (
+    <Link
+      to={path(`/media/${post.type}/${post.slug}`)}
+      className="card-hover group flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft"
+    >
+      <span className={`block overflow-hidden bg-magenta-50 ${compact ? 'aspect-[4/3]' : 'aspect-[16/10]'}`}>
+        {post.coverImage && (
+          <img
+            src={post.coverImage}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        )}
+      </span>
+      <span className={`flex flex-1 flex-col ${compact ? 'p-2' : 'p-3'}`}>
+        <span className="flex items-center gap-1.5 type-meta text-ink-faint">
+          <CalendarDays size={12} className="shrink-0" />
+          <span className="truncate">{formatDate(post.publishedAt, lang)}</span>
+        </span>
+        <span
+          className={`line-clamp-3 break-words type-title text-plum-800 transition group-hover:text-magenta-600 ${compact ? 'mt-1' : 'mt-1.5'}`}
+        >
+          <GradientText>{t(post.title, lang)}</GradientText>
+        </span>
+        {!compact && t(post.excerpt, lang) && (
+          <span className="mt-1 line-clamp-2 type-caption leading-relaxed text-ink-muted">
+            {t(post.excerpt, lang)}
+          </span>
+        )}
+        <span
+          className={`mt-auto inline-flex items-center gap-1 type-caption font-medium text-magenta-600 ${compact ? 'pt-1.5' : 'pt-2.5'}`}
+        >
+          {h('readMore')}
+          <ArrowRight size={13} />
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+/**
+ * Phones only (hidden from sm): the items two at a time, side by side, with arrows
+ * and page dots below to step through the rest. It moves only when an arrow is
+ * pressed (no autoplay, no swipe row). The last page starts two from the end, so an
+ * odd count never leaves an empty slot.
+ */
+function PhonePairs<T>({
   items,
-  getKey,
-  renderItem,
-  label,
-  phoneWidth,
-  tabletPerView = 3,
-  autoPlay = true,
-  className = '',
+  itemKey,
+  render,
 }: {
   items: T[];
-  getKey: (item: T) => string;
-  renderItem: (item: T, slot: CarouselSlot) => React.ReactNode;
-  label: string;
-  /** Card width on phones, e.g. `w-[72%]` */
-  phoneWidth: string;
-  tabletPerView?: 2 | 3;
-  /** Slide on its own; when false the row only moves with the arrows, dots or a swipe */
-  autoPlay?: boolean;
-  className?: string;
+  itemKey: (item: T) => string;
+  render: (item: T) => React.ReactNode;
 }) {
-  const count = items.length;
-  const canSlide = count > CAROUSEL_PER_VIEW;
-  const slides = canSlide ? [...items, ...items.slice(0, CAROUSEL_PER_VIEW)] : items;
-  const [index, setIndex] = useState(0);
-  const [animate, setAnimate] = useState(true);
-  const [hovered, setHovered] = useState(false);
-  /* Set by "previous" at the first card: jump to the repeated set, then step back. */
-  const stepBackRef = useRef(false);
-  const touchXRef = useRef<number | null>(null);
-  /* Cards pop up (fade + rise + slight overshoot) one after another on first view */
-  const rootRef = useRef<HTMLDivElement>(null);
-  const [shown, setShown] = useState(false);
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setShown(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.2 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  const next = () => {
-    setAnimate(true);
-    setIndex((i) => Math.min(i + 1, count));
-  };
-  const prev = () => {
-    if (index === 0) {
-      stepBackRef.current = true;
-      setAnimate(false);
-      setIndex(count);
-    } else {
-      setAnimate(true);
-      setIndex((i) => i - 1);
-    }
-  };
-
-  // Auto-advance; the timer restarts on every move so each set gets its full time
-  useEffect(() => {
-    if (!autoPlay || !canSlide || hovered) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const id = window.setTimeout(next, CAROUSEL_INTERVAL);
-    return () => window.clearTimeout(id);
-  }, [index, hovered, canSlide, autoPlay]);
-
-  // After an instant (unanimated) jump, turn the transition back on next frame
-  useEffect(() => {
-    if (animate) return;
-    let raf = requestAnimationFrame(() => {
-      raf = requestAnimationFrame(() => {
-        setAnimate(true);
-        if (stepBackRef.current) {
-          stepBackRef.current = false;
-          setIndex(count - 1);
-        }
-      });
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [animate, count]);
-
-  // Cards per view as a CSS variable; a row that cannot slide shows all its cards,
-  // so two cards share the row half and half
-  const perView = canSlide
-    ? tabletPerView === 2
-      ? 'sm:[--per:2] lg:[--per:3]'
-      : ''
-    : count === 2
-      ? 'sm:[--per:2]'
-      : '';
-  const slotClass = `${phoneWidth} shrink-0 snap-start sm:w-[calc((100%_-_(var(--per)_-_1)_*_1rem)_/_var(--per))]`;
+  const { s } = useSite();
+  const [page, setPage] = useState(0);
+  const pages = Math.ceil(items.length / NEWS_PAGE_SIZE);
+  // A reloaded list may be shorter than the page last shown
+  const current = Math.min(page, Math.max(0, pages - 1));
+  const start = Math.min(current * NEWS_PAGE_SIZE, Math.max(0, items.length - NEWS_PAGE_SIZE));
+  const shown = items.slice(start, start + NEWS_PAGE_SIZE);
+  const arrow =
+    'grid h-9 w-9 place-items-center rounded-full border border-plum-100 bg-white text-plum-800 shadow-soft transition hover:border-magenta-200 hover:text-magenta-600 disabled:pointer-events-none disabled:opacity-40';
 
   return (
-    <div
-      ref={rootRef}
-      className={`flex min-w-0 flex-col ${className}`}
-      onPointerEnter={(e) => e.pointerType === 'mouse' && setHovered(true)}
-      onPointerLeave={(e) => e.pointerType === 'mouse' && setHovered(false)}
-      onTouchStart={(e) => (touchXRef.current = e.touches[0].clientX)}
-      onTouchEnd={(e) => {
-        // Swipe on tablets (the sliding row); phones scroll the row natively instead
-        const start = touchXRef.current;
-        touchXRef.current = null;
-        if (start === null || !canSlide || window.innerWidth < 640) return;
-        const dx = e.changedTouches[0].clientX - start;
-        if (Math.abs(dx) > 40) (dx < 0 ? next : prev)();
-      }}
-    >
-      {/* sm+: the viewport clips the row, which is shifted by whole cards
-          (one card + gap = (row width + gap) / cards per view) */}
-      <div className="sm:-my-2 sm:overflow-hidden sm:py-2 lg:flex lg:flex-1 lg:flex-col">
-        <div
-          className={`no-scrollbar -mx-3 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-3 pb-1 [--per:3] sm:mx-0 sm:snap-none sm:gap-4 sm:overflow-visible sm:px-0 sm:[transform:translate3d(calc(var(--slide)_*_-1_*_(100%_+_1rem)_/_var(--per)),0,0)] lg:flex-1 ${perView} ${
-            animate ? 'sm:transition-transform sm:duration-700 sm:ease-[cubic-bezier(0.22,1,0.36,1)]' : ''
-          }`}
-          style={{ '--slide': index } as React.CSSProperties}
-          onTransitionEnd={(e) => {
-            if (e.target !== e.currentTarget || index < count) return;
-            // The repeated first set is in view: snap back to the real one, unanimated
-            setAnimate(false);
-            setIndex(0);
-          }}
-        >
-          {slides.map((item, i) => {
-            const clone = i >= count;
-            return (
-              <Fragment key={`${getKey(item)}-${i}`}>
-                {renderItem(item, {
-                  clone,
-                  className: `${slotClass} ${clone ? 'max-sm:hidden' : ''} ${
-                    shown ? `animate-pop-up ${POP_DELAYS[Math.min(i, POP_DELAYS.length - 1)]}` : 'opacity-0'
-                  }`,
-                })}
-              </Fragment>
-            );
-          })}
-        </div>
-      </div>
-
-      {canSlide && (
-        <div className="mt-3 hidden items-center justify-between gap-3 sm:flex">
-          <div className="flex items-center gap-1.5">
-            {items.map((item, i) => (
-              <button
-                key={getKey(item)}
-                type="button"
-                onClick={() => {
-                  setAnimate(true);
-                  setIndex(i);
-                }}
-                aria-label={`${label} ${i + 1} of ${count}`}
-                aria-current={index % count === i}
-                className="grid h-5 place-items-center"
-              >
-                <span
-                  className={`block h-1.5 rounded-full transition-all duration-500 ${
-                    index % count === i ? 'w-5 bg-magenta-500' : 'w-1.5 bg-plum-200 hover:bg-plum-300'
-                  }`}
-                />
-              </button>
-            ))}
+    <div className="sm:hidden">
+      {/* key replays the fade on each page */}
+      <div key={current} className="grid grid-cols-2 gap-2.5 motion-safe:animate-fade-in">
+        {shown.map((item) => (
+          <div key={itemKey(item)} className="min-w-0">
+            {render(item)}
           </div>
-          <RailArrows onPrev={prev} onNext={next} />
+        ))}
+      </div>
+      {pages > 1 && (
+        <div className="mt-3 flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setPage(current - 1)}
+            disabled={current === 0}
+            aria-label={s('previous')}
+            className={arrow}
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span className="flex items-center gap-1.5" aria-hidden="true">
+            {Array.from({ length: pages }, (_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 rounded-full transition-all ${i === current ? 'w-4 bg-magenta-500' : 'w-1.5 bg-plum-100'}`}
+              />
+            ))}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage(current + 1)}
+            disabled={current === pages - 1}
+            aria-label={s('next')}
+            className={arrow}
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
       )}
     </div>
   );
 }
 
-/* News shows at most this many posts, newest first. */
-const NEWS_COUNT = 4;
-
 /**
- * News: the most recent posts as cards — a swipe row on phones, two across on
- * tablets, one row of up to four on desktop.
+ * News: the most recent posts as cards. Phones show two at a time (PhonePairs);
+ * tablets show two across, desktop one row of up to four.
  */
 function NewsBand({ posts }: { posts: MediaPost[] }) {
-  const { lang, path, s, h } = useSite();
+  const { path, s, h } = useSite();
   const time = (post: MediaPost) => new Date(post.publishedAt).getTime() || 0;
-  const latest = [...posts].sort((a, b) => time(b) - time(a)).slice(0, NEWS_COUNT);
+  const sorted = [...posts].sort((a, b) => time(b) - time(a));
+  const latest = sorted.slice(0, NEWS_COUNT);
   const desktopCols = latest.length >= 4 ? 'lg:grid-cols-4' : latest.length === 3 ? 'lg:grid-cols-3' : '';
 
   return (
@@ -1013,88 +981,101 @@ function NewsBand({ posts }: { posts: MediaPost[] }) {
       {latest.length === 0 ? (
         <p className="py-5 text-center type-body-sm text-ink-faint sm:py-8">{s('nothingHere')}</p>
       ) : (
-        <div
-          className={`no-scrollbar -mx-3 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-3 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 ${desktopCols}`}
-        >
-          {latest.map((post, i) => (
-            <Reveal key={post._id} delay={Math.min(i, 4) * 80} className="w-[68%] shrink-0 snap-start sm:w-auto">
-              <Link
-                to={path(`/media/${post.type}/${post.slug}`)}
-                className="card-hover group flex h-full flex-col overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft"
-              >
-                <span className="block aspect-[16/9] overflow-hidden bg-magenta-50 sm:aspect-[16/10]">
-                  {post.coverImage && (
-                    <img
-                      src={post.coverImage}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  )}
-                </span>
-                <span className="flex flex-1 flex-col p-2.5 sm:p-3">
-                  <span className="flex items-center gap-1.5 type-meta text-ink-faint">
-                    <CalendarDays size={12} />
-                    {formatDate(post.publishedAt, lang)}
-                  </span>
-                  <span className="mt-1 line-clamp-3 type-title text-plum-800 transition group-hover:text-magenta-600 sm:mt-1.5">
-                    <GradientText>{t(post.title, lang)}</GradientText>
-                  </span>
-                  {t(post.excerpt, lang) && (
-                    <span className="mt-0.5 line-clamp-2 type-caption leading-relaxed text-ink-muted sm:mt-1">
-                      {t(post.excerpt, lang)}
-                    </span>
-                  )}
-                  <span className="mt-auto inline-flex items-center gap-1 pt-1.5 type-caption font-medium text-magenta-600 sm:pt-2.5">
-                    {h('readMore')}
-                    <ArrowRight size={13} />
-                  </span>
-                </span>
-              </Link>
-            </Reveal>
-          ))}
-        </div>
+        <>
+          <PhonePairs
+            items={sorted.slice(0, NEWS_MOBILE_COUNT)}
+            itemKey={(post) => post._id}
+            render={(post) => <NewsCard post={post} compact />}
+          />
+          <div className={`hidden gap-4 sm:grid sm:grid-cols-2 ${desktopCols}`}>
+            {latest.map((post, i) => (
+              <Reveal key={post._id} delay={Math.min(i, 4) * 80} className="min-w-0">
+                <NewsCard post={post} />
+              </Reveal>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
 }
 
-function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoItem) => void }) {
-  const { lang, path, s, h } = useSite();
-  /** `inCard`: flush top of a card, so the card supplies the corners and shadow */
-  const thumb = (v: VideoItem, big = false, inCard = false) => (
-    <span className={`relative block aspect-video overflow-hidden bg-plum-900 ${inCard ? '' : 'rounded-xl shadow-soft'}`}>
-      {(v.thumbnailUrl || youtubeThumb(v.youtubeUrl)) && (
-        <img
-          src={v.thumbnailUrl || youtubeThumb(v.youtubeUrl)}
-          alt=""
-          loading="lazy"
-          /* A broken custom thumbnail falls back to YouTube's own, then to the plain panel */
-          onError={(e) => {
-            const img = e.currentTarget;
-            const fallback = youtubeThumb(v.youtubeUrl);
-            if (fallback && img.src !== fallback) img.src = fallback;
-            else img.style.display = 'none';
-          }}
-          className="h-full w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-105"
-        />
-      )}
-      <span className="absolute inset-0 z-10 grid place-items-center">
-        <span
-          className={`grid place-items-center rounded-full bg-white/95 text-magenta-500 shadow-lift transition group-hover:scale-110 ${
-            big ? 'h-9 w-9 sm:h-12 sm:w-12' : 'h-8 w-8 sm:h-10 sm:w-10'
-          }`}
-        >
-          <Play size={big ? 19 : 16} className="ms-0.5" fill="currentColor" />
+/**
+ * One video card: the thumbnail (play button, duration) over the date and title; a
+ * click plays it in the shared modal. `compact` is the phone layout, two cards to a
+ * row: smaller play button, padding and date.
+ */
+function VideoTile({ v, onPlay, compact = false }: { v: VideoItem; onPlay: (v: VideoItem) => void; compact?: boolean }) {
+  const { lang } = useSite();
+  const src = v.thumbnailUrl || youtubeThumb(v.youtubeUrl);
+  return (
+    <button
+      type="button"
+      onClick={() => onPlay(v)}
+      aria-label={t(v.title, lang)}
+      className={`card-hover group flex h-full w-full flex-col overflow-hidden border border-plum-100/70 bg-white text-start shadow-soft ${
+        compact ? 'rounded-xl' : 'rounded-2xl'
+      }`}
+    >
+      <span className="relative block aspect-video overflow-hidden bg-plum-900">
+        {src && (
+          <img
+            src={src}
+            alt=""
+            loading="lazy"
+            /* A broken custom thumbnail falls back to YouTube's own, then to the plain panel */
+            onError={(e) => {
+              const img = e.currentTarget;
+              const fallback = youtubeThumb(v.youtubeUrl);
+              if (fallback && img.src !== fallback) img.src = fallback;
+              else img.style.display = 'none';
+            }}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        )}
+        <span className="absolute inset-0 z-10 grid place-items-center">
+          <span
+            className={`grid place-items-center rounded-full bg-white/95 text-magenta-500 shadow-lift transition group-hover:scale-110 ${
+              compact ? 'h-9 w-9' : 'h-12 w-12 sm:h-14 sm:w-14'
+            }`}
+          >
+            <Play size={compact ? 15 : 20} className="ms-0.5" fill="currentColor" />
+          </span>
+        </span>
+        {v.durationLabel && (
+          <span
+            className={`absolute z-10 rounded-md bg-ink/80 type-meta font-medium text-white ${
+              compact ? 'bottom-1 end-1 px-1 py-px' : 'bottom-2 end-2 px-1.5 py-0.5 sm:bottom-3 sm:end-3 sm:px-2'
+            }`}
+          >
+            {v.durationLabel}
+          </span>
+        )}
+      </span>
+      <span className={`flex flex-1 flex-col ${compact ? 'p-2' : 'p-4 sm:p-5'}`}>
+        {v.publishedAt && (
+          <span
+            className={`block type-meta font-medium uppercase text-magenta-600 ${
+              compact ? 'mb-1 truncate tracking-normal' : 'mb-1.5 tracking-wider'
+            }`}
+          >
+            {formatDate(v.publishedAt, lang)}
+          </span>
+        )}
+        <span className="line-clamp-2 block break-words type-title text-plum-800 transition group-hover:text-magenta-600">
+          <GradientText>{t(v.title, lang)}</GradientText>
         </span>
       </span>
-      {v.durationLabel && (
-        <span className="absolute bottom-1.5 end-1.5 z-10 rounded-md bg-ink/80 px-1.5 py-0.5 type-meta font-medium text-white sm:bottom-2 sm:end-2">
-          {v.durationLabel}
-        </span>
-      )}
-    </span>
+    </button>
   );
+}
+
+/**
+ * Videos: the latest videos (the API sends the newest three) as cards: two at a time
+ * on phones (PhonePairs), two across on tablets, three on desktop.
+ */
+function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoItem) => void }) {
+  const { path, s, h } = useSite();
 
   return (
     <div>
@@ -1104,73 +1085,14 @@ function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoIt
         actionLabel={s('viewMoreVideos')}
         to={path('/media/videos')}
       />
-      {videos.length > 1 ? (
-        /* The latest videos as large cards in one row (they slide along if more are
-           ever loaded); about one card at a time in a swipe row on phones. */
-        <AutoCarousel
-          items={videos}
-          getKey={(v) => v._id}
-          label="Video"
-          phoneWidth="w-[80%]"
-          tabletPerView={2}
-          renderItem={(v, { className, clone }) => (
-            <button
-              type="button"
-              onClick={() => onPlay(v)}
-              aria-hidden={clone || undefined}
-              tabIndex={clone ? -1 : undefined}
-              className={`card-hover group flex flex-col overflow-hidden rounded-xl border border-plum-100 bg-white text-start shadow-soft ${className}`}
-            >
-              {thumb(v, true, true)}
-              <span className="flex flex-1 flex-col p-3 sm:p-4">
-                <span className="line-clamp-2 block type-title text-plum-800 transition group-hover:text-magenta-600">
-                  <GradientText>{t(v.title, lang)}</GradientText>
-                </span>
-                {t(v.description, lang) && (
-                  <span className="mt-1 line-clamp-2 block type-caption leading-relaxed text-ink-muted sm:mt-1.5">
-                    {t(v.description, lang)}
-                  </span>
-                )}
-                <span className="mt-auto flex items-center justify-between gap-2 pt-2 sm:pt-3">
-                  <span className="inline-flex items-center gap-1 type-caption font-medium text-magenta-600">
-                    {s('watchVideo')}
-                    <ArrowRight size={13} />
-                  </span>
-                  {v.publishedAt && (
-                    <span className="flex items-center gap-1 type-meta text-ink-faint">
-                      <CalendarDays size={11} />
-                      {formatDate(v.publishedAt, lang)}
-                    </span>
-                  )}
-                </span>
-              </span>
-            </button>
-          )}
-        />
-      ) : (
-        <button
-          onClick={() => onPlay(videos[0])}
-          className="group grid w-full items-center gap-3 text-start sm:grid-cols-[minmax(0,320px)_1fr] sm:gap-4 md:gap-6"
-        >
-          {thumb(videos[0], true)}
-          <span className="min-w-0">
-            <span className="block type-title-lg text-plum-800 transition group-hover:text-magenta-600">
-              <GradientText>{t(videos[0].title, lang)}</GradientText>
-            </span>
-            {t(videos[0].description, lang) && (
-              <span className="mt-1 line-clamp-3 block type-caption leading-relaxed text-ink-muted sm:mt-1.5">
-                {t(videos[0].description, lang)}
-              </span>
-            )}
-            {videos[0].publishedAt && (
-              <span className="mt-2 flex items-center gap-1.5 type-meta text-ink-faint">
-                <CalendarDays size={12} />
-                {formatDate(videos[0].publishedAt, lang)}
-              </span>
-            )}
-          </span>
-        </button>
-      )}
+      <PhonePairs items={videos} itemKey={(v) => v._id} render={(v) => <VideoTile v={v} onPlay={onPlay} compact />} />
+      <div className="hidden gap-4 sm:grid sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
+        {videos.map((v, i) => (
+          <Reveal key={v._id} delay={Math.min(i, 4) * 80} className="min-w-0">
+            <VideoTile v={v} onPlay={onPlay} />
+          </Reveal>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1247,9 +1169,10 @@ function PhotoGallery({ photos }: { photos: MediaItem[] }) {
                       tabIndex={hidden ? -1 : undefined}
                       draggable={false}
                       aria-label={caption || `${h('photoGallery')} ${index + 1}`}
-                      /* 3:2 like event photos; pops in (fade + slight scale) on first view.
-                         On desktop five tiles fill the strip: a fifth of its width each, less the gap. */
-                      className={`group relative block aspect-[3/2] h-28 overflow-hidden rounded-lg bg-plum-50 shadow-soft transition duration-700 ease-out motion-reduce:transition-none sm:h-52 sm:rounded-xl lg:h-auto lg:w-[calc(20cqw-1rem)] ${
+                      /* 3:2 like event photos; pops in (fade + slight scale) on first view. Phones
+                         show two tiles across the strip (half its width each, less the gap); on
+                         desktop five fill it: a fifth of its width each, less the gap. */
+                      className={`group relative block aspect-[3/2] w-[calc(50cqw-0.25rem)] overflow-hidden rounded-lg bg-plum-50 shadow-soft transition duration-700 ease-out motion-reduce:transition-none sm:h-52 sm:w-auto sm:rounded-xl lg:h-auto lg:w-[calc(20cqw-1rem)] ${
                         shown ? 'scale-100 opacity-100' : 'scale-[0.92] opacity-0'
                       }`}
                       style={{ transitionDelay: shown ? `${Math.min(order, 8) * 80}ms` : undefined }}

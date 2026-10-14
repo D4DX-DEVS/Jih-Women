@@ -7,6 +7,27 @@ import { renderField } from './fields';
 import { PAGE_TITLE_FIELDS, SECTION_GROUPS } from './SiteContentFields';
 import type { Doc, FieldDef } from './fields';
 
+const isPlainObject = (value: unknown): value is Doc =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * The fields that differ between the settings as loaded and as edited, keyed by dotted
+ * path (e.g. `sections.focusAreas`); arrays and other values are compared whole. Save
+ * sends only these, so switches stored on the same settings by other screens (such as
+ * the Downloads switch on the Downloads screen) are never put back to the values this
+ * form happened to load.
+ */
+function changedFields(before: Doc, after: Doc, prefix = '', out: Doc = {}): Doc {
+  for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
+    const path = prefix ? `${prefix}.${key}` : key;
+    const a = before[key];
+    const b = after[key];
+    if (isPlainObject(a) && isPlainObject(b)) changedFields(a, b, path, out);
+    else if (JSON.stringify(a) !== JSON.stringify(b)) out[path] = b;
+  }
+  return out;
+}
+
 const IDENTITY_FIELDS: FieldDef[] = [
   { kind: 'localized', path: 'siteName', label: 'Organisation name', required: true },
   { kind: 'localized', path: 'tagline', label: 'Tagline', multiline: true, rows: 2 },
@@ -103,6 +124,7 @@ const SECTION_FIELDS: FieldDef[] = [
   { kind: 'toggle', path: 'sections.publications', label: 'Publications' },
   { kind: 'toggle', path: 'sections.contact', label: 'Contact section' },
   { kind: 'toggle', path: 'sections.newsletter', label: 'Newsletter signup (footer)' },
+  { kind: 'toggle', path: 'sections.downloads', label: 'Downloads link in the menu' },
 ];
 
 type Props = {
@@ -115,6 +137,8 @@ type Props = {
 
 export default function SiteSettingsManager({ view = 'settings', token, onToast, onLogout }: Props) {
   const [doc, setDoc] = useState<Doc | null>(null);
+  // The settings as last loaded or saved; Save sends only what differs from these
+  const [saved, setSaved] = useState<Doc | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -123,6 +147,7 @@ export default function SiteSettingsManager({ view = 'settings', token, onToast,
     try {
       const data = await apiJson<Doc>('/api/admin/cms/site-settings', { token });
       setDoc(data);
+      setSaved(data);
     } catch (err) {
       if (isAuthError(err)) return onLogout();
       onToast(describeError(err, 'Failed to load settings'), 'error');
@@ -136,10 +161,11 @@ export default function SiteSettingsManager({ view = 'settings', token, onToast,
   }, [load]);
 
   const save = async () => {
-    if (!doc) return;
+    if (!doc || !saved) return;
     setSaving(true);
     try {
-      const payload = { ...doc };
+      // Nothing changed sends an empty patch, which simply returns the stored settings
+      const payload = changedFields(saved, doc);
       delete payload._id;
       delete payload.createdAt;
       delete payload.updatedAt;
@@ -150,6 +176,7 @@ export default function SiteSettingsManager({ view = 'settings', token, onToast,
         token,
       });
       setDoc(data);
+      setSaved(data);
       onToast(view === 'content' ? 'Titles and headings saved' : 'Site settings saved');
     } catch (err) {
       if (isAuthError(err)) return onLogout();

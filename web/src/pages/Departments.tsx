@@ -55,7 +55,7 @@ export function DepartmentsIndex() {
           ) : (
             <>
               <ViewToggle />
-              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+              <div className={`grid gap-2.5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 {data.items.map((d) => (
                   <DepartmentCard key={d._id} department={d} view={view} />
                 ))}

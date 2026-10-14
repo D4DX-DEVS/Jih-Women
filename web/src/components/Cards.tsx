@@ -15,6 +15,7 @@ import {
 import { useSite } from '../lib/site';
 import type { ViewMode } from '../lib/view';
 import { t } from '../lib/i18n';
+import { leaderTermSummary } from '../lib/leaders';
 import {
   formatBytes,
   formatDate,
@@ -64,7 +65,7 @@ export function PostCard({
   compact?: boolean;
   /** Tablet and desktop only: tighter padding and type, for a four-across listing */
   small?: boolean;
-  /** Phones only (see useViewMode): `card` is a small tile for a three-up grid, `list` a compact row */
+  /** Phones only (see useViewMode): `card` is a small tile for a two-up grid, `list` a compact row */
   view?: ViewMode;
 }) {
   const { lang, path, h } = useSite();
@@ -119,7 +120,7 @@ export function PostCard({
       )}
       <div
         className={`flex min-w-0 flex-1 flex-col sm:justify-start ${small ? 'sm:p-3.5' : 'sm:p-5'} ${
-          row ? 'justify-center p-2.5' : 'p-1.5'
+          row ? 'justify-center p-2.5' : 'p-2'
         }`}
       >
         {/* Dates read in English on every card; the title and preview stay in the site language */}
@@ -239,6 +240,36 @@ function isPastEvent(event: OrgEvent) {
 }
 
 /**
+ * Where a click on an event poster goes: the poster's own link (set in the admin) in a new
+ * tab when it has one, otherwise the event page. Only http(s) links are followed.
+ */
+export function EventPosterLink({
+  event,
+  className = '',
+  children,
+  ...rest
+}: {
+  event: OrgEvent;
+  className?: string;
+  children?: ReactNode;
+  'aria-label'?: string;
+}) {
+  const { path } = useSite();
+  if (isExternalUrl(event.externalUrl)) {
+    return (
+      <a href={event.externalUrl} target="_blank" rel="noopener noreferrer" className={className} {...rest}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link to={path(`/events/${event.slug}`)} className={className} {...rest}>
+      {children}
+    </Link>
+  );
+}
+
+/**
  * One event on the Events page: its poster alone, shown whole in a 3:4 frame with the date
  * badge on it and nothing beneath. The whole card links to the event page, which carries
  * the details and the registration. `className` is the card's share of a row.
@@ -262,15 +293,17 @@ export function EventCard({
   const src = event.posterImage || event.coverImage;
   const to = path(`/events/${event.slug}`);
 
+  const dateRange = formatDateRange(event.startDate, event.endDate, lang);
+
   if (view !== 'list') {
     return (
-      <Link
-        to={to}
-        aria-label={`${name}, ${formatDateRange(event.startDate, event.endDate, lang)}`}
+      <EventPosterLink
+        event={event}
+        aria-label={name ? `${name}, ${dateRange}` : dateRange}
         className={`card-hover group block min-w-0 overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 sm:rounded-2xl ${className}`}
       >
         <EventPoster key={src} src={src} alt={name} day={day} month={month} title={name} className="aspect-[3/4] w-full" />
-      </Link>
+      </EventPosterLink>
     );
   }
 
@@ -295,19 +328,28 @@ export function EventCard({
       />
 
       <div className="flex min-w-0 flex-1 flex-col py-0.5 pe-1">
-        <h3 className="type-title-lg text-plum-800 transition group-hover:text-magenta-600">
-          {/* after:inset-0 stretches this link over the whole card */}
-          <Link to={to} className="outline-none after:absolute after:inset-0 after:content-['']">
-            <span className="line-clamp-2 [overflow-wrap:anywhere]">
-              <GradientText>{name}</GradientText>
-            </span>
-          </Link>
-        </h3>
+        {/* after:inset-0 stretches the link over the whole card. An untitled poster has no
+            heading: its link is named by the date instead. */}
+        {name ? (
+          <h3 className="type-title-lg text-plum-800 transition group-hover:text-magenta-600">
+            <EventPosterLink event={event} className="outline-none after:absolute after:inset-0 after:content-['']">
+              <span className="line-clamp-2 [overflow-wrap:anywhere]">
+                <GradientText>{name}</GradientText>
+              </span>
+            </EventPosterLink>
+          </h3>
+        ) : (
+          <EventPosterLink
+            event={event}
+            aria-label={dateRange}
+            className="outline-none after:absolute after:inset-0 after:content-['']"
+          />
+        )}
 
-        <ul className="type-caption mt-1 space-y-0.5 text-ink-muted">
+        <ul className={`type-caption space-y-0.5 text-ink-muted ${name ? 'mt-1' : ''}`}>
           <li className="flex items-start gap-2">
             <Calendar size={14} className="mt-0.5 shrink-0 text-magenta-500" />
-            <span>{formatDateRange(event.startDate, event.endDate, lang)}</span>
+            <span>{dateRange}</span>
           </li>
           {event.timeLabel && (
             <li className="flex items-start gap-2">
@@ -351,7 +393,7 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
   return (
     <Link
       to={path(`/campaigns/${campaign.slug}`)}
-      className="card-hover group relative flex min-h-[170px] flex-col justify-end overflow-hidden rounded-2xl bg-plum-800 p-4 text-white shadow-soft sm:min-h-[220px] sm:rounded-2xl sm:p-5"
+      className="card-hover group relative flex min-h-[150px] flex-col justify-end overflow-hidden rounded-xl bg-plum-800 p-3 text-white shadow-soft sm:min-h-[220px] sm:rounded-2xl sm:p-5"
     >
       {campaign.coverImage && (
         <img
@@ -368,9 +410,9 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
             {campaign.hashtag}
           </span>
         )}
-        <h3 className="type-subheading"><GradientText light>{t(campaign.title, lang)}</GradientText></h3>
+        <h3 className="type-subheading max-sm:type-title-lg"><GradientText light>{t(campaign.title, lang)}</GradientText></h3>
         {t(campaign.summary, lang) && (
-          <p className="mt-1 line-clamp-2 type-body-sm text-white/75 sm:mt-2">{t(campaign.summary, lang)}</p>
+          <p className="mt-1 line-clamp-2 type-body-sm text-white/75 max-sm:type-caption sm:mt-2">{t(campaign.summary, lang)}</p>
         )}
       </div>
     </Link>
@@ -384,7 +426,7 @@ export function DepartmentCard({
   view = 'card',
 }: {
   department: Pick<Department, '_id' | 'slug' | 'title' | 'tagline' | 'coverImage' | 'logoUrl'>;
-  /** Phones only (see useViewMode): `card` is a small tile for a three-up grid, `list` a compact row */
+  /** Phones only (see useViewMode): `card` is a small tile for a two-up grid, `list` a compact row */
   view?: ViewMode;
 }) {
   const { lang, path, s } = useSite();
@@ -409,7 +451,7 @@ export function DepartmentCard({
       ) : (
         <Placeholder className={`sm:aspect-[16/9] ${pic}`} />
       )}
-      <div className={`flex min-w-0 flex-1 flex-col sm:justify-start sm:p-5 ${row ? 'justify-center p-2.5' : 'p-1.5'}`}>
+      <div className={`flex min-w-0 flex-1 flex-col sm:justify-start sm:p-5 ${row ? 'justify-center p-2.5' : 'p-2'}`}>
         {department.logoUrl && (
           <img src={department.logoUrl} alt="" className="mb-3 hidden h-10 w-auto object-contain sm:block" />
         )}
@@ -446,15 +488,14 @@ export function ProgramCard({
   program,
   view = 'card',
 }: {
-  program: Pick<Program, '_id' | 'slug' | 'title' | 'tagline' | 'logoUrl' | 'externalUrl' | 'externalLabel'>;
-  /** Phones only (see useViewMode): `card` is a small tile for a three-up grid, `list` a compact row */
+  program: Pick<Program, '_id' | 'slug' | 'title' | 'tagline' | 'logoUrl'>;
+  /** Phones only (see useViewMode): `card` is a small tile for a two-up grid, `list` a compact row */
   view?: ViewMode;
 }) {
   const { lang, path, s } = useSite();
   const row = view === 'list';
-  // A programme with its own website opens it in a new tab; without one the card goes to
-  // the programme page. Only well-formed http(s) addresses count as a website.
-  const external = isExternalUrl(program.externalUrl);
+  // The card always opens the programme page; a programme's own website is linked
+  // below its content there, never opened straight from the card.
   const cardClass = `card-hover group relative flex overflow-hidden border border-plum-100 bg-white shadow-soft sm:flex-col sm:rounded-2xl ${
     row ? 'rounded-xl' : 'flex-col rounded-lg'
   }`;
@@ -465,7 +506,7 @@ export function ProgramCard({
            lets white or near-white logo backgrounds melt into the card */
         <div
           className={`flex items-center justify-center overflow-hidden border-plum-100/70 bg-white sm:aspect-[16/9] sm:border-b sm:border-e-0 sm:p-6 ${
-            row ? 'w-[7.5rem] shrink-0 self-stretch border-e p-3 sm:w-auto sm:self-auto' : 'aspect-square border-b p-2'
+            row ? 'w-[7.5rem] shrink-0 self-stretch border-e p-3 sm:w-auto sm:self-auto' : 'aspect-[4/3] border-b p-3'
           }`}
         >
           <img
@@ -477,10 +518,10 @@ export function ProgramCard({
         </div>
       ) : (
         <Placeholder
-          className={`sm:aspect-[16/9] ${row ? 'w-[7.5rem] shrink-0 self-stretch sm:w-auto sm:self-auto' : 'aspect-square'}`}
+          className={`sm:aspect-[16/9] ${row ? 'w-[7.5rem] shrink-0 self-stretch sm:w-auto sm:self-auto' : 'aspect-[4/3]'}`}
         />
       )}
-      <div className={`flex min-w-0 flex-1 flex-col sm:justify-start sm:p-5 ${row ? 'justify-center p-2.5' : 'p-1.5'}`}>
+      <div className={`flex min-w-0 flex-1 flex-col sm:justify-start sm:p-5 ${row ? 'justify-center p-2.5' : 'p-2'}`}>
         {/* Programme names and labels are always English; the tagline follows the site language */}
         <h3
           className={`type-title-lg text-plum-800 transition group-hover:text-magenta-600 sm:line-clamp-none ${
@@ -503,18 +544,14 @@ export function ProgramCard({
             row ? 'mt-1.5 inline-flex gap-1' : 'hidden'
           }`}
         >
-          {external ? t(program.externalLabel, 'en') || s('visitWebsite') : s('viewDetails')}
+          {s('viewDetails')}
           <ArrowUpRight size={14} />
         </span>
       </div>
     </>
   );
 
-  return external ? (
-    <a href={program.externalUrl} target="_blank" rel="noopener noreferrer" className={cardClass}>
-      {card}
-    </a>
-  ) : (
+  return (
     <Link to={path(`/programs/${program.slug}`)} className={cardClass}>
       {card}
     </Link>
@@ -527,66 +564,87 @@ export function LeaderCard({
   leader,
   view = 'card',
   className = '',
+  shownPeriod = '',
 }: {
   leader: Leader;
   view?: ViewMode;
   /** Sizing from the listing that lays the cards out (its share of a row) */
   className?: string;
+  /** The period in the heading above the card; not repeated when it is the leader's only one */
+  shownPeriod?: string;
 }) {
   const { lang } = useSite();
+  const name = t(leader.name, lang);
+  // Empty when neither language has one, so no blank line is drawn
+  const designation = t(leader.designation, lang);
+  const { district, periods } = leaderTermSummary(leader, lang, { name, shownPeriod });
+  // A past committee is often saved with only its group poster; that stands in for the photo
+  const photo = leader.photo || leader.posterImage;
 
   if (view === 'list') {
     return (
-      <div className={`flex items-center gap-3 rounded-xl border border-plum-100 bg-white p-2.5 shadow-soft ${className}`}>
-        {leader.photo ? (
+      <div className={`flex items-center gap-3 rounded-xl border border-plum-100 bg-white p-3 shadow-soft ${className}`}>
+        {photo ? (
           <img
-            src={leader.photo}
-            alt={t(leader.name, lang)}
+            src={photo}
+            alt={name}
             loading="lazy"
-            className="h-12 w-12 shrink-0 rounded-full object-cover object-top ring-2 ring-white"
+            className="h-16 w-16 shrink-0 rounded-full object-cover object-top ring-2 ring-white"
           />
         ) : (
-          <Placeholder className="h-12 w-12 shrink-0 rounded-full" />
+          <Placeholder className="h-16 w-16 shrink-0 rounded-full" />
         )}
         <div className="min-w-0 flex-1">
-          <h3 className="type-title text-plum-800 [overflow-wrap:anywhere]">
-            <GradientText>{t(leader.name, lang)}</GradientText>
+          <h3 className="type-title-lg font-semibold text-plum-800 [overflow-wrap:anywhere]">
+            <GradientText>{name}</GradientText>
           </h3>
-          {t(leader.designation, lang) && (
-            <p className="mt-0.5 type-caption leading-snug text-ink-muted">{t(leader.designation, lang)}</p>
+          {designation && <p className="mt-0.5 type-body-sm leading-snug text-ink-muted">{designation}</p>}
+          {(district || periods) && (
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 type-caption font-medium text-magenta-600">
+              {district && (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin size={13} className="shrink-0" aria-hidden="true" />
+                  {district}
+                </span>
+              )}
+              {periods && <span>{periods}</span>}
+            </p>
           )}
         </div>
-        {leader.termLabel && (
-          <span className="shrink-0 type-overline tracking-wider text-magenta-500">{leader.termLabel}</span>
-        )}
       </div>
     );
   }
 
   return (
-    <div className={`card-hover group overflow-hidden rounded-lg border border-plum-100 bg-white shadow-soft hover:border-magenta-200 sm:rounded-2xl ${className}`}>
-      {leader.photo ? (
-        <div className="card-sheen aspect-square bg-mist-deep sm:aspect-[4/5]">
+    <div className={`card-hover group flex flex-col overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft hover:border-magenta-200 sm:rounded-2xl ${className}`}>
+      {photo ? (
+        <div className="card-sheen aspect-[4/5] bg-mist-deep">
           <img
-            src={leader.photo}
-            alt={t(leader.name, lang)}
+            src={photo}
+            alt={name}
             loading="lazy"
             /* Portrait frame; anchored to the top so faces stay in view when a photo isn't 4:5 */
             className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
           />
         </div>
       ) : (
-        <Placeholder className="card-sheen aspect-square sm:aspect-[4/5]" />
+        <Placeholder className="card-sheen aspect-[4/5]" />
       )}
-      <div className="card-rule p-1.5 text-center sm:p-4">
-        <h3 className="type-title text-plum-800 [overflow-wrap:anywhere] max-sm:type-tile">
-          <GradientText>{t(leader.name, lang)}</GradientText>
+      <div className="card-rule flex flex-1 flex-col items-center px-2.5 py-3 text-center sm:px-4 sm:py-5">
+        <h3 className="type-title-lg font-semibold text-plum-800 [overflow-wrap:anywhere]">
+          <GradientText>{name}</GradientText>
         </h3>
-        {t(leader.designation, lang) && (
-          <p className="type-caption mt-0.5 leading-tight text-ink-muted max-sm:type-micro sm:mt-1 sm:leading-snug">{t(leader.designation, lang)}</p>
+        {designation && (
+          <p className="mt-1 type-body-sm leading-snug text-ink-muted">{designation}</p>
         )}
-        {leader.termLabel && (
-          <p className="mt-2 hidden type-overline tracking-wider text-magenta-500 sm:block">{leader.termLabel}</p>
+        {district && (
+          <p className="mt-2 inline-flex max-w-full items-center gap-1 rounded-full bg-magenta-50 px-2.5 py-0.5 type-caption font-semibold text-magenta-600">
+            <MapPin size={13} className="shrink-0" aria-hidden="true" />
+            <span className="[overflow-wrap:anywhere]">{district}</span>
+          </p>
+        )}
+        {periods && (
+          <p className="mt-2 type-caption font-medium tracking-wide text-plum-600">{periods}</p>
         )}
       </div>
     </div>
@@ -602,7 +660,7 @@ export function VideoCard({
 }: {
   item: VideoItem;
   onPlay?: (item: VideoItem) => void;
-  /** Phones only (see useViewMode): `card` is a small tile for a three-up grid, `list` a compact
+  /** Phones only (see useViewMode): `card` is a small tile for a two-up grid, `list` a compact
       row (thumbnail left); `stack` is the full-width stacked card used inside swipe rows */
   view?: ViewMode | 'stack';
 }) {
@@ -633,10 +691,10 @@ export function VideoCard({
         <span className="absolute inset-0 grid place-items-center">
           <span
             className={`grid place-items-center rounded-full bg-white/95 text-magenta-600 shadow-lift transition group-hover:scale-110 sm:h-14 sm:w-14 ${
-              list ? 'h-8 w-8' : tile ? 'h-6 w-6' : 'h-10 w-10'
+              list ? 'h-8 w-8' : tile ? 'h-8 w-8' : 'h-10 w-10'
             }`}
           >
-            <Play size={tile ? 11 : 17} className="ms-0.5" fill="currentColor" />
+            <Play size={tile ? 14 : 17} className="ms-0.5" fill="currentColor" />
           </span>
         </span>
         {item.durationLabel && (
@@ -649,7 +707,7 @@ export function VideoCard({
           </span>
         )}
       </div>
-      <div className={`min-w-0 sm:p-5 ${list ? 'flex-1 p-2.5 sm:flex-none' : tile ? 'p-1.5' : 'p-3'}`}>
+      <div className={`min-w-0 sm:p-5 ${list ? 'flex-1 p-2.5 sm:flex-none' : tile ? 'p-2' : 'p-3'}`}>
         <div
           className={`type-overline font-medium text-magenta-500 sm:tracking-wider ${
             tile ? 'tracking-normal max-sm:type-micro' : 'tracking-wider'
@@ -751,7 +809,7 @@ export function AlbumCard({ album, view = 'card' }: { album: Album; view?: ViewM
   return (
     <Link
       to={path(`/media/gallery/${album.slug}`)}
-      className="card-hover group relative flex aspect-square flex-col justify-end overflow-hidden rounded-lg bg-plum-800 p-1.5 text-white shadow-soft sm:aspect-[4/3] sm:rounded-2xl sm:p-5"
+      className="card-hover group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-xl bg-plum-800 p-2.5 text-white shadow-soft sm:rounded-2xl sm:p-5"
     >
       {album.coverImage ? (
         <img
@@ -765,8 +823,8 @@ export function AlbumCard({ album, view = 'card' }: { album: Album; view?: ViewM
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-plum-900 via-plum-900/40 to-transparent" />
       <div className="relative">
-        <h3 className="type-title-lg line-clamp-2 max-sm:type-tile"><GradientText light>{t(album.title, lang)}</GradientText></h3>
-        <p className="mt-1 hidden type-meta text-white/70 sm:block">{meta}</p>
+        <h3 className="type-title-lg line-clamp-2 max-sm:type-title"><GradientText light>{t(album.title, lang)}</GradientText></h3>
+        {meta && <p className="mt-0.5 line-clamp-1 type-meta text-white/70 sm:mt-1">{meta}</p>}
       </div>
     </Link>
   );
@@ -910,12 +968,12 @@ export function GalleryGrid({ items: all }: { items: MediaItem[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-1.5 sm:gap-3 lg:grid-cols-5">
+      <div className="gallery-grid">
         {items.map((item, i) => (
           <button
             key={i}
             onClick={() => setOpen(i)}
-            className="group relative aspect-square overflow-hidden rounded-lg bg-mist-deep sm:rounded-2xl"
+            className="group relative aspect-square overflow-hidden rounded-xl bg-mist-deep shadow-soft sm:rounded-2xl"
           >
             {item.kind === 'video' ? (
               <>
@@ -947,7 +1005,7 @@ export function GalleryGrid({ items: all }: { items: MediaItem[] }) {
 export function PublicationCard({ publication, view = 'card' }: { publication: Publication; view?: ViewMode }) {
   const { lang, path } = useSite();
   const row = view === 'list';
-  /* Phones: `card` is a tall cover over its title (three to a row); `list` is a compact row.
+  /* Phones: `card` is a tall cover over its title (two to a row); `list` is a compact row.
      From sm both are the cover-beside-text card. */
   const cover = row
     ? 'h-24 w-[4.5rem] sm:h-32 sm:w-24'
@@ -956,7 +1014,7 @@ export function PublicationCard({ publication, view = 'card' }: { publication: P
     <Link
       to={path(`/publications/${publication.slug}`)}
       className={`card-hover group flex border border-plum-100 bg-white shadow-soft sm:flex-row sm:gap-4 sm:rounded-2xl sm:p-4 ${
-        row ? 'gap-3 rounded-xl p-2.5' : 'flex-col gap-1 rounded-lg p-1.5'
+        row ? 'gap-3 rounded-xl p-2.5' : 'flex-col gap-1.5 rounded-lg p-2'
       }`}
     >
       {publication.coverImage ? (

@@ -359,7 +359,7 @@
        type-subheading   15 / 18 / 20   heading inside a content card, h3 in prose
        type-title-lg     14 / 16 / 18   title of a large card
        type-title        13 / 15        title of a card, row or person
-       type-tile         11             title of a three-across phone tile (`max-sm:type-tile`)
+       type-tile         13             title of a two-across phone tile (`max-sm:type-tile`)
 
        Text (size only: line height comes from the page, which sets it per language)
        type-body-lg      14 / 15 / 16   long-form text, lead paragraph
@@ -552,8 +552,37 @@
 
   /* Last, so it wins when paired with a title role: `type-title max-sm:type-tile` */
   .type-tile {
-    font-size: var(--fs-11);
-    line-height: 1.25;
+    font-size: var(--fs-13);
+    line-height: 1.3;
+  }
+
+  /* Photo gallery grid (album listing and album photos): 2 / 2 / 3 equal tiles per row
+     on phone / tablet / desktop. Flex-wrap rather than CSS grid so a short last row is
+     centred instead of hugging the start edge. */
+  .gallery-grid {
+    --gallery-cols: 2;
+    --gallery-gap: 0.625rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--gallery-gap);
+  }
+  .gallery-grid > * {
+    flex: 0 0 auto;
+    width: calc((100% - (var(--gallery-cols) - 1) * var(--gallery-gap)) / var(--gallery-cols));
+    min-width: 0;
+  }
+  @media (min-width: 640px) {
+    .gallery-grid {
+      --gallery-cols: 2;
+      --gallery-gap: 1.25rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .gallery-grid {
+      --gallery-cols: 3;
+      --gallery-gap: 1.5rem;
+    }
   }
 }
 

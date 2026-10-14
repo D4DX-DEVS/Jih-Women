@@ -16,8 +16,27 @@ import type { Attachment, Bullet, Localized, MediaItem, Person } from '../shared
 
 export type Doc = Record<string, unknown>;
 
-export type FieldDef =
-  | { kind: 'localized'; path: string; label: string; required?: boolean; multiline?: boolean; rows?: number; hint?: string; onlyLang?: 'ml' | 'en' }
+/** Conditions, given the field's own record (a row inside an object-list) and the whole record */
+export type FieldConditions = {
+  /** Shown (and checked) only when this returns true */
+  when?: (doc: Doc, root: Doc) => boolean;
+  /** Required only when this returns true (in addition to a plain `required`) */
+  requiredWhen?: (doc: Doc, root: Doc) => boolean;
+};
+
+export type FieldDef = FieldConditions & (
+  | {
+      kind: 'localized';
+      path: string;
+      label: string;
+      required?: boolean;
+      /** The required language, listed first (default Malayalam); with 'en' Malayalam is optional */
+      primaryLang?: 'ml' | 'en';
+      multiline?: boolean;
+      rows?: number;
+      hint?: string;
+      onlyLang?: 'ml' | 'en';
+    }
   | { kind: 'rich'; path: string; label: string; hint?: string; sections?: false }
   | { kind: 'text'; path: string; label: string; placeholder?: string; hint?: string; required?: boolean }
   | { kind: 'link'; path: string; label: string; emptyLabel: string; hint?: string }
@@ -41,7 +60,13 @@ export type FieldDef =
       hint?: string;
     }
   | { kind: 'row'; fields: FieldDef[] }
-  | { kind: 'heading'; label: string; hint?: string };
+  | { kind: 'heading'; label: string; hint?: string }
+);
+
+/** Whether a field is required for this record, counting `requiredWhen`. */
+export function isRequired(def: FieldDef, doc: Doc, root: Doc): boolean {
+  return Boolean(('required' in def && def.required) || def.requiredWhen?.(doc, root));
+}
 
 /* ---------------- nested path access ---------------- */
 
@@ -71,6 +96,8 @@ function toDateInput(value: unknown): string {
 
 export type FieldContext = {
   doc: Doc;
+  /** The whole record when `doc` is a row inside an object-list (defaults to `doc`) */
+  root?: Doc;
   onChange: (next: Doc) => void;
   token: string;
   onError: (message: string) => void;
@@ -79,6 +106,9 @@ export type FieldContext = {
 export function renderField(def: FieldDef, ctx: FieldContext, key: string | number): ReactNode {
   const { doc, onChange, token, onError } = ctx;
   const set = (path: string, value: unknown) => onChange(setPath(doc, path, value));
+  const root = ctx.root ?? doc;
+  if (def.when && !def.when(doc, root)) return null;
+  const required = isRequired(def, doc, root);
 
   switch (def.kind) {
     case 'heading':
@@ -104,11 +134,12 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
         <BilingualInput
           key={key}
           label={def.label}
-          required={def.required}
+          required={required}
           multiline={def.multiline}
           rows={def.rows}
           hint={def.hint}
           onlyLang={def.onlyLang}
+          primaryLang={def.primaryLang}
           value={(getPath(doc, def.path) as Localized) ?? emptyLocalized()}
           onChange={(v) => set(def.path, v)}
         />
@@ -128,7 +159,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
 
     case 'text':
       return (
-        <Field key={key} label={def.label} required={def.required} hint={def.hint}>
+        <Field key={key} label={def.label} required={required} hint={def.hint}>
           <input
             className="input"
             placeholder={def.placeholder}
@@ -153,7 +184,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
 
     case 'number':
       return (
-        <Field key={key} label={def.label} required={def.required} hint={def.hint}>
+        <Field key={key} label={def.label} required={required} hint={def.hint}>
           <input
             className="input"
             type="number"
@@ -165,7 +196,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
 
     case 'date':
       return (
-        <Field key={key} label={def.label} required={def.required} hint={def.hint}>
+        <Field key={key} label={def.label} required={required} hint={def.hint}>
           <input
             className="input"
             type="date"
@@ -177,7 +208,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
 
     case 'select':
       return (
-        <Field key={key} label={def.label} required={def.required} hint={def.hint}>
+        <Field key={key} label={def.label} required={required} hint={def.hint}>
           <select
             className="input"
             value={(getPath(doc, def.path) as string) ?? ''}
@@ -209,7 +240,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
         <AssetPicker
           key={key}
           label={def.label}
-          required={def.required}
+          required={required}
           hint={def.hint}
           recommend={def.recommend}
           folder={def.folder}
@@ -306,7 +337,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
       const replace = (next: Doc[]) => set(def.path, next);
 
       return (
-        <Field key={key} label={`${def.label} (${rows.length})`} hint={def.hint}>
+        <Field key={key} label={`${def.label} (${rows.length})`} required={required} hint={def.hint}>
           <div className="space-y-3">
             {rows.map((row, i) => (
               <div key={i} className="rounded-xl border border-black/10 bg-white/60 p-4 relative">
@@ -325,6 +356,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
                       {
                         ...ctx,
                         doc: row,
+                        root,
                         onChange: (nextRow) =>
                           replace(rows.map((r, idx) => (idx === i ? nextRow : r))),
                       },

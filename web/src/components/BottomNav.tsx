@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router';
 import { ChevronRight, LayoutGrid, X } from 'lucide-react';
 import { useSite } from '../lib/site';
 import { str, t } from '../lib/i18n';
-import { buildBottomTabs, buildNavItems, type NavLeaf } from '../lib/nav';
+import { buildBottomTabs, buildNavItems, showDownloadsLink, type NavLeaf } from '../lib/nav';
 
 /**
  * Phone navigation (below md): an app-style bar fixed to the bottom of the screen
@@ -18,18 +18,19 @@ export default function BottomNav() {
   const [moreOpen, setMoreOpen] = useState(false);
 
   const tabs = useMemo(() => buildBottomTabs(path, 'en'), [path]);
+  const showDownloads = showDownloadsLink(data?.settings);
 
   /* "More": everything in the main navigation that is not already a tab, grouped
      like the header menu (standalone links first, then each dropdown) */
   const groups = useMemo(() => {
     const tabPaths = new Set(tabs.map((tab) => tab.to));
-    const items = buildNavItems(path, 'en');
+    const items = buildNavItems(path, 'en', showDownloads);
     const keep = (links: NavLeaf[]) => links.filter((l) => !tabPaths.has(l.to));
     return [
       { label: str('menuMain', 'en'), links: keep(items.filter((i) => i.to).map((i) => ({ label: i.label, to: i.to!, icon: i.icon }))) },
       ...items.filter((i) => i.children?.length).map((i) => ({ label: i.label, links: keep(i.children!) })),
     ].filter((g) => g.links.length);
-  }, [path, tabs]);
+  }, [path, tabs, showDownloads]);
 
   const activeTab = tabs.findIndex((tab) => tab.match(pathname));
   const moreActive = activeTab === -1 && groups.some((g) => g.links.some((l) => pathname === l.to || pathname.startsWith(`${l.to}/`)));

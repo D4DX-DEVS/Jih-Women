@@ -3,6 +3,7 @@ import { emptyLocalized } from '../shared/types';
 import type { Localized } from '../shared/types';
 import type { CollectionConfig, ColumnDef } from './CollectionManager';
 import type { Doc } from './fields';
+import DownloadsVisibilityToggle from './DownloadsVisibilityToggle';
 import FocusVisibilityToggle from './FocusVisibilityToggle';
 import YouTubeChannelImport from './YouTubeChannelImport';
 
@@ -409,12 +410,48 @@ const LEADER_CATEGORY_OPTIONS = [
   { value: 'party', label: 'Past Leaders' },
 ];
 
+/** Stored in English; the public site shows each in the visitor's language (web/src/lib/leaders.ts). */
+const KERALA_DISTRICT_OPTIONS = [
+  { value: '', label: '— Choose district —' },
+  ...[
+    'Thiruvananthapuram',
+    'Kollam',
+    'Pathanamthitta',
+    'Alappuzha',
+    'Kottayam',
+    'Idukki',
+    'Ernakulam',
+    'Thrissur',
+    'Palakkad',
+    'Malappuram',
+    'Kozhikode',
+    'Wayanad',
+    'Kannur',
+    'Kasaragod',
+  ].map((d) => ({ value: d, label: d })),
+];
+
+type LeaderTermRow = { period?: string; district?: string };
+
+/** District leaders need a designation, a year (range) and a district; the server checks the same */
+const isDistrictLeader = (_doc: Doc, root: Doc) => root.category === 'district';
+
+/** A leader's periods; records saved before periods existed hold one in `termLabel` (or the years). */
+function leaderTermRows(row: Doc): LeaderTermRow[] {
+  const terms = row.terms as LeaderTermRow[] | undefined;
+  if (Array.isArray(terms) && terms.length) return terms;
+  const label = String(row.termLabel ?? '').trim();
+  if (label) return [{ period: label, district: '' }];
+  const years = [row.termFrom, row.termTo].filter(Boolean);
+  return years.length ? [{ period: years.join('–'), district: '' }] : [];
+}
+
 export const LEADERS: CollectionConfig = {
   key: 'leaders',
   endpoint: '/api/admin/cms/leaders',
   label: 'Leaders',
   singular: 'Leader',
-  description: 'State, district and past leaders: current leadership and past leadership (Meeqathi) posters. Each leader belongs to one category, shown as its own tab on the website.',
+  description: 'State, district and past leaders. Each leader belongs to one category, shown as its own tab on the website.',
   reorderable: true,
   filters: [
     { param: 'category', label: 'Category', options: LEADER_CATEGORY_OPTIONS },
@@ -437,7 +474,25 @@ export const LEADERS: CollectionConfig = {
         </span>
       ),
     },
-    str('termLabel', 'Term'),
+    {
+      label: 'Leadership periods',
+      className: 'min-w-[160px] max-w-[260px]',
+      render: (row) => {
+        const terms = leaderTermRows(row);
+        return terms.length ? (
+          <div className="space-y-0.5 text-[12.5px] leading-snug text-foreground/70">
+            {terms.map((t, i) => (
+              <div key={i} className="cell-truncate">
+                {t.period || '—'}
+                {t.district && <span className="text-foreground/45"> · {t.district}</span>}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span className="text-foreground/25">—</span>
+        );
+      },
+    },
     flag('isCurrent', 'Current'),
   ],
   blank: () => ({
@@ -446,35 +501,94 @@ export const LEADERS: CollectionConfig = {
     designation: emptyLocalized(),
     bio: emptyLocalized(),
     photo: '',
-    posterImage: '',
-    termLabel: '',
-    isCurrent: true,
+    terms: [{ period: '', district: '' }],
     order: 0,
     published: true,
   }),
+  // An older record's single term becomes its first period. The old term fields are
+  // cleared here; the server fills them again from the periods when the leader is saved.
+  // A leader with no period yet gets one empty row, so the year input is in view.
+  // The category decides Current/Past on save, so a leader still marked as past from
+  // before opens under Past Leaders, the tab the website lists them under.
+  toForm: (row) => {
+    const terms = leaderTermRows(row).map((t) => ({ period: t.period ?? '', district: t.district ?? '' }));
+    return {
+      ...row,
+      category: row.isCurrent === false ? 'party' : row.category || 'state',
+      terms: terms.length ? terms : [{ period: '', district: '' }],
+      termLabel: '',
+      termFrom: null,
+      termTo: null,
+    };
+  },
   fields: [
+    { kind: 'heading', label: 'Leader details' },
     {
       kind: 'select',
       path: 'category',
       label: 'Category',
       options: LEADER_CATEGORY_OPTIONS,
-      hint: 'Which tab of the Leaders page this person appears under. Anyone not marked as current leadership appears under Past Leaders, whatever the category.',
+      hint: 'Which tab of the Leaders page this person appears under. State and District Leaders are current leadership; Past Leaders are not. District Leaders also need a designation, a year and a district.',
     },
-    { kind: 'localized', path: 'name', label: 'Name', required: true },
-    { kind: 'localized', path: 'designation', label: 'Designation' },
+    {
+      kind: 'localized',
+      path: 'name',
+      label: 'Name',
+      required: true,
+      primaryLang: 'en',
+      hint: 'English is required. Malayalam is optional; when entered it is shown on the Malayalam site.',
+    },
+    {
+      kind: 'localized',
+      path: 'designation',
+      label: 'Designation',
+      primaryLang: 'en',
+      requiredWhen: isDistrictLeader,
+      hint: 'The position held, e.g. President, Secretary, District President. Malayalam is optional.',
+    },
+
+    {
+      kind: 'heading',
+      label: 'Leadership periods',
+      hint: 'One row per period this person led in, e.g. 2024–2026. Add every term to the same leader instead of creating the leader again. The latest period is the heading they are listed under on the website; all periods are shown on their card.',
+    },
+    {
+      kind: 'object-list',
+      path: 'terms',
+      label: 'Periods',
+      addLabel: 'Add another period',
+      requiredWhen: isDistrictLeader,
+      blank: () => ({ period: '', district: '' }),
+      fields: [
+        { kind: 'row', fields: [
+          {
+            kind: 'text',
+            path: 'period',
+            label: 'Year or year range',
+            placeholder: '2024–2026',
+            requiredWhen: isDistrictLeader,
+          },
+          {
+            kind: 'select',
+            path: 'district',
+            label: 'District',
+            options: KERALA_DISTRICT_OPTIONS,
+            // Shown for District Leaders; also for any period that already has a district saved
+            when: (row, root) => isDistrictLeader(row, root) || Boolean(row.district),
+            requiredWhen: isDistrictLeader,
+            hint: 'The district served in during this period.',
+          },
+        ] },
+      ],
+    },
+
+    { kind: 'heading', label: 'Photo' },
+    { kind: 'asset', path: 'photo', label: 'Photograph', folder: 'leaders', recommend: '800×1000px (4:5 portrait). Head and shoulders with the face in the upper third.' },
+
+    { kind: 'heading', label: 'Biography' },
     { kind: 'rich', path: 'bio', label: 'Biography' },
-    { kind: 'row', fields: [
-      { kind: 'asset', path: 'photo', label: 'Photograph', folder: 'leaders', recommend: '800×1000px (4:5 portrait). Head and shoulders with the face in the upper third.' },
-      { kind: 'asset', path: 'posterImage', label: 'Meeqathi poster', folder: 'leaders', recommend: "1200px wide at the poster's natural shape (portrait 3:4 or 2:3 is typical). Shown uncropped." },
-    ] },
-    { kind: 'row', fields: [
-      { kind: 'text', path: 'termLabel', label: 'Term label', placeholder: '2019 – 2023' },
-      { kind: 'toggle', path: 'isCurrent', label: 'Current leadership' },
-    ] },
-    { kind: 'row', fields: [
-      { kind: 'number', path: 'termFrom', label: 'Term from (year)' },
-      { kind: 'number', path: 'termTo', label: 'Term to (year)' },
-    ] },
+
+    { kind: 'heading', label: 'Display' },
     { kind: 'row', fields: [orderField, publishedField] },
   ],
 };
@@ -486,13 +600,13 @@ export const EVENTS: CollectionConfig = {
   noun: 'event posters',
   singular: 'Poster',
   description:
-    'Posters shown in the Events section of the home page: upcoming events first, then the most recent past ones. Hide a poster with its Published switch, or delete it to remove it for good.',
-  /* The form manages the poster, its title and the event date, and sends only those.
-     Everything else stored on an event (summary, description, venue, speakers, gallery,
-     downloads, registration settings, slug) is left as it is, so existing events keep
-     their pages. The start date is required by the event model, so it stays on the form
-     and defaults to today. */
-  editable: ['title', 'startDate', 'posterImage'],
+    'Posters shown in the Events section of the home page, newest first after any upcoming events. Hide a poster with its Published switch, or delete it to remove it for good.',
+  /* The form manages the poster, its optional title and its optional link, and sends only
+     those. Everything else stored on an event (date, summary, description, venue, speakers,
+     gallery, downloads, registration settings, slug) is left as it is, so existing events
+     keep their pages and their dates. A new poster is dated when it is created (the event
+     model's default). */
+  editable: ['title', 'posterImage', 'externalUrl'],
   modalSize: 'md',
   columns: [
     {
@@ -513,12 +627,12 @@ export const EVENTS: CollectionConfig = {
       },
     },
     loc('title', 'Title'),
-    date('startDate', 'Event date'),
+    date('startDate', 'Date'),
   ],
   blank: () => ({
     title: emptyLocalized(),
-    startDate: new Date().toISOString(),
     posterImage: '',
+    externalUrl: '',
   }),
   fields: [
     {
@@ -536,15 +650,14 @@ export const EVENTS: CollectionConfig = {
       kind: 'localized',
       path: 'title',
       label: 'Poster title',
-      required: true,
-      hint: 'A short name for the event. Used as the poster\u2019s caption and alternative text.',
+      hint: 'Optional. A short name for the event, used as the poster\u2019s alternative text. Leave it empty and the poster is shown without a title.',
     },
     {
-      kind: 'date',
-      path: 'startDate',
-      label: 'Event date',
-      required: true,
-      hint: 'Posters of upcoming events are listed first on the home page, soonest first.',
+      kind: 'text',
+      path: 'externalUrl',
+      label: 'Link',
+      placeholder: 'https://example.org',
+      hint: 'Optional. When set, clicking the poster on the website opens this address in a new tab. Must start with http:// or https://. Leave it empty and the poster opens its event page.',
     },
   ],
 };
@@ -774,6 +887,7 @@ export const DOWNLOADS: CollectionConfig = {
   singular: 'Download',
   description: 'Official documents, forms, posters and reports available for download.',
   reorderable: true,
+  extra: (props) => <DownloadsVisibilityToggle {...props} />,
   filters: [{ param: 'category', label: 'Category', options: [
     { value: 'official-document', label: 'Official document' },
     { value: 'constitution', label: 'Constitution' },

@@ -278,7 +278,7 @@ router.use(
   buildCrud({
     Model: Leader,
     name: 'Leader',
-    searchPaths: ['name.ml', 'name.en', 'designation.ml', 'designation.en'],
+    searchPaths: ['name.ml', 'name.en', 'designation.ml', 'designation.en', 'terms.period', 'terms.district', 'termLabel'],
     filters: ['published', 'isCurrent', 'category'],
     // Leaders saved before categories existed have no category; they count as state leaders
     filterMatch: { category: (value) => (value === 'state' ? { $in: ['state', null] } : value) },
@@ -293,9 +293,11 @@ router.use(
     searchPaths: ['title.ml', 'title.en', 'slug', 'district'],
     filters: ['published', 'featured'],
     sort: { startDate: -1 },
-    // Event Poster: the admin form manages the poster, its title and the event date.
-    // Other stored event fields are left as they are; `published` is the list's toggle.
-    writable: ['title', 'startDate', 'posterImage', 'published'],
+    // Event Poster: the admin form manages the poster, its optional title and its optional
+    // link. A new poster is dated on creation (the model's default); `startDate` stays
+    // writable so stored dates can still be set. Other stored event fields are left as
+    // they are; `published` is the list's toggle.
+    writable: ['title', 'startDate', 'posterImage', 'externalUrl', 'published'],
   })
 );
 

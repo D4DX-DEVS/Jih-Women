@@ -21,15 +21,18 @@ import { DetailSkeleton, ListSkeleton } from '../components/PageSkeletons';
 import { Lightbox, PanelPoster, ProgramCard } from '../components/Cards';
 import Reveal from '../components/Reveal';
 import ContentSections from '../components/ContentCards';
-import { useViewMode } from '../lib/view';
+import { usePhone, useViewMode } from '../lib/view';
 import NotFound from './NotFound';
 import type { MediaItem, Program } from '../lib/types';
 
 export function ProgramsIndex() {
   const { path, s, pageTitle, h } = useSite();
   const { view } = useViewMode();
+  // Phones show the page banner's "Programs" title once: the "Programs" label above the
+  // Major and Other headings would only repeat it (twice) on the narrow screen
+  const phone = usePhone();
   const { data, loading, error, reload } = useApi<{ items: Program[] }>('/api/site/programs');
-  const cols = view === 'list' ? 'grid-cols-1' : 'grid-cols-3';
+  const cols = view === 'list' ? 'grid-cols-1' : 'grid-cols-2';
 
   const major = data?.items.filter((p) => p.isMajor) ?? [];
   const others = data?.items.filter((p) => !p.isMajor) ?? [];
@@ -53,8 +56,8 @@ export function ProgramsIndex() {
               <ViewToggle />
               {major.length > 0 && (
                 <>
-                  <ManagedSectionHeading sectionKey="programsMajor" eyebrow={h('programs')} title={h('majorProgrammes')} />
-                  <div className={`grid ${cols} gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3`}>
+                  <ManagedSectionHeading sectionKey="programsMajor" eyebrow={h('programs')} hideEyebrow={phone} title={h('majorProgrammes')} />
+                  <div className={`grid ${cols} gap-2.5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3`}>
                     {major.map((p) => (
                       <ProgramCard key={p._id} program={p} view={view} />
                     ))}
@@ -63,8 +66,8 @@ export function ProgramsIndex() {
               )}
               {others.length > 0 && (
                 <div className="mt-7 sm:mt-14">
-                  <ManagedSectionHeading sectionKey="programsOther" eyebrow={h('programs')} title={h('otherProgrammes')} />
-                  <div className={`grid ${cols} gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3`}>
+                  <ManagedSectionHeading sectionKey="programsOther" eyebrow={h('programs')} hideEyebrow={phone} title={h('otherProgrammes')} />
+                  <div className={`grid ${cols} gap-2.5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3`}>
                     {others.map((p) => (
                       <ProgramCard key={p._id} program={p} view={view} />
                     ))}
@@ -106,8 +109,9 @@ export function ProgramDetail() {
   // A programme page is its description plus its poster (or, without one, its logo).
   // Objectives, schedule, videos and downloads are no longer managed in the admin, so
   // any values still stored for them are not shown.
+  // The programme's own website is linked once, below the content.
   const website = isExternalUrl(data.externalUrl) ? data.externalUrl : '';
-  const hasAside = Boolean(data.posterImage || data.logoUrl || website);
+  const hasAside = Boolean(data.posterImage || data.logoUrl);
   // Only photos that have a file; with none, the page has no Gallery section at all
   const gallery = validMedia(data.gallery);
   const logo = data.logoUrl ? (
@@ -136,22 +140,11 @@ export function ProgramDetail() {
         ]}
       />
 
-      {website && (
-        <div className="border-b border-plum-100 bg-magenta-500/10">
-          <Container className="flex flex-wrap items-center justify-between gap-2 py-3 sm:gap-4 sm:py-5">
-            <p className="type-body-sm text-ink-muted">{t(data.externalLabel, 'en') || s('visitWebsite')}</p>
-            <Button href={website} variant="primary" size="sm">
-              {s('visitWebsite')}
-              <ExternalLinkIcon size={15} />
-            </Button>
-          </Container>
-        </div>
-      )}
-
       <Section tone="mist">
         <Container>
-          {/* One content card: the description's sections, with the programme's poster
-              (its logo alone when no poster is uploaded) and link in the side column */}
+          {/* One content card: the description's sections and, below them, the link to
+              the programme's website; its poster (its logo alone when no poster is
+              uploaded) in the side column */}
           <ContentPanel
             aside={
               hasAside ? (
@@ -162,17 +155,17 @@ export function ProgramDetail() {
                   ) : (
                     logo
                   )}
-                  {website && (
-                    <Button href={website} variant="outline" size="sm" className="mt-3 sm:mt-4">
-                      {s('visitWebsite')}
-                      <ExternalLinkIcon size={14} />
-                    </Button>
-                  )}
                 </div>
               ) : undefined
             }
           >
             {overview ? <ContentSections html={overview} firstTitle={h('overview')} firstIcon={BookOpen} /> : <EmptyState />}
+            {website && (
+              <Button href={website} variant="outline" className="mt-4 sm:mt-7">
+                {t(data.externalLabel, 'en') || s('visitWebsite')}
+                <ExternalLinkIcon size={15} />
+              </Button>
+            )}
           </ContentPanel>
 
           {/* This programme's own photos (Programme > Gallery in admin). No photos: no

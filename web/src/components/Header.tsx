@@ -9,13 +9,12 @@ import {
   Menu,
   Search,
   Sparkles,
-  Twitter,
   X,
   Youtube,
 } from 'lucide-react';
 import { useSite } from '../lib/site';
 import { str, t } from '../lib/i18n';
-import { buildNavItems, type NavItem } from '../lib/nav';
+import { buildNavItems, showDownloadsLink, type NavItem } from '../lib/nav';
 import { CONTAINER_CLASS } from './Primitives';
 
 /* Same width and padding as every page section, so the edges line up */
@@ -29,7 +28,16 @@ export default function Header() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [scrolled, setScrolled] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Once the page leaves the top, the sticky header grows a little (see the header row)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Focus the header search as it expands
   useEffect(() => {
@@ -58,7 +66,8 @@ export default function Header() {
 
   /* Header chrome (desktop nav + mobile drawer) is always shown in English,
      independent of the site's ML/EN toggle — only page content follows it. */
-  const items: NavItem[] = useMemo(() => buildNavItems(path, 'en'), [path]);
+  const showDownloads = showDownloadsLink(settings);
+  const items: NavItem[] = useMemo(() => buildNavItems(path, 'en', showDownloads), [path, showDownloads]);
 
   /* Mobile menu categories, derived from the same items: every standalone link
      goes under "Main", and each dropdown becomes a category of its own. */
@@ -77,7 +86,6 @@ export default function Header() {
     { href: settings?.social?.facebook, Icon: Facebook, label: 'Facebook' },
     { href: settings?.social?.instagram, Icon: Instagram, label: 'Instagram' },
     { href: settings?.social?.youtube, Icon: Youtube, label: 'YouTube' },
-    { href: settings?.social?.twitter, Icon: Twitter, label: 'X' },
   ].filter((x) => Boolean(x.href));
 
   const submitSearch = (e: React.FormEvent) => {
@@ -143,11 +151,22 @@ export default function Header() {
       </div>
 
       {/* Main header */}
-      <header className="sticky top-0 z-50 border-b border-plum-100 bg-white/95 shadow-[0_1px_16px_-8px_rgba(44,10,77,0.25)] backdrop-blur">
+      {/* Scrolled: the row is 4px taller and the header's bottom margin is -4px, both
+          animated together, so the header overlaps the page by those 4px instead of
+          pushing it down: no layout shift and no change in scroll position. */}
+      <header
+        className={`sticky top-0 z-50 border-b border-plum-100 bg-white/95 shadow-[0_1px_16px_-8px_rgba(44,10,77,0.25)] backdrop-blur transition-[margin] duration-300 ease-out ${
+          scrolled ? '-mb-1' : ''
+        }`}
+      >
         <div className={SHELL}>
         {/* Logo on the left; navigation and search grouped on the right. One height and
             width on every page (no per-page variants). */}
-        <div className="flex h-11 min-w-0 items-center justify-between gap-2 md:h-16 lg:h-[72px] xl:gap-6">
+        <div
+          className={`flex min-w-0 items-center justify-between gap-2 transition-[height] duration-300 ease-out xl:gap-6 ${
+            scrolled ? 'h-12 md:h-[68px] lg:h-[76px]' : 'h-11 md:h-16 lg:h-[72px]'
+          }`}
+        >
             <Link
               to={path('/')}
               className="flex shrink-0 items-center"

@@ -100,6 +100,8 @@ const siteSettingSchema = new mongoose.Schema(
       presidentMessage: { type: Boolean, default: true },
       focusAreas: { type: Boolean, default: true },
       newsletter: { type: Boolean, default: true },
+      // The Downloads link in the site menus (the Downloads page itself stays live)
+      downloads: { type: Boolean, default: true },
     },
   },
   { timestamps: true }
