@@ -14,7 +14,7 @@ import {
   Video,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { str } from './i18n';
+import { str, stripLang } from './i18n';
 import type { Lang, SiteSettings } from './types';
 
 /**
@@ -68,16 +68,15 @@ export function buildNavItems(path: (to: string) => string, navLang: Lang, showD
  * the current one (a section's detail pages count too).
  */
 export function buildBottomTabs(path: (to: string) => string, navLang: Lang) {
-  const strip = (p: string) => p.replace(/^\/(ml|en)/, '') || '/';
   return [
-    { label: str('home', navLang), to: path('/'), icon: Home, match: (p: string) => strip(p) === '/' },
-    { label: str('programs', navLang), to: path('/programs'), icon: Sparkles, match: (p: string) => strip(p).startsWith('/programs') },
+    { label: str('home', navLang), to: path('/'), icon: Home, match: (p: string) => stripLang(p) === '/' },
+    { label: str('programs', navLang), to: path('/programs'), icon: Sparkles, match: (p: string) => stripLang(p).startsWith('/programs') },
     {
       label: str('news', navLang),
       to: path('/media/news'),
       icon: Newspaper,
-      match: (p: string) => /^\/media\/(news|press-release|statement|interview|speech)(\/|$)/.test(strip(p)),
+      match: (p: string) => /^\/media\/(news|press-release|statement|interview|speech)(\/|$)/.test(stripLang(p)),
     },
-    { label: str('gallery', navLang), to: path('/media/gallery'), icon: Images, match: (p: string) => strip(p).startsWith('/media/gallery') },
+    { label: str('gallery', navLang), to: path('/media/gallery'), icon: Images, match: (p: string) => stripLang(p).startsWith('/media/gallery') },
   ];
 }

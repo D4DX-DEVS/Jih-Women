@@ -11,6 +11,16 @@ export function isLang(value: string | undefined): value is Lang {
   return value === 'ml' || value === 'en';
 }
 
+/** Malayalam (the default) lives at the site root, English under `/en`. */
+export function langFromPath(pathname: string): Lang {
+  return /^\/en(?=\/|$)/.test(pathname) ? 'en' : DEFAULT_LANG;
+}
+
+/** A path without its language prefix, e.g. '/en/events' → '/events'. */
+export function stripLang(pathname: string): string {
+  return pathname.replace(/^\/(ml|en)(?=\/|$)/, '') || '/';
+}
+
 /** Reads a bilingual field, falling back to the other language when empty. */
 export function t(value: Localized | undefined | null, lang: Lang): string {
   if (!value) return '';

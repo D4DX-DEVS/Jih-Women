@@ -13,7 +13,7 @@ import {
   Youtube,
 } from 'lucide-react';
 import { useSite } from '../lib/site';
-import { str, t } from '../lib/i18n';
+import { str, stripLang, t } from '../lib/i18n';
 import { buildNavItems, showDownloadsLink, type NavItem } from '../lib/nav';
 import { CONTAINER_CLASS } from './Primitives';
 
@@ -44,7 +44,7 @@ export default function Header() {
     if (searchOpen) searchInputRef.current?.focus();
   }, [searchOpen]);
 
-  const pageKey = `${location.pathname.replace(/^\/(ml|en)/, '') || '/'}${location.search}`;
+  const pageKey = `${stripLang(location.pathname)}${location.search}`;
 
   useEffect(() => {
     // Close overlays on real page navigation only — not when switching ML↔EN on the same page,
