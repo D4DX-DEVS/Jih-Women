@@ -88,9 +88,9 @@ const STRINGS: Dict = {
   currentLeadership: { ml: 'ഇപ്പോഴത്തെ നേതൃത്വം', en: 'Current Leadership' },
   pastLeadership: { ml: 'മുൻ നേതൃത്വം', en: 'Past Leadership' },
   leaderCategories: { ml: 'നേതാക്കളുടെ വിഭാഗങ്ങൾ', en: 'Leader categories' },
-  stateLeaders: { ml: 'സംസ്ഥാന നേതാക്കൾ', en: 'State Leaders' },
-  districtLeaders: { ml: 'ജില്ലാ നേതാക്കൾ', en: 'District Leaders' },
-  pastLeaders: { ml: 'മുൻ നേതാക്കൾ', en: 'Past Leaders' },
+  stateLeaders: { ml: 'സംസ്ഥാനം', en: 'State' },
+  districtLeaders: { ml: 'ജില്ല', en: 'District' },
+  pastLeaders: { ml: 'മുൻ നേതാക്കൾ', en: 'Former Leaders' },
 
   overview: { ml: 'അവലോകനം', en: 'Overview' },
   objectives: { ml: 'ലക്ഷ്യങ്ങൾ', en: 'Objectives' },

@@ -407,7 +407,7 @@ export const PROGRAMS: CollectionConfig = {
 const LEADER_CATEGORY_OPTIONS = [
   { value: 'state', label: 'State Leaders' },
   { value: 'district', label: 'District Leaders' },
-  { value: 'party', label: 'Past Leaders' },
+  { value: 'party', label: 'Former Leaders' },
 ];
 
 /** Stored in English; the public site shows each in the visitor's language (web/src/lib/leaders.ts). */

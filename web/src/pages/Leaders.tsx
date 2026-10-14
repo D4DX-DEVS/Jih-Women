@@ -20,7 +20,7 @@ import type { Leader, LeaderCategory } from '../lib/types';
 const CATEGORIES: { key: LeaderCategory; label: string }[] = [
   { key: 'state', label: 'stateLeaders' },
   { key: 'district', label: 'districtLeaders' },
-  // Saved as `party` (the category's stored value); shown as "Past Leaders"
+  // Saved as `party` (the category's stored value); shown as "Former Leaders"
   { key: 'party', label: 'pastLeaders' },
 ];
 
@@ -80,6 +80,8 @@ export default function Leaders() {
       />
       <Section tone="mist">
         <Container>
+          {/* Phones only (hidden from `sm`): the Cards / List switch, at the top as on other listings */}
+          <ViewToggle />
           {/* One wide panel holds the tabs and every leaders section. Its width is capped so
               the four-a-row cards stay one size on every desktop, however wide the site is. */}
           <div className="mx-auto max-w-[1216px] rounded-2xl border border-plum-100 bg-white p-3 shadow-soft sm:rounded-2xl sm:p-6 lg:p-8">
@@ -115,8 +117,6 @@ export default function Leaders() {
               <EmptyState />
             ) : (
               <div role="tabpanel">
-                {/* Phones only (hidden from `sm`): grid / list icons above the cards */}
-                <ViewToggle icons />
                 <div className="space-y-8 sm:space-y-12">
                 {currentGroups.map((group) => (
                   <section key={group.period || 'no-period'}>
