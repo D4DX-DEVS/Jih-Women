@@ -90,7 +90,7 @@ export function MediaList() {
             <EmptyState />
           ) : (
             <>
-              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+              <div className={`grid gap-2.5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 {data.items.map((post) => (
                   <PostCard key={post._id} post={post} view={view} small />
                 ))}
@@ -208,7 +208,7 @@ export function MediaDetail() {
         <Section tone="white">
           <Container>
             <SectionHeading eyebrow={h('mediaCentre')} title={h('relatedPosts')} />
-            <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+            <div className={`grid gap-2.5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-2'}`}>
               {data.related.map((post) => (
                 <PostCard key={post._id} post={post} view={view} />
               ))}
@@ -247,7 +247,7 @@ export function VideosPage({ kind }: { kind: 'video' | 'podcast' }) {
             <EmptyState />
           ) : (
             <>
-              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+              <div className={`grid gap-2.5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 {data.items.map((item) => (
                   <VideoCard key={item._id} item={item} onPlay={setPlaying} view={view} />
                 ))}
@@ -286,7 +286,8 @@ export function AlbumsIndex() {
             <EmptyState />
           ) : (
             <>
-              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-5 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+              {/* Two album cards a row on phones; list view is one row per album */}
+              <div className={`gallery-grid ${view === 'list' ? 'max-sm:[--gallery-cols:1]' : ''}`}>
                 {data.items.map((album) => (
                   <AlbumCard key={album._id} album={album} view={view} />
                 ))}

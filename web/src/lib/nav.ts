@@ -14,8 +14,18 @@ import {
   Video,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { str } from './i18n';
-import type { Lang } from './types';
+import { str, stripLang } from './i18n';
+import type { Lang, SiteSettings } from './types';
+
+/**
+ * Whether the menus list the Downloads link: only once the saved settings have loaded
+ * and the admin's Downloads switch (`sections.downloads`) is not off. While the
+ * settings are loading, or when they failed to load, the link stays out, so it never
+ * flashes up and then disappears. A backend without the switch sends no value (on).
+ */
+export function showDownloadsLink(settings: SiteSettings | null | undefined): boolean {
+  return Boolean(settings) && settings!.sections?.downloads !== false;
+}
 
 /** `icon` is shown in the mobile menus only; the desktop nav is text. */
 export type NavLeaf = { label: string; to: string; icon?: LucideIcon };
@@ -24,8 +34,10 @@ export type NavItem = { label: string; to?: string; icon?: LucideIcon; children?
 /**
  * The site's main navigation (desktop header, tablet drawer and the phone "More"
  * sheet all read from here). `path` turns a route into a language-prefixed path.
+ * `showDownloads` follows the admin's Downloads switch (see `showDownloadsLink`);
+ * when it is off only the menu link goes, the Downloads page stays reachable.
  */
-export function buildNavItems(path: (to: string) => string, navLang: Lang): NavItem[] {
+export function buildNavItems(path: (to: string) => string, navLang: Lang, showDownloads: boolean): NavItem[] {
   return [
     { label: str('home', navLang), to: path('/'), icon: Home },
     {
@@ -42,7 +54,7 @@ export function buildNavItems(path: (to: string) => string, navLang: Lang): NavI
       children: [
         { label: str('videos', navLang), to: path('/media/videos'), icon: Video },
         { label: str('photoGallery', navLang), to: path('/media/gallery'), icon: Images },
-        { label: str('downloads', navLang), to: path('/media/downloads'), icon: Download },
+        ...(showDownloads ? [{ label: str('downloads', navLang), to: path('/media/downloads'), icon: Download }] : []),
         { label: str('publications', navLang), to: path('/publications'), icon: BookOpen },
       ],
     },
@@ -56,16 +68,15 @@ export function buildNavItems(path: (to: string) => string, navLang: Lang): NavI
  * the current one (a section's detail pages count too).
  */
 export function buildBottomTabs(path: (to: string) => string, navLang: Lang) {
-  const strip = (p: string) => p.replace(/^\/(ml|en)/, '') || '/';
   return [
-    { label: str('home', navLang), to: path('/'), icon: Home, match: (p: string) => strip(p) === '/' },
-    { label: str('programs', navLang), to: path('/programs'), icon: Sparkles, match: (p: string) => strip(p).startsWith('/programs') },
+    { label: str('home', navLang), to: path('/'), icon: Home, match: (p: string) => stripLang(p) === '/' },
+    { label: str('programs', navLang), to: path('/programs'), icon: Sparkles, match: (p: string) => stripLang(p).startsWith('/programs') },
     {
       label: str('news', navLang),
       to: path('/media/news'),
       icon: Newspaper,
-      match: (p: string) => /^\/media\/(news|press-release|statement|interview|speech)(\/|$)/.test(strip(p)),
+      match: (p: string) => /^\/media\/(news|press-release|statement|interview|speech)(\/|$)/.test(stripLang(p)),
     },
-    { label: str('gallery', navLang), to: path('/media/gallery'), icon: Images, match: (p: string) => strip(p).startsWith('/media/gallery') },
+    { label: str('gallery', navLang), to: path('/media/gallery'), icon: Images, match: (p: string) => stripLang(p).startsWith('/media/gallery') },
   ];
 }

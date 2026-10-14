@@ -80,6 +80,8 @@ export type SiteSettings = {
     presidentMessage: boolean;
     focusAreas: boolean;
     newsletter: boolean;
+    /** The Downloads link in the menus; missing on an older backend (treated as on) */
+    downloads?: boolean;
   };
   /** Admin-managed page titles and section headings (keys: backend/utils/siteContent.js) */
   content?: {
@@ -209,6 +211,17 @@ export type Program = {
 
 export type LeaderCategory = 'state' | 'district' | 'party';
 
+/** One period of leadership, oldest first in `Leader.terms` */
+export type LeaderTerm = {
+  /** As entered in the admin, e.g. "2024–2026" */
+  period: string;
+  /** District served in during this period (district leaders); empty otherwise */
+  district: string;
+  /** Years read from `period`; missing when it has none */
+  from?: number;
+  to?: number;
+};
+
 export type Leader = {
   _id: string;
   /** Leaders saved before categories existed are reported as 'state' by the API */
@@ -217,7 +230,11 @@ export type Leader = {
   designation: Localized;
   bio: Localized;
   photo: string;
-  posterImage: string;
+  /** Group poster of a past committee; the card shows it when there is no photo */
+  posterImage?: string;
+  /** Every period this person led in; records saved before periods existed report their old term here */
+  terms?: LeaderTerm[];
+  /** The most recent period, kept for older API responses that have no `terms` */
   termLabel: string;
   termFrom?: number;
   termTo?: number;
@@ -238,6 +255,8 @@ export type OrgEvent = {
   district: string;
   coverImage: string;
   posterImage: string;
+  /** Optional poster link: when set, the poster opens this address in a new tab */
+  externalUrl?: string;
   speakers: Person[];
   gallery: MediaItem[];
   downloads: Attachment[];

@@ -115,17 +115,19 @@ export function EventDetail() {
   // Beside the description the poster sits in the side column, as on programme pages.
   // An event that is only a poster keeps it as the main content.
   const posterAside = Boolean(data.posterImage && description);
+  // An Event Poster may have no title: the page is then headed by the section name alone
+  const name = t(data.title, lang);
 
   return (
     <>
       <PageHeader
-        title={t(data.title, lang)}
+        title={name || pageTitle('events')}
         description={t(data.summary, lang)}
         image={data.coverImage}
         breadcrumb={[
           { label: s('home'), to: path('/') },
           { label: pageTitle('events'), to: path('/events') },
-          { label: t(data.title, lang) },
+          ...(name ? [{ label: name }] : []),
         ]}
       />
 
@@ -136,7 +138,7 @@ export function EventDetail() {
           <ContentPanel
             aside={
               <>
-                {posterAside && <PanelPoster src={data.posterImage} alt={t(data.title, lang)} />}
+                {posterAside && <PanelPoster src={data.posterImage} alt={name} />}
                 <dl className="space-y-3 type-body-sm sm:space-y-4">
                   <div className="flex gap-3">
                     <Calendar size={16} className="mt-0.5 shrink-0 text-magenta-500" />

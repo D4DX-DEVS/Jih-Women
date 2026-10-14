@@ -63,6 +63,8 @@ type NavEntry = {
   badge?: keyof Stats;
   /** Counts that represent unattended work; surfaced on a collapsed group. */
   alert?: boolean;
+  /** Left out of the admin; the section's data, API and website pages are untouched. */
+  hidden?: boolean;
 };
 
 /** `key` is stable and safe to persist; `title` is display copy and may change. */
@@ -76,7 +78,7 @@ const PINNED: NavEntry[] = [
   { key: 'site-content', label: 'Titles & Headings', kind: 'content', Icon: Type },
 ];
 
-const NAV: NavGroup[] = [
+const NAV_ALL: NavGroup[] = [
   {
     key: 'home',
     title: 'Home page',
@@ -91,7 +93,7 @@ const NAV: NavGroup[] = [
     title: 'Organisation',
     entries: [
       { key: PAGES.key, label: PAGES.label, kind: 'collection', config: PAGES, badge: 'pages', Icon: FileText },
-      { key: DEPARTMENTS.key, label: DEPARTMENTS.label, kind: 'collection', config: DEPARTMENTS, badge: 'departments', Icon: Network },
+      { key: DEPARTMENTS.key, label: DEPARTMENTS.label, kind: 'collection', config: DEPARTMENTS, badge: 'departments', Icon: Network, hidden: true },
       { key: PROGRAMS.key, label: PROGRAMS.label, kind: 'collection', config: PROGRAMS, badge: 'programs', Icon: BookOpen },
       { key: LEADERS.key, label: LEADERS.label, kind: 'collection', config: LEADERS, badge: 'leaders', Icon: Users },
     ],
@@ -101,7 +103,7 @@ const NAV: NavGroup[] = [
     title: 'Events',
     entries: [
       { key: EVENTS.key, label: EVENTS.label, kind: 'collection', config: EVENTS, badge: 'events', Icon: CalendarDays },
-      { key: 'event-rsvps', label: 'Registrations', kind: 'rsvps', badge: 'eventRsvps', alert: true, Icon: ClipboardList },
+      { key: 'event-rsvps', label: 'Registrations', kind: 'rsvps', badge: 'eventRsvps', alert: true, Icon: ClipboardList, hidden: true },
     ],
   },
   {
@@ -131,6 +133,10 @@ const NAV: NavGroup[] = [
     ],
   },
 ];
+
+/* Hidden sections are left out everywhere, so a section last opened before it was
+   hidden falls back to the Dashboard. */
+const NAV: NavGroup[] = NAV_ALL.map((g) => ({ ...g, entries: g.entries.filter((e) => !e.hidden) }));
 
 const ALL_ENTRIES: NavEntry[] = [...PINNED, ...NAV.flatMap((g) => g.entries)];
 
@@ -426,7 +432,6 @@ const OVERVIEW_TILES: { key: string; label: string; target: string }[] = [
   { key: 'focusAreas', label: 'Focus areas', target: 'focus-areas' },
   { key: 'campaigns', label: 'Campaigns', target: 'campaigns' },
   { key: 'pages', label: 'About Us pages', target: 'pages' },
-  { key: 'departments', label: 'Departments', target: 'departments' },
   { key: 'programs', label: 'Highlights', target: 'programs' },
   { key: 'leaders', label: 'Leaders', target: 'leaders' },
   { key: 'events', label: 'Event posters', target: 'events' },
@@ -467,7 +472,7 @@ function Overview({ stats, onOpen }: { stats: Stats | null; onOpen: (key: string
         )}
       </div>
 
-      {(stats.unreadMessages > 0 || stats.eventRsvps > 0) && (
+      {stats.unreadMessages > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
             onClick={() => onOpen('contact')}
@@ -478,17 +483,6 @@ function Overview({ stats, onOpen }: { stats: Stats | null; onOpen: (key: string
             </div>
             <div className="admin-display mt-1.5 text-[26px] font-semibold text-[#e6187e]">
               {stats.unreadMessages ?? 0}
-            </div>
-          </button>
-          <button
-            onClick={() => onOpen('event-rsvps')}
-            className="glass p-4 text-left transition hover:border-[#e6187e]/40"
-          >
-            <div className="text-[11px] uppercase tracking-wider text-foreground/45">
-              Event registrations
-            </div>
-            <div className="admin-display mt-1.5 text-[26px] font-semibold">
-              {stats.eventRsvps ?? 0}
             </div>
           </button>
         </div>

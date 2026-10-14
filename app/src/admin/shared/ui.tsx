@@ -292,6 +292,7 @@ export function BilingualInput({
   placeholder,
   hint,
   onlyLang,
+  primaryLang = 'ml',
 }: {
   label: string;
   value: Localized | undefined;
@@ -303,9 +304,14 @@ export function BilingualInput({
   hint?: string;
   /** Show a single language's input; the other language's stored value is kept untouched */
   onlyLang?: (typeof LANGUAGES)[number]['code'];
+  /** The language listed first and marked required ('ml' by default). With 'en' the
+      Malayalam input is labelled optional. */
+  primaryLang?: (typeof LANGUAGES)[number]['code'];
 }) {
   const current = value ?? emptyLocalized();
-  const langs = onlyLang ? LANGUAGES.filter((l) => l.code === onlyLang) : LANGUAGES;
+  const ordered = primaryLang === 'en' ? [...LANGUAGES].reverse() : LANGUAGES;
+  const langs = onlyLang ? ordered.filter((l) => l.code === onlyLang) : ordered;
+  const isPrimary = (code: string) => (primaryLang === 'en' ? code === 'en' : LANGUAGES.some((l) => l.code === code && l.required));
   return (
     <Field label={label} required={required} hint={hint}>
       <div className={`grid grid-cols-1 gap-2.5 ${langs.length > 1 ? 'md:grid-cols-2' : ''}`}>
@@ -313,7 +319,8 @@ export function BilingualInput({
           <div key={lang.code}>
             <div className="field-lang">
               {lang.label}
-              {required && lang.required && <span className="field-req">*</span>}
+              {primaryLang === 'en' && !isPrimary(lang.code) && ' (optional)'}
+              {required && isPrimary(lang.code) && <span className="field-req">*</span>}
             </div>
             {multiline ? (
               <textarea
@@ -974,17 +981,36 @@ export function GalleryEditor({
   /* Upload progress while several files go up one after another */
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const inputId = useId();
+  /* Index of the photo waiting for "Remove" to be confirmed */
+  const [removing, setRemoving] = useState<number | null>(null);
+  /* The list as of the latest render: uploads finish later, and appending to the list
+     they started from would drop captions typed or photos removed in the meantime */
+  const latest = useRef(items);
+  useEffect(() => {
+    latest.current = items;
+  });
+  /* Files already uploaded here (name, size and date -> stored URL), so picking the same
+     file again does not add a second copy of it */
+  const uploaded = useRef(new Map<string, string>());
 
   const addFiles = async (files: FileList | null) => {
-    if (!files || !files.length) return;
+    if (!files || !files.length || busy) return;
     setBusy(true);
     const added: MediaItem[] = [];
     const list = Array.from(files);
+    let skipped = 0;
     setProgress({ done: 0, total: list.length });
     for (const [n, file] of list.entries()) {
       setProgress({ done: n, total: list.length });
+      const signature = `${file.name}|${file.size}|${file.lastModified}`;
+      const previous = uploaded.current.get(signature);
+      if (previous && (latest.current.some((it) => it.url === previous) || added.some((it) => it.url === previous))) {
+        skipped += 1;
+        continue;
+      }
       try {
         const res = await uploadAsset(file, folder, token);
+        uploaded.current.set(signature, res.url);
         added.push({
           url: res.url,
           thumbnailUrl: res.thumbnailUrl || res.url,
@@ -992,10 +1018,20 @@ export function GalleryEditor({
           kind: res.kind === 'video' ? 'video' : 'image',
         });
       } catch (err) {
-        onError?.(err instanceof Error ? err.message : `Failed to upload ${file.name}`);
+        onError?.(`${file.name}: ${err instanceof Error ? err.message : 'the upload failed. Please try again.'}`);
       }
     }
-    if (added.length) onChange([...items, ...added]);
+    if (added.length) {
+      const known = new Set(latest.current.map((it) => it.url));
+      onChange([...latest.current, ...added.filter((it) => !known.has(it.url))]);
+    }
+    if (skipped) {
+      onError?.(
+        skipped === 1
+          ? 'That file is already in this gallery, so it was not added again.'
+          : `${skipped} files are already in this gallery, so they were not added again.`
+      );
+    }
     setBusy(false);
     setProgress(null);
   };
@@ -1053,7 +1089,7 @@ export function GalleryEditor({
                 <button
                   type="button"
                   className="text-xs text-red-500/70 hover:text-red-600"
-                  onClick={() => onChange(items.filter((_, idx) => idx !== i))}
+                  onClick={() => setRemoving(i)}
                 >
                   Remove
                 </button>
@@ -1064,7 +1100,8 @@ export function GalleryEditor({
 
         <label
           htmlFor={inputId}
-          className="grid min-h-[128px] cursor-pointer place-items-center rounded-lg border border-dashed border-[#d3d7e4] text-[12px] text-foreground/45 transition hover:border-[#e6187e]/50 hover:bg-[#fdf2f8] hover:text-[#e6187e]"
+          aria-disabled={busy}
+          className="grid min-h-[128px] cursor-pointer place-items-center aria-disabled:cursor-wait rounded-lg border border-dashed border-[#d3d7e4] text-[12px] text-foreground/45 transition hover:border-[#e6187e]/50 hover:bg-[#fdf2f8] hover:text-[#e6187e]"
         >
           {busy ? (
             <span className="flex flex-col items-center gap-2">
@@ -1087,6 +1124,8 @@ export function GalleryEditor({
           multiple
           accept={accept}
           className="hidden"
+          /* no second batch while one is uploading */
+          disabled={busy}
           onChange={(e) => {
             addFiles(e.target.files);
             e.target.value = '';
@@ -1094,6 +1133,16 @@ export function GalleryEditor({
         />
       </div>
       {recommend && <UploadSpec>{recommend}</UploadSpec>}
+      {removing !== null && items[removing] && (
+        <ConfirmDialog
+          title={items[removing].kind === 'video' ? 'Remove this video?' : 'Remove this photo?'}
+          description="Only this one is removed; the others stay as they are. The website changes when you save."
+          confirmLabel="Remove"
+          tone="danger"
+          onConfirm={() => onChange(items.filter((_, idx) => idx !== removing))}
+          onClose={() => setRemoving(null)}
+        />
+      )}
     </Field>
   );
 }

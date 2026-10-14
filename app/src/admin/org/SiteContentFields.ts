@@ -95,9 +95,7 @@ const SECTIONS: SectionDef[] = [
     fields: ['label', 'heading'],
   },
   { key: 'homePublications', title: 'Home · Publications', description: 'Publications section.', fields: ['label', 'heading'] },
-  { key: 'leadersCurrent', title: 'Leaders · Current leadership', description: 'State leaders grid.', fields: ['label', 'heading'] },
-  { key: 'leadersPast', title: 'Leaders · Past leadership', description: 'Meeqathi posters and past terms.', fields: ['label', 'heading'] },
-  { key: 'programsMajor', title: 'Programmes · Major', description: 'Major programmes list.', fields: ['label', 'heading'] },
+  { key: 'leadersCurrent', title: 'Leaders · Current leadership', description: 'Small label above each leadership-period heading on the State and District tabs. The headings themselves are the years entered on each leader.', fields: ['label'] },  { key: 'programsMajor', title: 'Programmes · Major', description: 'Major programmes list.', fields: ['label', 'heading'] },
   { key: 'programsOther', title: 'Programmes · Other', description: 'Other programmes list.', fields: ['label', 'heading'] },
 ];
 

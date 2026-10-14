@@ -77,7 +77,7 @@ export function PublicationsIndex() {
             <EmptyState />
           ) : (
             <>
-              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+              <div className={`grid gap-2.5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 {data.items.map((p) => (
                   <PublicationCard key={p._id} publication={p} view={view} />
                 ))}

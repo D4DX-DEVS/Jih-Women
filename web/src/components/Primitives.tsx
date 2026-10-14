@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
-import { Download, LayoutGrid, List } from 'lucide-react';
+import { Download, LayoutGrid, List, PenLine } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
@@ -61,21 +61,23 @@ export function Section({
 /**
  * SectionHeading whose label, heading, description and logo come from the
  * admin-managed section content (Titles & Headings), falling back to the
- * built-in text passed in when a value is empty.
+ * built-in text passed in when a value is empty. `hideEyebrow` leaves the label out
+ * (stored or built-in), for a heading whose label only repeats the page title.
  */
 export function ManagedSectionHeading({
   sectionKey,
   eyebrow,
   title,
   description,
+  hideEyebrow = false,
   ...rest
-}: Parameters<typeof SectionHeading>[0] & { sectionKey: string }) {
+}: Parameters<typeof SectionHeading>[0] & { sectionKey: string; hideEyebrow?: boolean }) {
   const { section } = useSite();
   const content = section(sectionKey, { label: eyebrow, heading: title, description });
   return (
     <SectionHeading
       {...rest}
-      eyebrow={content.label || undefined}
+      eyebrow={hideEyebrow ? undefined : content.label || undefined}
       title={content.heading}
       description={content.description || undefined}
       logo={content.logo || undefined}
@@ -161,34 +163,60 @@ export function GradientText({ children, light = false }: { children: ReactNode;
 }
 
 /**
- * Phones only: a Cards / List switch for a listing screen. The choice is remembered and
- * shared by every listing; tablets and desktop always show cards, so it is hidden there.
+ * Phones only: the Cards / List switch for a listing screen, shown as a single writing
+ * icon with no visible text. A tap switches between the two layouts (pressed = list);
+ * screen readers hear "List". It only changes the layout, never the content. The choice
+ * is remembered and shared by every listing; tablets and desktop always show cards, so
+ * it is hidden there.
+ *
+ * `icons` shows the switch as two icon-only buttons side by side (grid / list), the
+ * active one filled; each is named for screen readers and has a tooltip.
  */
-export function ViewToggle() {
+export function ViewToggle({ icons = false, className = 'mb-2.5' }: { icons?: boolean; className?: string }) {
   const { s } = useSite();
   const { mode, setMode } = useViewMode();
-  const options = [
-    { value: 'card' as const, label: s('cardView'), Icon: LayoutGrid },
-    { value: 'list' as const, label: s('listView'), Icon: List },
-  ];
-  return (
-    <div className="mb-2.5 flex justify-end sm:hidden">
-      <div role="group" aria-label="View" className="inline-flex rounded-full border border-plum-100 bg-white p-0.5 shadow-soft">
-        {options.map(({ value, label, Icon }) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setMode(value)}
-            aria-pressed={mode === value}
-            className={`inline-flex h-7 items-center gap-1 rounded-full px-2.5 type-caption font-medium transition ${
-              mode === value ? 'bg-magenta-500 text-white shadow-pink' : 'text-ink-muted'
-            }`}
-          >
-            <Icon size={13} />
-            {label}
-          </button>
-        ))}
+  const list = mode === 'list';
+  if (icons) {
+    const options = [
+      { value: 'card' as const, label: s('cardView'), Icon: LayoutGrid },
+      { value: 'list' as const, label: s('listView'), Icon: List },
+    ];
+    return (
+      <div className={`flex justify-end sm:hidden ${className}`}>
+        <div role="group" aria-label="View" className="inline-flex rounded-full border border-plum-100 bg-white p-0.5 shadow-soft">
+          {options.map(({ value, label, Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setMode(value)}
+              aria-pressed={mode === value}
+              aria-label={label}
+              title={label}
+              className={`grid h-8 w-8 place-items-center rounded-full transition active:scale-95 ${
+                mode === value ? 'bg-magenta-500 text-white shadow-pink' : 'text-ink-muted'
+              }`}
+            >
+              <Icon size={15} aria-hidden="true" />
+            </button>
+          ))}
+        </div>
       </div>
+    );
+  }
+  return (
+    <div className={`flex justify-end sm:hidden ${className}`}>
+      <button
+        type="button"
+        onClick={() => setMode(list ? 'card' : 'list')}
+        aria-pressed={list}
+        aria-label={s('listView')}
+        title={list ? s('cardView') : s('listView')}
+        className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border shadow-soft transition active:scale-95 ${
+          list ? 'border-magenta-500 bg-magenta-500 text-white shadow-pink' : 'border-plum-100 bg-white text-magenta-600'
+        }`}
+      >
+        <PenLine size={15} />
+      </button>
     </div>
   );
 }

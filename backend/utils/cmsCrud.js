@@ -29,6 +29,7 @@ const FIELD_ALIASES = {
   publishedAt: 'Publish date',
   eventDate: 'Event date',
   isCurrent: 'Current leadership',
+  terms: 'Leadership period',
   isMajor: 'Major programme',
 };
 

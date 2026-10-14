@@ -87,7 +87,7 @@ async function render(path, expect) {
 }
 
 const ROUTES = [
-  ['/ml', ["President's Message", 'വിദ്യാഭ്യാസം']],
+  ['/', ["President's Message", 'വിദ്യാഭ്യാസം']],
   ['/en', ['Jamaat e Islami Hind', "President's Message", 'Education', 'View All News']],
   ['/en/who-we-are', ['Who We Are', 'Ideology', 'Our Values']],
   ['/en/who-we-are/ideology', ['Ideology', 'Our Foundation']],

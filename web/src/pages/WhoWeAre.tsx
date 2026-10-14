@@ -98,7 +98,7 @@ export function WhoWeAreIndex() {
           ) : (
             <>
               {!hasFocus && <ViewToggle />}
-              <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${row ? 'grid-cols-1' : 'grid-cols-3'}`}>
+              <div className={`grid gap-2.5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${row ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 {data.items.map((page) => (
                   <Link
                     key={page._id}
@@ -121,7 +121,7 @@ export function WhoWeAreIndex() {
                         />
                       </div>
                     )}
-                    <div className={`min-w-0 flex-1 sm:p-5 ${row ? 'self-center p-2.5' : 'p-1.5'}`}>
+                    <div className={`min-w-0 flex-1 sm:p-5 ${row ? 'self-center p-2.5' : 'p-2'}`}>
                       <h2 className={`type-title-lg transition group-hover:text-magenta-600 ${row ? '' : 'max-sm:type-tile'}`}>
                         <GradientText>{t(page.title, 'en')}</GradientText>
                       </h2>
