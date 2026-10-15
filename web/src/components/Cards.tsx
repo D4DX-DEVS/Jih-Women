@@ -1,6 +1,7 @@
 import { GradientText } from './Primitives';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router';
 import {
   ArrowUpRight,
@@ -270,11 +271,29 @@ export function EventPosterLink({
 }
 
 /**
+ * An event poster opened full size in the lightbox, captioned with the event's title. A
+ * poster click opens this and never leaves the page: the poster's own link (externalUrl)
+ * is kept in the data but not followed from here.
+ */
+export function PosterLightbox({ event, onClose }: { event: OrgEvent; onClose: () => void }) {
+  const src = event.posterImage || event.coverImage;
+  return (
+    <Lightbox
+      items={[{ url: src, thumbnailUrl: src, caption: event.title, kind: 'image' }]}
+      index={0}
+      onClose={onClose}
+      onIndex={() => {}}
+    />
+  );
+}
+
+/**
  * One event on the Events page: its poster alone, shown whole in a 3:4 frame with the date
- * badge on it and nothing beneath. The whole card links to the event page, which carries
- * the details and the registration. `className` is the card's share of a row.
- * Phones can switch to `list`: a compact row with a small poster beside the details and,
- * for an event that is not over yet, its Register button.
+ * badge on it and nothing beneath. A click opens the poster full size in the lightbox
+ * (an event with no picture links to its page instead). `className` is the card's share
+ * of a row. Phones can switch to `list`: a compact row with a small poster beside the
+ * details and, for an event that is not over yet, its Register button; there the poster
+ * opens the lightbox and the rest of the row links to the event page.
  */
 export function EventCard({
   event,
@@ -287,6 +306,7 @@ export function EventCard({
 }) {
   const { lang, path, s } = useSite();
   const { day, month } = formatDay(event.startDate, lang);
+  const [zoomed, setZoomed] = useState(false);
 
   const name = t(event.title, lang);
   const venue = t(event.venue, lang);
@@ -295,15 +315,34 @@ export function EventCard({
 
   const dateRange = formatDateRange(event.startDate, event.endDate, lang);
 
+  const lightbox = zoomed && <PosterLightbox event={event} onClose={() => setZoomed(false)} />;
+
   if (view !== 'list') {
+    const cardClass = `card-hover group block min-w-0 overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 sm:rounded-2xl ${className}`;
+    const poster = (
+      <EventPoster key={src} src={src} alt={name} day={day} month={month} title={name} className="aspect-[3/4] w-full" />
+    );
+    if (!src) {
+      return (
+        <EventPosterLink event={event} aria-label={name ? `${name}, ${dateRange}` : dateRange} className={cardClass}>
+          {poster}
+        </EventPosterLink>
+      );
+    }
+    // The lightbox sits beside the button, not in it: its clicks must not bubble back to the card
     return (
-      <EventPosterLink
-        event={event}
-        aria-label={name ? `${name}, ${dateRange}` : dateRange}
-        className={`card-hover group block min-w-0 overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 sm:rounded-2xl ${className}`}
-      >
-        <EventPoster key={src} src={src} alt={name} day={day} month={month} title={name} className="aspect-[3/4] w-full" />
-      </EventPosterLink>
+      <>
+        <button
+          type="button"
+          onClick={() => setZoomed(true)}
+          aria-haspopup="dialog"
+          aria-label={name ? `${name}, ${dateRange}` : dateRange}
+          className={`cursor-zoom-in text-start ${cardClass}`}
+        >
+          {poster}
+        </button>
+        {lightbox}
+      </>
     );
   }
 
@@ -318,14 +357,27 @@ export function EventCard({
     <article
       className={`card-hover group relative flex min-w-0 gap-3 rounded-xl border border-plum-100 bg-white p-2 shadow-soft has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-magenta-500 ${className}`}
     >
-      <EventPoster
-        key={src}
-        src={src}
-        alt={name}
-        day={day}
-        month={month}
-        className="aspect-[3/4] w-20 shrink-0 self-start rounded-lg"
-      />
+      {/* z-10 lifts the poster above the row's stretched link, so it opens the lightbox */}
+      {src ? (
+        <button
+          type="button"
+          onClick={() => setZoomed(true)}
+          aria-haspopup="dialog"
+          aria-label={name || dateRange}
+          className="relative z-10 w-20 shrink-0 cursor-zoom-in self-start rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
+        >
+          <EventPoster key={src} src={src} alt={name} day={day} month={month} className="aspect-[3/4] w-full rounded-lg" />
+        </button>
+      ) : (
+        <EventPoster
+          key={src}
+          src={src}
+          alt={name}
+          day={day}
+          month={month}
+          className="aspect-[3/4] w-20 shrink-0 self-start rounded-lg"
+        />
+      )}
 
       <div className="flex min-w-0 flex-1 flex-col py-0.5 pe-1">
         {/* after:inset-0 stretches the link over the whole card. An untitled poster has no
@@ -382,6 +434,7 @@ export function EventCard({
           )}
         </div>
       </div>
+      {lightbox}
     </article>
   );
 }
@@ -565,6 +618,7 @@ export function LeaderCard({
   view = 'card',
   className = '',
   shownPeriod = '',
+  shownPeriodOnPhones = '',
 }: {
   leader: Leader;
   view?: ViewMode;
@@ -572,12 +626,21 @@ export function LeaderCard({
   className?: string;
   /** The period in the heading above the card; not repeated when it is the leader's only one */
   shownPeriod?: string;
+  /** As `shownPeriod`, for a heading shown above the card on phones only; the card still
+      shows the period from `sm` */
+  shownPeriodOnPhones?: string;
 }) {
   const { lang } = useSite();
+  // Name and designation are empty when neither language has one, so no blank line is drawn
   const name = t(leader.name, lang);
-  // Empty when neither language has one, so no blank line is drawn
   const designation = t(leader.designation, lang);
   const { district, periods } = leaderTermSummary(leader, lang, { name, shownPeriod });
+  const periodsOnPhones = shownPeriodOnPhones
+    ? leaderTermSummary(leader, lang, { name, shownPeriod: shownPeriodOnPhones }).periods
+    : periods;
+  // A card with nothing to say below the photo (e.g. a poster with only its year, which
+  // the heading already shows) has no empty text panel
+  const textOnPhones = Boolean(name || designation || district || periodsOnPhones);
   // A past committee is often saved with only its group poster; that stands in for the photo
   const photo = leader.photo || leader.posterImage;
 
@@ -595,11 +658,15 @@ export function LeaderCard({
           <Placeholder className="h-16 w-16 shrink-0 rounded-full" />
         )}
         <div className="min-w-0 flex-1">
-          <h3 className="type-title-lg font-semibold text-plum-800 [overflow-wrap:anywhere]">
-            <GradientText>{name}</GradientText>
-          </h3>
-          {designation && <p className="mt-0.5 type-body-sm leading-snug text-ink-muted">{designation}</p>}
-          {(district || periods) && (
+          {name && (
+            <h3 className="type-title-lg font-semibold text-plum-800 [overflow-wrap:anywhere]">
+              <GradientText>{name}</GradientText>
+            </h3>
+          )}
+          {designation && (
+            <p className={`${name ? 'mt-0.5 ' : ''}type-body-sm leading-snug text-ink-muted`}>{designation}</p>
+          )}
+          {(district || periodsOnPhones) && (
             <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 type-caption font-medium text-magenta-600">
               {district && (
                 <span className="inline-flex items-center gap-1">
@@ -607,7 +674,7 @@ export function LeaderCard({
                   {district}
                 </span>
               )}
-              {periods && <span>{periods}</span>}
+              {periodsOnPhones && <span>{periodsOnPhones}</span>}
             </p>
           )}
         </div>
@@ -630,23 +697,33 @@ export function LeaderCard({
       ) : (
         <Placeholder className="card-sheen aspect-[4/5]" />
       )}
-      <div className="card-rule flex flex-1 flex-col items-center px-2.5 py-3 text-center sm:px-4 sm:py-5">
-        <h3 className="type-title-lg font-semibold text-plum-800 [overflow-wrap:anywhere]">
-          <GradientText>{name}</GradientText>
-        </h3>
-        {designation && (
-          <p className="mt-1 type-body-sm leading-snug text-ink-muted">{designation}</p>
-        )}
-        {district && (
-          <p className="mt-2 inline-flex max-w-full items-center gap-1 rounded-full bg-magenta-50 px-2.5 py-0.5 type-caption font-semibold text-magenta-600">
-            <MapPin size={13} className="shrink-0" aria-hidden="true" />
-            <span className="[overflow-wrap:anywhere]">{district}</span>
-          </p>
-        )}
-        {periods && (
-          <p className="mt-2 type-caption font-medium tracking-wide text-plum-600">{periods}</p>
-        )}
-      </div>
+      {(textOnPhones || periods) && (
+        <div
+          className={`card-rule flex flex-1 flex-col items-center px-2.5 py-3 text-center sm:px-4 sm:py-5 ${
+            textOnPhones ? '' : 'max-sm:hidden'
+          }`}
+        >
+          {name && (
+            <h3 className="type-title-lg font-semibold text-plum-800 [overflow-wrap:anywhere]">
+              <GradientText>{name}</GradientText>
+            </h3>
+          )}
+          {designation && (
+            <p className={`${name ? 'mt-1 ' : ''}type-body-sm leading-snug text-ink-muted`}>{designation}</p>
+          )}
+          {district && (
+            <p className="mt-2 inline-flex max-w-full items-center gap-1 rounded-full bg-magenta-50 px-2.5 py-0.5 type-caption font-semibold text-magenta-600">
+              <MapPin size={13} className="shrink-0" aria-hidden="true" />
+              <span className="[overflow-wrap:anywhere]">{district}</span>
+            </p>
+          )}
+          {periods && (
+            <p className={`mt-2 type-caption font-medium tracking-wide text-plum-600 ${periodsOnPhones ? '' : 'max-sm:hidden'}`}>
+              {periods}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -860,10 +937,26 @@ export function Lightbox({
     };
   }, [index, items.length, onClose, onIndex]);
 
+  // Focus starts on the close button and goes back to whatever opened the viewer
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    return () => {
+      if (opener && document.contains(opener)) opener.focus({ preventScroll: true });
+    };
+  }, []);
+
   if (!item) return null;
 
-  return (
-    <div className="fixed inset-0 z-[70] flex flex-col bg-ink/90 p-4 animate-fade-in" onClick={onClose}>
+  // Portalled to <body>: a transformed or clipping ancestor (a Reveal, a card) cannot trap
+  // the fixed overlay, and it stacks above the sticky header (z-50)
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t(item.caption, lang) || undefined}
+      className="fixed inset-0 z-[70] flex flex-col bg-ink/90 p-4 animate-fade-in"
+      onClick={onClose}
+    >
       {/* A click or tap anywhere off the picture closes the viewer (the backdrop's onClick) */}
       <div className="flex min-h-0 flex-1 items-center justify-center">
         {/* Wraps the picture exactly, so the close button sits on its top corner. The caps are
@@ -889,6 +982,7 @@ export function Lightbox({
             type="button"
             onClick={onClose}
             aria-label={s('close')}
+            autoFocus
             className="absolute end-2 top-2 grid h-9 w-9 place-items-center rounded-full bg-ink/60 text-white ring-1 ring-white/40 backdrop-blur-sm transition hover:bg-ink/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:end-3 sm:top-3 sm:h-10 sm:w-10"
           >
             <X size={20} />
@@ -918,7 +1012,8 @@ export function Lightbox({
           →
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

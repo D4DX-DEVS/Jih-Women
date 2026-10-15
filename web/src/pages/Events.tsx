@@ -33,8 +33,8 @@ import { useViewMode } from '../lib/view';
 import NotFound from './NotFound';
 import type { OrgEvent, Paged } from '../lib/types';
 
-/* Events per page: four full rows of five on desktop. */
-const EVENTS_PER_PAGE = 20;
+/* Events per page: six full rows of three on desktop (nine of two on phones). */
+const EVENTS_PER_PAGE = 18;
 
 export function EventsIndex() {
   const { path, s, pageTitle } = useSite();
@@ -50,12 +50,12 @@ export function EventsIndex() {
   const listKey = data?.items.map((event) => event._id).join('|') ?? '';
   /* Each card is a fixed share of the row (the calc() subtracts the gaps), so a flex row
      that wraps keeps every card the same width and `justify-center` centres a last row
-     that is not full: 2 a row on phones (1 in list view), 3 from sm, 4 on tablets, 5 on
-     desktop. */
-  const row = `flex flex-wrap justify-center sm:gap-4 xl:gap-5 ${view === 'list' ? 'gap-2.5' : 'gap-3'}`;
+     that is not full: 2 a row on phones (1 in list view), 3 from sm up, with the gaps
+     widening on desktop so the three large posters keep some air between them. */
+  const row = `flex flex-wrap justify-center sm:gap-4 lg:gap-6 xl:gap-8 ${view === 'list' ? 'gap-2.5' : 'gap-3'}`;
   const cell = `${
     view === 'list' ? 'w-full' : 'w-[calc((100%-0.75rem)/2)]'
-  } sm:w-[calc((100%-2rem)/3)] md:w-[calc((100%-3rem)/4)] lg:w-[calc((100%-4rem)/5)] xl:w-[calc((100%-5rem)/5)]`;
+  } sm:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-3rem)/3)] xl:w-[calc((100%-4rem)/3)]`;
 
   return (
     <>
@@ -68,7 +68,7 @@ export function EventsIndex() {
           <ViewToggle />
           <div aria-busy={loading}>
             {loading && !data ? (
-              <ListSkeleton variant="posters" count={10} />
+              <ListSkeleton variant="posters" count={6} />
             ) : error ? (
               <ErrorState message={error} onRetry={reload} />
             ) : !data?.items.length ? (

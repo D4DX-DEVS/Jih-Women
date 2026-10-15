@@ -431,9 +431,20 @@ const KERALA_DISTRICT_OPTIONS = [
   ].map((d) => ({ value: d, label: d })),
 ];
 
+/**
+ * The designation list. Each option saves both languages, so the English site shows the
+ * English; any other designation is entered through the list's custom option.
+ */
+const LEADER_DESIGNATION_OPTIONS: { label: string; value: Localized }[] = [
+  { label: 'പ്രസിഡന്റ്', value: { ml: 'പ്രസിഡന്റ്', en: 'President' } },
+  { label: 'ജനറൽ സെക്രട്ടറി', value: { ml: 'ജനറൽ സെക്രട്ടറി', en: 'General Secretary' } },
+  { label: 'വൈസ് പ്രസിഡന്റ്', value: { ml: 'വൈസ് പ്രസിഡന്റ്', en: 'Vice President' } },
+  { label: 'സമിതി അംഗം', value: { ml: 'സമിതി അംഗം', en: 'Committee Member' } },
+];
+
 type LeaderTermRow = { period?: string; district?: string };
 
-/** District leaders need a designation, a year (range) and a district; the server checks the same */
+/** District leaders also get a district for each year; every leader field is optional */
 const isDistrictLeader = (_doc: Doc, root: Doc) => root.category === 'district';
 
 /** A leader's periods; records saved before periods existed hold one in `termLabel` (or the years). */
@@ -522,42 +533,21 @@ export const LEADERS: CollectionConfig = {
     };
   },
   fields: [
-    { kind: 'heading', label: 'Leader details' },
+    { kind: 'heading', label: 'Leader details', hint: 'Every field is optional; the website leaves out whatever is left empty.' },
     {
       kind: 'select',
       path: 'category',
       label: 'Category',
       options: LEADER_CATEGORY_OPTIONS,
-      hint: 'Which tab of the Leaders page this person appears under. State and District Leaders are current leadership; Past Leaders are not. District Leaders also need a designation, a year and a district.',
+      hint: 'Which tab of the Leaders page this person appears under. State and District Leaders are current leadership; Past Leaders are not.',
     },
-    {
-      kind: 'localized',
-      path: 'name',
-      label: 'Name',
-      required: true,
-      primaryLang: 'en',
-      hint: 'English is required. Malayalam is optional; when entered it is shown on the Malayalam site.',
-    },
-    {
-      kind: 'localized',
-      path: 'designation',
-      label: 'Designation',
-      primaryLang: 'en',
-      requiredWhen: isDistrictLeader,
-      hint: 'The position held, e.g. President, Secretary, District President. Malayalam is optional.',
-    },
-
-    {
-      kind: 'heading',
-      label: 'Leadership periods',
-      hint: 'One row per period this person led in, e.g. 2024–2026. Add every term to the same leader instead of creating the leader again. The latest period is the heading they are listed under on the website; all periods are shown on their card.',
-    },
+    // The year is the heading the leader is listed under on the website, in every category
     {
       kind: 'object-list',
       path: 'terms',
-      label: 'Periods',
-      addLabel: 'Add another period',
-      requiredWhen: isDistrictLeader,
+      label: 'Year',
+      addLabel: 'Add another year',
+      hint: 'A year or year range, e.g. 2024 or 2024–2026. If this person led in more than one period, add each one here instead of creating the leader again. The latest is the heading they are listed under on the website; the others are shown on their card.',
       blank: () => ({ period: '', district: '' }),
       fields: [
         { kind: 'row', fields: [
@@ -566,7 +556,6 @@ export const LEADERS: CollectionConfig = {
             path: 'period',
             label: 'Year or year range',
             placeholder: '2024–2026',
-            requiredWhen: isDistrictLeader,
           },
           {
             kind: 'select',
@@ -575,11 +564,24 @@ export const LEADERS: CollectionConfig = {
             options: KERALA_DISTRICT_OPTIONS,
             // Shown for District Leaders; also for any period that already has a district saved
             when: (row, root) => isDistrictLeader(row, root) || Boolean(row.district),
-            requiredWhen: isDistrictLeader,
             hint: 'The district served in during this period.',
           },
         ] },
       ],
+    },
+    {
+      kind: 'localized',
+      path: 'name',
+      label: 'Name',
+      hint: 'Malayalam is shown on the Malayalam site and English on the English site; either one is used when the other is empty.',
+    },
+    {
+      kind: 'localized-choice',
+      path: 'designation',
+      label: 'Designation',
+      options: LEADER_DESIGNATION_OPTIONS,
+      customLabel: 'Other / Custom',
+      hint: 'Choose Other / Custom to type a designation that is not in the list.',
     },
 
     { kind: 'heading', label: 'Photo' },

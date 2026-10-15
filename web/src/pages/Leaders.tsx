@@ -57,11 +57,13 @@ export default function Leaders() {
   // Current leaders are headed by the years of their latest period as entered in the
   // admin ("2024–2026"), newest first; a leader with several periods is listed once.
   const currentGroups = groupLeadersByPeriod(current);
-  // Past leaders share one grid without headings, most recent period first; each card
-  // lists all of that person's periods.
-  const pastLeaders = groupLeadersByPeriod(past).flatMap((group) => group.leaders);
+  // Past leaders, most recent period first. On phones each period has its heading, as for
+  // current leaders; from `sm` they share one grid without headings and each card lists
+  // all of that person's periods.
+  const pastGroups = groupLeadersByPeriod(past);
   // The small label above each period heading is the admin-managed section label
   const currentText = section('leadersCurrent', { label: h('leaders'), heading: h('currentLeadership') });
+  const pastText = section('leadersPast', { label: h('leaders'), heading: h('pastLeadership') });
 
   /* Each card is a fixed share of the row (the calc() subtracts the gaps), so a flex row
      that wraps keeps every column the same width and `justify-center` centres a last row
@@ -137,10 +139,34 @@ export default function Leaders() {
                   </section>
                 ))}
 
-                {pastLeaders.length > 0 && (
-                  <div className={row}>
-                    {pastLeaders.map((leader) => (
-                      <LeaderCard key={leader._id} leader={leader} view={view} className={cell} />
+                {/* From `sm` the groups and their rows are `display: contents`, so every card
+                    flows in this one grid as before and the phone-only headings are hidden */}
+                {pastGroups.length > 0 && (
+                  <div className="space-y-8 sm:flex sm:flex-wrap sm:justify-center sm:gap-4 sm:space-y-0 lg:gap-6">
+                    {pastGroups.map((group) => (
+                      <section key={group.period || 'no-period'} className="sm:contents">
+                        {group.period && (
+                          <div className="sm:hidden">
+                            <SectionHeading
+                              eyebrow={pastText.label || undefined}
+                              logo={pastText.logo || undefined}
+                              title={group.period}
+                              align="center"
+                            />
+                          </div>
+                        )}
+                        <div className={`${row} sm:contents`}>
+                          {group.leaders.map((leader) => (
+                            <LeaderCard
+                              key={leader._id}
+                              leader={leader}
+                              view={view}
+                              className={cell}
+                              shownPeriodOnPhones={group.period}
+                            />
+                          ))}
+                        </div>
+                      </section>
                     ))}
                   </div>
                 )}
