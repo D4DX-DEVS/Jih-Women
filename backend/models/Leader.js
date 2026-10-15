@@ -76,31 +76,10 @@ function latestTerm(terms) {
 
 const termSchema = new mongoose.Schema(
   {
-    // The year or year range as shown on the site, e.g. "2024–2026"
-    period: {
-      type: String,
-      trim: true,
-      default: '',
-      maxlength: 60,
-      validate: {
-        validator: (value) => Boolean(value && String(value).trim()),
-        message: 'Enter the year or years of every leadership period, e.g. 2024–2026.',
-      },
-    },
-    // District served in during this period; required for district leaders, empty for others
-    district: {
-      type: String,
-      trim: true,
-      default: '',
-      maxlength: 80,
-      validate: {
-        validator(value) {
-          const owner = typeof this.ownerDocument === 'function' ? this.ownerDocument() : null;
-          return !isDistrict(owner) || filled(value);
-        },
-        message: 'Choose the district for every period of a district leader.',
-      },
-    },
+    // The year or year range as shown on the site, e.g. "2024–2026"; optional
+    period: { type: String, trim: true, default: '', maxlength: 60 },
+    // District served in during this period (district leaders); optional
+    district: { type: String, trim: true, default: '', maxlength: 80 },
     // Read from `period` when saved; used for ordering and grouping
     from: { type: Number },
     to: { type: Number },
@@ -114,8 +93,10 @@ const leaderSchema = new mongoose.Schema(
       type: String,
       enum: { values: LEADER_CATEGORIES, message: 'Choose State, District or Past leaders as the category.' },
       default: 'state',
+      // Optional in the admin: a blank category is saved as State, as for older records
+      set: (value) => value || 'state',
     },
-    // English required, Malayalam optional (see the validators below)
+    // Every field is optional, in both languages; the site leaves out whatever is empty
     name: localized({ maxlength: 200 }),
     designation: localized({ maxlength: 200 }),
     bio: localized({ maxlength: 20000 }),
@@ -141,21 +122,6 @@ const leaderSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
-// English is the required language for leaders; Malayalam is optional throughout
-const filled = (value) => Boolean(String(value || '').trim());
-const isDistrict = (doc) => Boolean(doc) && doc.category === 'district';
-
-leaderSchema.path('name.en').validate(filled, "Enter the leader's name in English.");
-
-// District leaders also need a designation, a year (range) and a district for every period
-leaderSchema.path('designation.en').validate(function (value) {
-  return !isDistrict(this) || filled(value);
-}, 'Enter the designation in English; it is required for district leaders.');
-
-leaderSchema.path('terms').validate(function (terms) {
-  return !isDistrict(this) || (terms || []).some((t) => filled(t.period));
-}, 'Enter the year or year range; it is required for district leaders.');
 
 leaderSchema.pre('validate', function (next) {
   const source = this.terms && this.terms.length

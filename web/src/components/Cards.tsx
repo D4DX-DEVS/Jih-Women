@@ -565,6 +565,7 @@ export function LeaderCard({
   view = 'card',
   className = '',
   shownPeriod = '',
+  shownPeriodOnPhones = '',
 }: {
   leader: Leader;
   view?: ViewMode;
@@ -572,12 +573,21 @@ export function LeaderCard({
   className?: string;
   /** The period in the heading above the card; not repeated when it is the leader's only one */
   shownPeriod?: string;
+  /** As `shownPeriod`, for a heading shown above the card on phones only; the card still
+      shows the period from `sm` */
+  shownPeriodOnPhones?: string;
 }) {
   const { lang } = useSite();
+  // Name and designation are empty when neither language has one, so no blank line is drawn
   const name = t(leader.name, lang);
-  // Empty when neither language has one, so no blank line is drawn
   const designation = t(leader.designation, lang);
   const { district, periods } = leaderTermSummary(leader, lang, { name, shownPeriod });
+  const periodsOnPhones = shownPeriodOnPhones
+    ? leaderTermSummary(leader, lang, { name, shownPeriod: shownPeriodOnPhones }).periods
+    : periods;
+  // A card with nothing to say below the photo (e.g. a poster with only its year, which
+  // the heading already shows) has no empty text panel
+  const textOnPhones = Boolean(name || designation || district || periodsOnPhones);
   // A past committee is often saved with only its group poster; that stands in for the photo
   const photo = leader.photo || leader.posterImage;
 
@@ -595,11 +605,15 @@ export function LeaderCard({
           <Placeholder className="h-16 w-16 shrink-0 rounded-full" />
         )}
         <div className="min-w-0 flex-1">
-          <h3 className="type-title-lg font-semibold text-plum-800 [overflow-wrap:anywhere]">
-            <GradientText>{name}</GradientText>
-          </h3>
-          {designation && <p className="mt-0.5 type-body-sm leading-snug text-ink-muted">{designation}</p>}
-          {(district || periods) && (
+          {name && (
+            <h3 className="type-title-lg font-semibold text-plum-800 [overflow-wrap:anywhere]">
+              <GradientText>{name}</GradientText>
+            </h3>
+          )}
+          {designation && (
+            <p className={`${name ? 'mt-0.5 ' : ''}type-body-sm leading-snug text-ink-muted`}>{designation}</p>
+          )}
+          {(district || periodsOnPhones) && (
             <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 type-caption font-medium text-magenta-600">
               {district && (
                 <span className="inline-flex items-center gap-1">
@@ -607,7 +621,7 @@ export function LeaderCard({
                   {district}
                 </span>
               )}
-              {periods && <span>{periods}</span>}
+              {periodsOnPhones && <span>{periodsOnPhones}</span>}
             </p>
           )}
         </div>
@@ -630,23 +644,33 @@ export function LeaderCard({
       ) : (
         <Placeholder className="card-sheen aspect-[4/5]" />
       )}
-      <div className="card-rule flex flex-1 flex-col items-center px-2.5 py-3 text-center sm:px-4 sm:py-5">
-        <h3 className="type-title-lg font-semibold text-plum-800 [overflow-wrap:anywhere]">
-          <GradientText>{name}</GradientText>
-        </h3>
-        {designation && (
-          <p className="mt-1 type-body-sm leading-snug text-ink-muted">{designation}</p>
-        )}
-        {district && (
-          <p className="mt-2 inline-flex max-w-full items-center gap-1 rounded-full bg-magenta-50 px-2.5 py-0.5 type-caption font-semibold text-magenta-600">
-            <MapPin size={13} className="shrink-0" aria-hidden="true" />
-            <span className="[overflow-wrap:anywhere]">{district}</span>
-          </p>
-        )}
-        {periods && (
-          <p className="mt-2 type-caption font-medium tracking-wide text-plum-600">{periods}</p>
-        )}
-      </div>
+      {(textOnPhones || periods) && (
+        <div
+          className={`card-rule flex flex-1 flex-col items-center px-2.5 py-3 text-center sm:px-4 sm:py-5 ${
+            textOnPhones ? '' : 'max-sm:hidden'
+          }`}
+        >
+          {name && (
+            <h3 className="type-title-lg font-semibold text-plum-800 [overflow-wrap:anywhere]">
+              <GradientText>{name}</GradientText>
+            </h3>
+          )}
+          {designation && (
+            <p className={`${name ? 'mt-1 ' : ''}type-body-sm leading-snug text-ink-muted`}>{designation}</p>
+          )}
+          {district && (
+            <p className="mt-2 inline-flex max-w-full items-center gap-1 rounded-full bg-magenta-50 px-2.5 py-0.5 type-caption font-semibold text-magenta-600">
+              <MapPin size={13} className="shrink-0" aria-hidden="true" />
+              <span className="[overflow-wrap:anywhere]">{district}</span>
+            </p>
+          )}
+          {periods && (
+            <p className={`mt-2 type-caption font-medium tracking-wide text-plum-600 ${periodsOnPhones ? '' : 'max-sm:hidden'}`}>
+              {periods}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

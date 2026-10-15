@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   AssetPicker,
   AttachmentEditor,
@@ -43,6 +43,17 @@ export type FieldDef = FieldConditions & (
   | { kind: 'number'; path: string; label: string; hint?: string; required?: boolean }
   | { kind: 'date'; path: string; label: string; hint?: string; required?: boolean }
   | { kind: 'select'; path: string; label: string; options: { value: string; label: string }[]; hint?: string; required?: boolean }
+  | {
+      /** A bilingual value picked from a list, with a last option for typing one in */
+      kind: 'localized-choice';
+      path: string;
+      label: string;
+      /** Ready-made values: the list shows `label`, choosing one saves `value` in both languages */
+      options: { label: string; value: Localized }[];
+      /** Label of the last option, which shows the inputs for a value of the editor's own */
+      customLabel: string;
+      hint?: string;
+    }
   | { kind: 'toggle'; path: string; label: string; description?: string }
   | { kind: 'asset'; path: string; label: string; folder: string; accept?: string; preview?: 'image' | 'file'; fit?: 'cover' | 'contain' | 'poster'; hint?: string; recommend?: string; required?: boolean }
   | { kind: 'gallery'; path: string; label: string; folder: string; hint?: string; recommend?: string; accept?: string }
@@ -90,6 +101,73 @@ function toDateInput(value: unknown): string {
   if (Number.isNaN(d.getTime())) return '';
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/* ---------------- choice of bilingual values ---------------- */
+
+const CUSTOM_CHOICE = 'custom';
+
+/**
+ * Which option a stored value is: a ready-made one when each language matches it or is
+ * empty, the custom option for any other text, '' when nothing is stored.
+ */
+function choiceOf(value: Localized, options: { value: Localized }[]): string {
+  const ml = (value.ml ?? '').trim();
+  const en = (value.en ?? '').trim().toLowerCase();
+  if (!ml && !en) return '';
+  const index = options.findIndex(
+    (o) => (!ml || ml === o.value.ml) && (!en || en === (o.value.en ?? '').toLowerCase())
+  );
+  return index >= 0 ? String(index) : CUSTOM_CHOICE;
+}
+
+/**
+ * A select of ready-made bilingual values plus a custom option. A stored value that is
+ * none of the options (e.g. typed in before the list existed) opens as custom with its
+ * text in the inputs, so editing a record never changes it unless the editor does.
+ */
+function LocalizedChoice({
+  label,
+  hint,
+  options,
+  customLabel,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  options: { label: string; value: Localized }[];
+  customLabel: string;
+  value: Localized;
+  onChange: (v: Localized) => void;
+}) {
+  const [custom, setCustom] = useState(() => choiceOf(value, options) === CUSTOM_CHOICE);
+  const selected = custom ? CUSTOM_CHOICE : choiceOf(value, options);
+  return (
+    <div className="space-y-2.5">
+      <Field label={label} hint={hint}>
+        <select
+          className="input"
+          value={selected}
+          onChange={(e) => {
+            const next = e.target.value;
+            setCustom(next === CUSTOM_CHOICE);
+            // The custom inputs start empty rather than holding the option left behind
+            onChange(next === '' || next === CUSTOM_CHOICE ? emptyLocalized() : { ...options[Number(next)].value });
+          }}
+        >
+          <option value="">— Choose {label.toLowerCase()} —</option>
+          {options.map((o, i) => (
+            <option key={i} value={String(i)}>
+              {o.label}
+            </option>
+          ))}
+          <option value={CUSTOM_CHOICE}>{customLabel}</option>
+        </select>
+      </Field>
+      {custom && <BilingualInput label={`Custom ${label.toLowerCase()}`} value={value} onChange={onChange} />}
+    </div>
+  );
 }
 
 /* ---------------- renderer ---------------- */
@@ -221,6 +299,19 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
             ))}
           </select>
         </Field>
+      );
+
+    case 'localized-choice':
+      return (
+        <LocalizedChoice
+          key={key}
+          label={def.label}
+          hint={def.hint}
+          options={def.options}
+          customLabel={def.customLabel}
+          value={(getPath(doc, def.path) as Localized) ?? emptyLocalized()}
+          onChange={(v) => set(def.path, v)}
+        />
       );
 
     case 'toggle':
