@@ -779,7 +779,7 @@ function EventPosters({ events }: { events: OrgEvent[] }) {
             onClick={() => setZoomed(event)}
             aria-haspopup="dialog"
             aria-label={name || title}
-            className="group block w-full cursor-zoom-in rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-magenta-400 motion-safe:animate-fade-in"
+            className="group block w-full rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-magenta-400 motion-safe:animate-fade-in"
           >
             {/* object-contain: the poster is shown whole, never cropped or stretched */}
             <span className="relative block aspect-[3/4] w-full overflow-hidden rounded-xl border border-plum-100/80 bg-white shadow-soft">

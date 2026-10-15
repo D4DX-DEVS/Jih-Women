@@ -337,7 +337,7 @@ export function EventCard({
           onClick={() => setZoomed(true)}
           aria-haspopup="dialog"
           aria-label={name ? `${name}, ${dateRange}` : dateRange}
-          className={`cursor-zoom-in text-start ${cardClass}`}
+          className={`text-start ${cardClass}`}
         >
           {poster}
         </button>
@@ -364,7 +364,7 @@ export function EventCard({
           onClick={() => setZoomed(true)}
           aria-haspopup="dialog"
           aria-label={name || dateRange}
-          className="relative z-10 w-20 shrink-0 cursor-zoom-in self-start rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
+          className="relative z-10 w-20 shrink-0 self-start rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
         >
           <EventPoster key={src} src={src} alt={name} day={day} month={month} className="aspect-[3/4] w-full rounded-lg" />
         </button>
