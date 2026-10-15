@@ -558,8 +558,11 @@ function Eyebrow({ children, logo }: { children: React.ReactNode; logo?: string 
 }
 
 /* President's message (left) beside the event poster (right), as one card; stacked on
-   narrower screens. Either part is left out when it has nothing to show. A click (or
-   Enter) anywhere on the message, photo included, opens the whole message in a popup. */
+   narrower screens. Either part is left out when it has nothing to show. Read More (or a
+   click anywhere on the message, photo included) opens the whole message in a popup.
+   Side by side, the message column takes the height of the events column (heading and
+   poster) and its preview fills whatever that leaves, so Read More lines up with the
+   bottom of the poster. */
 function PresidentAndEvents({ message, events }: { message: PresidentMessage | null; events: OrgEvent[] }) {
   const { lang, section, h } = useSite();
   const [open, setOpen] = useState(false);
@@ -571,6 +574,7 @@ function PresidentAndEvents({ message, events }: { message: PresidentMessage | n
   const designation = message ? t(message.designation, lang) : '';
 
   if (!message && events.length === 0) return null;
+  const fill = events.length > 0;
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-magenta-100/80 bg-gradient-to-br from-white via-magenta-50/50 to-plum-50 shadow-card sm:rounded-3xl">
@@ -578,24 +582,20 @@ function PresidentAndEvents({ message, events }: { message: PresidentMessage | n
       {/* Desktop: the message takes the larger part of the card (about 70% on wide screens) */}
       <div className={`relative grid ${message && events.length > 0 ? 'lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]' : ''}`}>
         {message && (
-          <div className="relative min-w-0 p-3.5 sm:p-6 md:p-8 xl:p-10">
+          // Same top and bottom padding as the events column, so the two headings and the
+          // bottoms of Read More and the poster line up
+          <div className="relative flex min-w-0 flex-col p-3.5 sm:p-6 md:p-8 xl:px-10">
             <Eyebrow logo={president.logo}>{label}</Eyebrow>
             {/* The negative margin and matching padding give the hover tint some room
-                without moving anything. A link inside the message still works as a link. */}
+                without moving anything. A link inside the message still works as a link.
+                Keyboard and screen-reader users open the popup with Read More. */}
             <div
-              role="button"
-              tabIndex={0}
-              aria-haspopup="dialog"
-              aria-label={`${label}: ${h('readMore')}`}
               onClick={(e) => {
                 if (!(e.target as HTMLElement).closest('a')) setOpen(true);
               }}
-              onKeyDown={(e) => {
-                if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
-                e.preventDefault();
-                setOpen(true);
-              }}
-              className="relative -mx-2 -mb-2 grid cursor-pointer gap-3 rounded-2xl px-2 py-2 transition-colors hover:bg-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-400 sm:-mx-3 sm:mt-2 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-start sm:gap-6 sm:px-3 lg:mt-4 xl:grid-cols-[minmax(0,1fr)_170px] xl:gap-10"
+              className={`relative -mx-2 -mb-2 grid cursor-pointer gap-3 rounded-2xl px-2 py-2 transition-colors hover:bg-white/60 sm:-mx-3 sm:mt-2 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-start sm:gap-6 sm:px-3 lg:mt-4 xl:grid-cols-[minmax(0,1fr)_170px] xl:gap-10 ${
+                fill ? 'lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)]' : ''
+              }`}
             >
               <figure className="relative mx-auto sm:order-last sm:mx-0">
                 {message.photo ? (
@@ -617,7 +617,7 @@ function PresidentAndEvents({ message, events }: { message: PresidentMessage | n
                 )}
               </figure>
 
-              <div className="relative min-w-0">
+              <div className={`relative min-w-0 ${fill ? 'lg:flex lg:min-h-0 lg:flex-col lg:self-stretch' : ''}`}>
                 <span className="pointer-events-none absolute -start-1 -top-2 font-display text-[2.4rem] leading-none text-magenta-200 sm:-top-3 sm:text-[3.2rem] lg:-start-2 lg:-top-4 lg:text-[4.25rem]">
                   &ldquo;
                 </span>
@@ -626,7 +626,20 @@ function PresidentAndEvents({ message, events }: { message: PresidentMessage | n
                     <GradientText>{heading}</GradientText>
                   </h2>
                 )}
-                {body && <MessagePreview html={body} />}
+                {body && <MessagePreview html={body} fill={fill} />}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpen(true);
+                  }}
+                  aria-haspopup="dialog"
+                  aria-label={`${h('readMore')}: ${label}`}
+                  className="relative ms-6 mt-3 inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border border-magenta-200 bg-white/70 px-4 py-1.5 type-caption font-semibold text-magenta-600 shadow-soft transition hover:border-magenta-300 hover:bg-white hover:text-magenta-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 sm:ms-7 sm:mt-4 sm:px-5 sm:py-2 lg:ms-10"
+                >
+                  {h('readMore')}
+                  <ArrowRight size={14} />
+                </button>
               </div>
             </div>
             {open && (
@@ -661,8 +674,10 @@ function PresidentAndEvents({ message, events }: { message: PresidentMessage | n
 }
 
 /* The message as a short preview: capped in height, fading out only when it is cut off.
-   The whole message opens in a popup (see PresidentAndEvents). */
-function MessagePreview({ html }: { html: string }) {
+   The whole message opens in a popup (see PresidentAndEvents). `fill`: from lg up the
+   preview takes the height left in its column instead of a fixed cap; it is laid over
+   that space (absolute), so the text never makes the column taller. */
+function MessagePreview({ html, fill = false }: { html: string; fill?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [cut, setCut] = useState(false);
 
@@ -679,13 +694,15 @@ function MessagePreview({ html }: { html: string }) {
   }, [html]);
 
   return (
-    <div
-      ref={ref}
-      className={`prose-content type-body-lg relative mt-1.5 max-h-[9.5rem] overflow-hidden ps-6 leading-[1.7] sm:mt-2 sm:max-h-[14rem] sm:ps-7 sm:leading-[1.85] lg:max-h-[17.5rem] lg:ps-10 ${
-        cut ? '[mask-image:linear-gradient(to_bottom,black_80%,transparent)]' : ''
-      }`}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    <div className={`relative mt-1.5 sm:mt-2 ${fill ? 'lg:min-h-[8rem] lg:flex-1' : ''}`}>
+      <div
+        ref={ref}
+        className={`prose-content type-body-lg relative max-h-[9.5rem] overflow-hidden ps-6 leading-[1.7] sm:max-h-[14rem] sm:ps-7 sm:leading-[1.85] lg:max-h-[17.5rem] lg:ps-10 ${
+          fill ? 'lg:absolute lg:inset-0 lg:max-h-none' : ''
+        } ${cut ? '[mask-image:linear-gradient(to_bottom,black_80%,transparent)]' : ''}`}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </div>
   );
 }
 
