@@ -1,9 +1,8 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import {
   ArrowRight,
   CalendarDays,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Maximize2,
@@ -26,12 +25,13 @@ import {
 import { HomeSkeleton } from '../components/PageSkeletons';
 import {
   CampaignCard,
-  EventPosterLink,
   Lightbox,
+  PosterLightbox,
   PostCard,
   PublicationCard,
   VideoPlayerModal,
 } from '../components/Cards';
+import PresidentMessageModal from '../components/PresidentMessageModal';
 import FocusStrip from '../components/FocusStrip';
 import Reveal from '../components/Reveal';
 import { useViewMode } from '../lib/view';
@@ -558,9 +558,11 @@ function Eyebrow({ children, logo }: { children: React.ReactNode; logo?: string 
 }
 
 /* President's message (left) beside the event poster (right), as one card; stacked on
-   narrower screens. Either part is left out when it has nothing to show. */
+   narrower screens. Either part is left out when it has nothing to show. A click (or
+   Enter) anywhere on the message, photo included, opens the whole message in a popup. */
 function PresidentAndEvents({ message, events }: { message: PresidentMessage | null; events: OrgEvent[] }) {
   const { lang, section, h } = useSite();
+  const [open, setOpen] = useState(false);
   const president =section('homePresident', { label: h('presidentMessage') });
   const label = president.label;
   const heading = message ? t(message.heading, 'en') || label : '';
@@ -578,7 +580,23 @@ function PresidentAndEvents({ message, events }: { message: PresidentMessage | n
         {message && (
           <div className="relative min-w-0 p-3.5 sm:p-6 md:p-8 xl:p-10">
             <Eyebrow logo={president.logo}>{label}</Eyebrow>
-            <div className="relative mt-2 grid gap-3 sm:mt-4 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-start sm:gap-6 lg:mt-6 xl:grid-cols-[minmax(0,1fr)_170px] xl:gap-10">
+            {/* The negative margin and matching padding give the hover tint some room
+                without moving anything. A link inside the message still works as a link. */}
+            <div
+              role="button"
+              tabIndex={0}
+              aria-haspopup="dialog"
+              aria-label={`${label}: ${h('readMore')}`}
+              onClick={(e) => {
+                if (!(e.target as HTMLElement).closest('a')) setOpen(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
+                e.preventDefault();
+                setOpen(true);
+              }}
+              className="relative -mx-2 -mb-2 grid cursor-pointer gap-3 rounded-2xl px-2 py-2 transition-colors hover:bg-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-400 sm:-mx-3 sm:mt-2 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-start sm:gap-6 sm:px-3 lg:mt-4 xl:grid-cols-[minmax(0,1fr)_170px] xl:gap-10"
+            >
               <figure className="relative mx-auto sm:order-last sm:mx-0">
                 {message.photo ? (
                   <img
@@ -608,9 +626,23 @@ function PresidentAndEvents({ message, events }: { message: PresidentMessage | n
                     <GradientText>{heading}</GradientText>
                   </h2>
                 )}
-                {body && <MessagePreview html={body} label={label} />}
+                {body && <MessagePreview html={body} />}
               </div>
             </div>
+            {open && (
+              <PresidentMessageModal
+                mode="pinned"
+                triggerHovered={false}
+                label={label}
+                heading={heading}
+                body={body}
+                name={name}
+                designation={designation}
+                photo={message.photo}
+                onPin={() => {}}
+                onClose={() => setOpen(false)}
+              />
+            )}
           </div>
         )}
 
@@ -629,18 +661,14 @@ function PresidentAndEvents({ message, events }: { message: PresidentMessage | n
 }
 
 /* The message as a short preview: capped in height, fading out only when it is cut off.
-   Read More opens the whole message in place; Read Less folds it back to the preview. */
-function MessagePreview({ html, label }: { html: string; label: string }) {
-  const { h } = useSite();
-  const id = useId();
+   The whole message opens in a popup (see PresidentAndEvents). */
+function MessagePreview({ html }: { html: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [cut, setCut] = useState(false);
-  const [expanded, setExpanded] = useState(false);
 
-  // Measured only while folded: the open message is never cut, and `cut` must outlast it
   useEffect(() => {
     const el = ref.current;
-    if (!el || expanded) return;
+    if (!el) return;
     const measure = () => setCut(el.scrollHeight > el.clientHeight + 1);
     measure();
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
@@ -648,38 +676,16 @@ function MessagePreview({ html, label }: { html: string; label: string }) {
     // Web fonts change the line count once they load
     document.fonts?.ready.then(measure);
     return () => observer?.disconnect();
-  }, [html, expanded]);
-
-  const toggle = () => {
-    // Folding a long message pulls the page up: keep the message on screen
-    if (expanded) requestAnimationFrame(() => ref.current?.scrollIntoView({ block: 'nearest' }));
-    setExpanded(!expanded);
-  };
+  }, [html]);
 
   return (
-    <>
-      <div
-        ref={ref}
-        id={id}
-        className={`prose-content type-body-lg relative mt-1.5 scroll-mt-24 ps-6 leading-[1.7] sm:mt-2 sm:ps-7 sm:leading-[1.85] lg:ps-10 ${
-          expanded ? '' : 'max-h-[9.5rem] overflow-hidden sm:max-h-[14rem] lg:max-h-[17.5rem]'
-        } ${cut && !expanded ? '[mask-image:linear-gradient(to_bottom,black_80%,transparent)]' : ''}`}
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
-      {cut && (
-        <button
-          type="button"
-          onClick={toggle}
-          aria-expanded={expanded}
-          aria-controls={id}
-          aria-label={`${h(expanded ? 'readLess' : 'readMore')}: ${label}`}
-          className="relative ms-6 mt-3 inline-flex items-center gap-1.5 rounded-full border border-magenta-200 bg-white/70 px-4 py-1.5 type-caption font-semibold text-magenta-600 shadow-soft transition hover:border-magenta-300 hover:bg-white hover:text-magenta-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 sm:ms-7 sm:mt-4 sm:px-5 sm:py-2 lg:ms-10 lg:mt-5"
-        >
-          {h(expanded ? 'readLess' : 'readMore')}
-          <ChevronDown size={15} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
-        </button>
-      )}
-    </>
+    <div
+      ref={ref}
+      className={`prose-content type-body-lg relative mt-1.5 max-h-[9.5rem] overflow-hidden ps-6 leading-[1.7] sm:mt-2 sm:max-h-[14rem] sm:ps-7 sm:leading-[1.85] lg:max-h-[17.5rem] lg:ps-10 ${
+        cut ? '[mask-image:linear-gradient(to_bottom,black_80%,transparent)]' : ''
+      }`}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
 }
 
@@ -688,13 +694,13 @@ function MessagePreview({ html, label }: { html: string; label: string }) {
 const SHIPPED_EVENTS_HEADINGS = new Set(['Upcoming Events', 'വരാനിരിക്കുന്ന പരിപാടികൾ']);
 
 /* Event posters (Event Poster in the admin), one at a time: the poster is shown whole in
-   a 3:4 frame with nothing beneath it, and links to the event page for the details. The
-   backend sends upcoming events first (soonest first) and then the most recent past
-   ones, so the first poster is the next event; the posters advance on their own every
-   few seconds (looping), and the arrows or a swipe step through them too. A poster with
-   its own link opens that link in a new tab instead (EventPosterLink). A mouse over
-   the column or keyboard focus inside it pauses the rotation, and prefers-reduced-motion
-   turns it off. */
+   a 3:4 frame with nothing beneath it, and a click opens it full size in the lightbox
+   (never another page, even when the poster has its own link). The backend sends
+   upcoming events first (soonest first) and then the most recent past ones, so the first
+   poster is the next event; the posters advance on their own every few seconds
+   (looping), and the arrows on either side of the poster or a swipe step through them
+   too. A mouse over the column, keyboard focus inside it or an open lightbox pauses the
+   rotation, and prefers-reduced-motion turns it off. */
 const EVENT_POSTER_INTERVAL = 4500;
 
 function EventPosters({ events }: { events: OrgEvent[] }) {
@@ -704,6 +710,7 @@ function EventPosters({ events }: { events: OrgEvent[] }) {
   const [index, setIndex] = useState(0);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [zoomed, setZoomed] = useState<OrgEvent | null>(null);
   const touchXRef = useRef<number | null>(null);
   const count = events.length;
   // A reloaded list may be shorter than the poster last shown
@@ -715,11 +722,11 @@ function EventPosters({ events }: { events: OrgEvent[] }) {
 
   // Auto-advance; the timer restarts on every move, so a poster stepped to by hand gets its full time
   useEffect(() => {
-    if (count < 2 || hovered || focused) return;
+    if (count < 2 || hovered || focused || zoomed) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const id = window.setTimeout(() => setIndex((i) => (Math.min(i, count - 1) + 1) % count), EVENT_POSTER_INTERVAL);
     return () => window.clearTimeout(id);
-  }, [current, count, hovered, focused]);
+  }, [current, count, hovered, focused, zoomed]);
 
   // Fetch the next poster ahead of time so it fades in whole rather than loading in view
   useEffect(() => {
@@ -729,26 +736,25 @@ function EventPosters({ events }: { events: OrgEvent[] }) {
   }, [current, count, events]);
 
   return (
-    <div
-      className="flex min-w-0 flex-col"
-      onPointerEnter={(e) => e.pointerType === 'mouse' && setHovered(true)}
-      onPointerLeave={(e) => e.pointerType === 'mouse' && setHovered(false)}
-      onFocus={(e) => setFocused((e.target as HTMLElement).matches(':focus-visible'))}
-      onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setFocused(false)}
-      onTouchStart={(e) => (touchXRef.current = e.touches[0].clientX)}
-      onTouchEnd={(e) => {
-        const start = touchXRef.current;
-        touchXRef.current = null;
-        if (start === null || count < 2) return;
-        const dx = e.changedTouches[0].clientX - start;
-        if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1);
-      }}
-    >
-      {/* Wraps rather than clipping View All when a long heading meets a narrow column */}
-      <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <Eyebrow logo={heading.logo}>{title}</Eyebrow>
-        <div className="flex shrink-0 items-center gap-3">
-          {events.length > 1 && <RailArrows onPrev={() => step(-1)} onNext={() => step(1)} />}
+    <>
+      <div
+        className="flex min-w-0 flex-col"
+        onPointerEnter={(e) => e.pointerType === 'mouse' && setHovered(true)}
+        onPointerLeave={(e) => e.pointerType === 'mouse' && setHovered(false)}
+        onFocus={(e) => setFocused((e.target as HTMLElement).matches(':focus-visible'))}
+        onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setFocused(false)}
+        onTouchStart={(e) => (touchXRef.current = e.touches[0].clientX)}
+        onTouchEnd={(e) => {
+          const start = touchXRef.current;
+          touchXRef.current = null;
+          if (start === null || count < 2) return;
+          const dx = e.changedTouches[0].clientX - start;
+          if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1);
+        }}
+      >
+        {/* Wraps rather than clipping View All when a long heading meets a narrow column */}
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <Eyebrow logo={heading.logo}>{title}</Eyebrow>
           <Link
             to={path('/events')}
             className="-my-2 inline-flex shrink-0 items-center gap-1 whitespace-nowrap py-2 type-meta font-medium text-ink-muted transition hover:text-magenta-600"
@@ -757,28 +763,66 @@ function EventPosters({ events }: { events: OrgEvent[] }) {
             <ArrowRight size={13} />
           </Link>
         </div>
-      </div>
 
-      {/* key: the fade replays for each poster. Phones: the poster fills the column width;
-          from sm up the column is wide (or beside the message), so the poster is capped */}
-      <EventPosterLink
-        key={event._id}
-        event={event}
-        aria-label={name || title}
-        className="group mx-auto mt-3 block w-full rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-magenta-400 motion-safe:animate-fade-in sm:mt-4 sm:max-w-[250px] lg:mt-6 lg:max-w-[270px]"
-      >
-        {/* object-contain: the poster is shown whole, never cropped or stretched */}
-        <span className="relative block aspect-[3/4] w-full overflow-hidden rounded-xl border border-plum-100/80 bg-white shadow-soft">
-          <img
-            src={event.posterImage || event.coverImage}
-            alt={name}
-            loading="lazy"
-            draggable={false}
-            className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
-          />
-        </span>
-      </EventPosterLink>
-    </div>
+        {/* Phones: the poster fills the column width, less the room for the arrows to sit
+            half over its edges; from sm up the column is wide (or beside the message), so
+            the poster is capped and the arrows straddle its edges from outside */}
+        <div
+          className={`relative mx-auto mt-3 w-full sm:mt-4 sm:max-w-[250px] sm:px-0 lg:mt-6 lg:max-w-[270px] ${
+            count > 1 ? 'px-[1.125rem]' : ''
+          }`}
+        >
+          {/* key: the fade replays for each poster */}
+          <button
+            key={event._id}
+            type="button"
+            onClick={() => setZoomed(event)}
+            aria-haspopup="dialog"
+            aria-label={name || title}
+            className="group block w-full cursor-zoom-in rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-magenta-400 motion-safe:animate-fade-in"
+          >
+            {/* object-contain: the poster is shown whole, never cropped or stretched */}
+            <span className="relative block aspect-[3/4] w-full overflow-hidden rounded-xl border border-plum-100/80 bg-white shadow-soft">
+              <img
+                src={event.posterImage || event.coverImage}
+                alt={name}
+                loading="lazy"
+                draggable={false}
+                className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+              />
+            </span>
+          </button>
+          {count > 1 && (
+            <>
+              <span className="absolute left-0 top-1/2 z-10 -translate-y-1/2 sm:-translate-x-1/2">
+                <PosterArrow dir={-1} onClick={() => step(-1)} />
+              </span>
+              <span className="absolute right-0 top-1/2 z-10 -translate-y-1/2 sm:translate-x-1/2">
+                <PosterArrow dir={1} onClick={() => step(1)} />
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+      {/* Outside the column: the lightbox's clicks and swipes must not reach the carousel */}
+      {zoomed && <PosterLightbox event={zoomed} onClose={() => setZoomed(null)} />}
+    </>
+  );
+}
+
+/* A previous / next button on the edge of the event poster */
+function PosterArrow({ dir, onClick }: { dir: 1 | -1; onClick: () => void }) {
+  const { s } = useSite();
+  const Icon = dir === 1 ? ChevronRight : ChevronLeft;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={s(dir === 1 ? 'next' : 'previous')}
+      className="grid h-9 w-9 place-items-center rounded-full border border-plum-100 bg-white/95 text-plum-800 shadow-soft backdrop-blur-sm transition hover:border-magenta-200 hover:text-magenta-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 active:scale-95"
+    >
+      <Icon size={18} />
+    </button>
   );
 }
 
@@ -816,22 +860,6 @@ function BandHeading({
         {actionLabel}
         <ArrowRight size={13} />
       </Link>
-    </div>
-  );
-}
-
-function RailArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => void }) {
-  const { s } = useSite();
-  const cls =
-    'grid h-7 w-7 place-items-center rounded-full border border-plum-100 bg-white text-plum-800 shadow-soft transition hover:border-magenta-200 hover:text-magenta-600';
-  return (
-    <div className="flex items-center gap-1.5">
-      <button type="button" onClick={onPrev} aria-label={s('previous')} className={cls}>
-        <ChevronLeft size={14} />
-      </button>
-      <button type="button" onClick={onNext} aria-label={s('next')} className={cls}>
-        <ChevronRight size={14} />
-      </button>
     </div>
   );
 }
