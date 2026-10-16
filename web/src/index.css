@@ -194,6 +194,74 @@
     @apply border border-plum-100 px-2 py-1.5 sm:px-3 sm:py-2 text-start;
   }
 
+  /* Text pasted into the CMS editor (from Word, Google Docs, other websites or the
+     admin console itself) keeps its source's inline font-family, font-size and
+     line-height: "Noto Sans Malayalam", which the site doesn't load, so readers get
+     their system font; a 40px heading at line-height 1; the console's Outfit.
+     Editor content always takes the page's type instead. Weight, colour and the rest
+     of the inline style are left alone. */
+  .prose-content [style*='font-family'],
+  .prose-content font[face] {
+    font-family: inherit !important;
+  }
+
+  .prose-content :is(h1, h2, h3, h4, h5, h6):is([style*='font-family'], [face]) {
+    font-family: theme('fontFamily.display') !important;
+  }
+
+  .prose-content [style*='font-size']:not(h1, h2, h3, h4, h5, h6),
+  .prose-content font[size] {
+    font-size: inherit !important;
+  }
+
+  .prose-content [style*='line-height']:not(h1, h2, h3, h4, h5, h6) {
+    line-height: inherit !important;
+  }
+
+  /* Pasted headings keep the prose heading sizes (`type-heading-sm`, `type-subheading`) */
+  .prose-content h2:is([style*='font-size'], [style*='line-height']) {
+    font-size: var(--fs-16) !important;
+    line-height: 1.3 !important;
+  }
+
+  .prose-content h3:is([style*='font-size'], [style*='line-height']) {
+    font-size: var(--fs-15) !important;
+    line-height: 1.375 !important;
+  }
+
+  @screen sm {
+    .prose-content h2:is([style*='font-size'], [style*='line-height']) {
+      font-size: var(--fs-20) !important;
+    }
+
+    .prose-content h3:is([style*='font-size'], [style*='line-height']) {
+      font-size: var(--fs-18) !important;
+    }
+  }
+
+  @screen md {
+    .prose-content h2:is([style*='font-size'], [style*='line-height']) {
+      font-size: var(--fs-23) !important;
+    }
+
+    .prose-content h3:is([style*='font-size'], [style*='line-height']) {
+      font-size: var(--fs-20) !important;
+    }
+  }
+
+  /* The CMS editor has no colour tool, so an inline colour in editor content is always
+     left over from a paste (Word's #333, a source site's black) and made those pages
+     darker than the rest. Text takes the prose colour, headings the prose heading
+     colour; links keep their own. */
+  .prose-content [style*='color']:not(a, h2, h3),
+  .prose-content font[color] {
+    color: inherit !important;
+  }
+
+  .prose-content :is(h2, h3)[style*='color'] {
+    color: theme('colors.plum.800') !important;
+  }
+
   /* Justified Malayalam reads better in the President's message block */
   .prose-justify {
     text-align: justify;
