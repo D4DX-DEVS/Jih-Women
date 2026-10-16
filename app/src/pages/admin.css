@@ -37,7 +37,9 @@
      sidebar's sticky offset are both derived from this — change it here only. */
   --admin-header-h: 56px;
 
-  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+  /* Outfit has no Malayalam: 'Anek Malayalam' (loaded in index.html) draws it,
+     the same Malayalam face as the public website */
+  font-family: 'Outfit', 'Anek Malayalam', system-ui, -apple-system, sans-serif;
   background: var(--a-bg);
   min-height: 100vh;
   color: var(--a-text);
@@ -52,7 +54,7 @@
 }
 
 .admin-shell .admin-display {
-  font-family: 'Outfit', system-ui, sans-serif;
+  font-family: 'Outfit', 'Anek Malayalam', system-ui, sans-serif;
   letter-spacing: -0.015em;
 }
 
@@ -822,7 +824,7 @@
   border: 1px solid var(--a-border-strong, #d3d7e4);
   box-shadow: 0 12px 32px -8px rgba(27, 24, 48, 0.28);
   font-size: 13.5px;
-  font-family: 'Outfit', system-ui, sans-serif;
+  font-family: 'Outfit', 'Anek Malayalam', system-ui, sans-serif;
   color: #1b1830;
   z-index: 90;
   max-width: min(420px, calc(100vw - 48px));
@@ -880,6 +882,15 @@
 
 .admin-shell .admin-richtext {
   overflow-wrap: anywhere;
+}
+
+/* Console font throughout, not the WES site's Syne headings (index.css) or the
+   inline fonts that come along with pasted text — the public site ignores
+   those too (web/src/index.css, .prose-content) */
+.admin-shell .admin-richtext :is(h1, h2, h3, h4, h5, h6),
+.admin-shell .admin-richtext [style*='font-family'],
+.admin-shell .admin-richtext font[face] {
+  font-family: inherit !important;
 }
 
 .admin-shell .admin-richtext h2 {

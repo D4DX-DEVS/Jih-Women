@@ -388,7 +388,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
   const { s } = useSite();
   return (
     <div className="rounded-2xl border border-red-200 bg-red-50/70 py-8 text-center sm:rounded-2xl sm:py-14">
-      <p className="font-medium text-red-800">{s('errorTitle')}</p>
+      <p className="type-title font-medium text-red-800">{s('errorTitle')}</p>
       <p className="mt-1 type-body-sm text-red-700/80">{message}</p>
       {onRetry && (
         <button
