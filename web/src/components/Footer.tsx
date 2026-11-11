@@ -16,7 +16,7 @@ export default function Footer() {
   const { data, path } = useSite();
   const settings = data?.settings;
   /* Footer lists only these programmes (names and links still come from the site data) */
-  const FOOTER_PROGRAMS = ['for-her', 'thamheedul-mar-a', 'proficia'];
+  const FOOTER_PROGRAMS = ['thamheedul-mar-a', 'proficia'];
   const programs = FOOTER_PROGRAMS.map((slug) => (data?.nav.programs ?? []).find((p) => p.slug === slug)).filter(
     (p): p is NonNullable<typeof p> => Boolean(p)
   );

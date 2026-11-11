@@ -328,7 +328,7 @@ export const PROGRAMS: CollectionConfig = {
   endpoint: '/api/admin/cms/programs',
   label: 'Highlights',
   singular: 'Programme',
-  description: 'WES, Proficia, Thamheed, Safa Nagar and other programmes. A poster uploaded for a programme is shown on that programme’s own page.',
+  description: 'WES, Profisia, Thamheed, Safa Nagar and other programmes. A poster uploaded for a programme is shown on that programme’s own page.',
   reorderable: true,
   filters: [{ param: 'isMajor', label: 'Type', options: [
     { value: 'true', label: 'Major programme' },
