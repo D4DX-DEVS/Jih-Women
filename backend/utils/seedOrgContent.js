@@ -160,14 +160,14 @@ const PROGRAMS = [
     slug: 'proficia',
     order: 2,
     isMajor: true,
-    title: { ml: 'പ്രൊഫീഷ്യ', en: 'Proficia' },
+    title: { ml: 'പ്രൊഫീഷ്യ', en: 'Profisia' },
     tagline: {
       ml: 'പ്രൊഫഷണൽ വനിതകൾക്കായുള്ള പദ്ധതി.',
       en: 'An initiative for professional women.',
     },
     overview: {
       ml: '<p>പ്രൊഫീഷ്യ പദ്ധതിയുടെ വിവരണം ചേർക്കുക.</p>',
-      en: '<p>Add the Proficia programme overview.</p>',
+      en: '<p>Add the Profisia programme overview.</p>',
     },
   },
   {

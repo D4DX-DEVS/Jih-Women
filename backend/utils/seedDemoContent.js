@@ -54,7 +54,7 @@ async function buildAssets() {
     slide3: uploadImage('slide-3', { width: 1920, height: 900, label: 'Serving Communities with Compassion', sub: 'Social Service', variant: 2 }),
 
     bannerWes: uploadImage('banner-wes', { width: 1200, height: 400, label: 'Women Entrepreneurs Summit', sub: 'WES 2026', variant: 3 }),
-    bannerProficia: uploadImage('banner-proficia', { width: 1200, height: 400, label: 'Proficia Professional Summit', sub: '2025', variant: 1 }),
+    bannerProficia: uploadImage('banner-proficia', { width: 1200, height: 400, label: 'Profisia Professional Summit', sub: '2025', variant: 1 }),
     bannerThamheed: uploadImage('banner-thamheed', { width: 1200, height: 400, label: 'Thamheed Study Programme', sub: 'Learning', variant: 4 }),
 
     president: uploadImage('president', { width: 600, height: 750, label: 'President', sub: 'Portrait', variant: 2 }),
@@ -64,7 +64,7 @@ async function buildAssets() {
     deptForHer: uploadImage('dept-for-her', { width: 1400, height: 790, label: 'FOR HER', sub: 'Digital Campaign', variant: 1 }),
 
     progWes: uploadImage('prog-wes', { width: 1400, height: 790, label: 'Women Entrepreneurs Summit', sub: 'Programme', variant: 3 }),
-    progProficia: uploadImage('prog-proficia', { width: 1400, height: 790, label: 'Proficia', sub: 'Programme', variant: 1 }),
+    progProficia: uploadImage('prog-proficia', { width: 1400, height: 790, label: 'Profisia', sub: 'Programme', variant: 1 }),
     progThamheed: uploadImage('prog-thamheed', { width: 1400, height: 790, label: 'Thamheed', sub: 'Programme', variant: 4 }),
     progSafa: uploadImage('prog-safa-nagar', { width: 1400, height: 790, label: 'Safa Nagar', sub: 'Programme', variant: 2 }),
 

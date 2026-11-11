@@ -94,7 +94,7 @@ const ROUTES = [
   ['/en/who-we-are/constitution', ['Constitution', 'Downloads']],
   ['/en/departments', ['Departments', "Thamheedul Mar'a", 'WINGS']],
   ['/en/departments/thamheedul-mara', ["Thamheedul Mar'a", 'Objectives', 'Activities', 'Leadership']],
-  ['/en/programs', ['Programmes', 'Women Entrepreneurs Summit', 'Proficia']],
+  ['/en/programs', ['Programmes', 'Women Entrepreneurs Summit', 'Profisia']],
   ['/en/programs/wes', ['Women Entrepreneurs Summit', 'Overview', 'Schedule']],
   ['/en/leaders', ['Leaders', 'Current Leadership', 'Sajida P.T.P', 'Past Leadership']],
   ['/en/events', ['Events', "State Women's Conference 2026"]],
