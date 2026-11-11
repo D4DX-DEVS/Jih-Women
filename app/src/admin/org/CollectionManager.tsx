@@ -4,7 +4,7 @@ import { ExternalLink } from 'lucide-react';
 import { apiJson, describeError, isAuthError } from '../shared/api';
 import type { ListResponse } from '../shared/types';
 import { ConfirmDialog, EmptyState, Modal, Pagination, Spinner } from '../shared/ui';
-import { getPath, renderField } from './fields';
+import { getPath, isRequired, renderField } from './fields';
 import { canPreviewRecord, recordPreviewUrl, sectionPreviewUrl } from './preview';
 import type { Doc, FieldDef } from './fields';
 
@@ -36,10 +36,14 @@ export type CollectionConfig = {
   /** Top-level fields the form saves. When set, only these are sent on create/edit;
       anything else stored on the record is left untouched. */
   editable?: string[];
+  /** What the records are called in running text, lower case (default: the label, lower-cased) */
+  noun?: string;
   /** Width of the add/edit modal (default `xl`) */
   modalSize?: 'md' | 'lg' | 'xl';
   /** Collection-specific panel shown above the list (e.g. the YouTube channel import) */
   extra?: (props: CollectionExtraProps) => ReactNode;
+  /** Prepares a stored record for the edit form (e.g. moves an older field into its newer shape) */
+  toForm?: (row: Doc) => Doc;
 };
 
 export type CollectionExtraProps = {
@@ -57,21 +61,30 @@ type Props = {
 };
 
 /** Walks nested field definitions and returns the required ones that are empty. */
-function missingRequired(fields: FieldDef[], doc: Doc): string[] {
+function missingRequired(fields: FieldDef[], doc: Doc, root: Doc = doc): string[] {
   const missing: string[] = [];
 
   for (const field of fields) {
+    // A hidden field is never required
+    if (field.when && !field.when(doc, root)) continue;
     if (field.kind === 'row') {
-      missing.push(...missingRequired(field.fields, doc));
+      missing.push(...missingRequired(field.fields, doc, root));
       continue;
     }
-    if (field.kind === 'heading' || !('required' in field) || !field.required) continue;
+    if (field.kind === 'object-list') {
+      const rows = (getPath(doc, field.path) as Doc[] | undefined) ?? [];
+      if (!rows.length && isRequired(field, doc, root)) missing.push(field.label);
+      rows.forEach((row) => missing.push(...missingRequired(field.fields, row, root)));
+      continue;
+    }
+    if (field.kind === 'heading' || !isRequired(field, doc, root)) continue;
 
     const value = getPath(doc, field.path);
 
     if (field.kind === 'localized') {
-      const ml = (value as { ml?: string } | undefined)?.ml;
-      if (!ml || !ml.trim()) missing.push(`${field.label} (Malayalam)`);
+      const lang = field.primaryLang ?? 'ml';
+      const text = (value as { ml?: string; en?: string } | undefined)?.[lang];
+      if (!text || !text.trim()) missing.push(`${field.label} (${lang === 'en' ? 'English' : 'Malayalam'})`);
       continue;
     }
     if (value === undefined || value === null || String(value).trim() === '') {
@@ -80,6 +93,17 @@ function missingRequired(fields: FieldDef[], doc: Doc): string[] {
   }
 
   return missing;
+}
+
+/**
+ * The record's name for the edit dialog's title, so the editor can see which record
+ * (and so whose gallery, posters and files) is open. English first, then Malayalam;
+ * empty for records without a title.
+ */
+function recordName(doc: Doc): string {
+  const title = doc.title as string | { ml?: string; en?: string } | undefined;
+  const name = typeof title === 'string' ? title : title?.en?.trim() || title?.ml?.trim() || '';
+  return name.length > 60 ? `${name.slice(0, 57)}…` : name;
 }
 
 /**
@@ -118,6 +142,7 @@ function RowPreview({ sectionKey, row }: { sectionKey: string; row: Doc }) {
 }
 
 export default function CollectionManager({ config, token, onToast, onLogout }: Props) {
+  const noun = config.noun ?? config.label.toLowerCase();
   const [list, setList] = useState<ListResponse<Doc> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -167,11 +192,11 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
       setList(data);
     } catch (err) {
       if (isAuthError(err)) return onLogout();
-      setError(describeError(err, `We could not load the ${config.label.toLowerCase()}.`));
+      setError(describeError(err, `We could not load the ${noun}.`));
     } finally {
       setLoading(false);
     }
-  }, [config.endpoint, config.label, query, token, onLogout]);
+  }, [config.endpoint, noun, query, token, onLogout]);
 
   useEffect(() => {
     load();
@@ -184,7 +209,7 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
 
   const openEdit = (row: Doc) => {
     setFormError(null);
-    setEditing({ ...row });
+    setEditing(config.toForm ? config.toForm({ ...row }) : { ...row });
   };
 
   const save = async () => {
@@ -319,7 +344,7 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
               <label className="field-label">Search</label>
               <input
                 className="input"
-                placeholder={`Search ${config.label.toLowerCase()}…`}
+                placeholder={`Search ${noun}…`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -398,7 +423,7 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
                       message={
                         hasFilters
                           ? 'Nothing matches that search.'
-                          : `No ${config.label.toLowerCase()} yet. Create the first one.`
+                          : `No ${noun} yet. Create the first one.`
                       }
                       action={
                         hasFilters ? undefined : (
@@ -480,7 +505,7 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
         <Modal
           title={
             editing._id
-              ? `Edit ${config.singular.toLowerCase()}`
+              ? `Edit ${config.singular.toLowerCase()}${recordName(editing) ? ` · ${recordName(editing)}` : ''}`
               : `New ${config.singular.toLowerCase()}`
           }
           subtitle={config.description}

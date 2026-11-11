@@ -7,7 +7,8 @@ import { ArrowRight, Images, Play } from 'lucide-react';
 gsap.registerPlugin(ScrollTrigger);
 
 const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
-const PREVIEW_COUNT = 4;
+// One row of five on desktop
+const PREVIEW_COUNT = 5;
 
 type GalleryImage = {
   _id: string;
@@ -109,13 +110,16 @@ export default function Gallery() {
           {/* Preview grid */}
           <div
             ref={gridRef}
-            className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-5"
           >
-            {images.map((img) => (
+            {images.map((img, i) => (
               <button
                 key={img._id}
                 onClick={() => navigate('/gallery')}
-                className="group relative aspect-square overflow-hidden rounded-[16px] border border-white/10 bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                // Tablets show two per row, so the fifth tile would sit alone: leave it out there
+                className={`group relative aspect-square overflow-hidden rounded-[16px] border border-white/10 bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
+                  i === 4 ? 'sm:max-lg:hidden' : ''
+                }`}
               >
                 {img.type === 'video' ? (
                   <>

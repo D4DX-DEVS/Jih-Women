@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Outlet, useLocation, useParams } from 'react-router';
+import { Outlet, useLocation } from 'react-router';
+import { langFromPath, stripLang } from '../lib/i18n';
 import { SiteProvider } from '../lib/site';
 import Header from './Header';
 import Footer from './Footer';
@@ -15,9 +16,9 @@ function ScrollToTop() {
 }
 
 function Shell() {
-  const { lang } = useParams();
   const { pathname } = useLocation();
-  const isHome = /^\/(ml|en)\/?$/.test(pathname);
+  const lang = langFromPath(pathname);
+  const isHome = stripLang(pathname.replace(/\/$/, '')) === '/';
   return (
     // Phones: bottom padding so the fixed bottom navigation never covers the end of a page
     <div className="flex min-h-screen min-w-0 flex-col overflow-x-clip pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0">
@@ -38,7 +39,7 @@ function Shell() {
 }
 
 export default function Layout() {
-  const { lang } = useParams();
+  const lang = langFromPath(useLocation().pathname);
   return (
     <SiteProvider key={lang}>
       <ScrollToTop />

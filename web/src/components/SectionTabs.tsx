@@ -61,7 +61,7 @@ export default function SectionTabs({ content: { intro, sections } }: { content:
             phones (swipe sideways if there are many), a column beside the content from md */}
         <div
           role="tablist"
-          className="slim-scroll max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden sticky top-11 z-20 -mx-3.5 mb-2.5 flex gap-1.5 overflow-x-auto bg-white/95 px-3.5 py-2 backdrop-blur sm:-mx-7 sm:px-7 md:top-24 md:-mx-1 md:-my-1 md:mb-0 md:max-h-[calc(100vh-7.5rem)] md:flex-col md:gap-2 md:self-start md:overflow-y-auto md:overflow-x-hidden md:bg-transparent md:p-1 md:pe-7 md:backdrop-blur-none"
+          className="slim-scroll max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden sticky top-12 z-20 -mx-3.5 mb-2.5 flex gap-1.5 overflow-x-auto bg-white/95 px-3.5 py-2 backdrop-blur sm:-mx-7 sm:px-7 md:top-24 md:-mx-1 md:-my-1 md:mb-0 md:max-h-[calc(100vh-7.5rem)] md:flex-col md:gap-2 md:self-start md:overflow-y-auto md:overflow-x-hidden md:bg-transparent md:p-1 md:pe-7 md:backdrop-blur-none"
         >
           {sections.map((section, i) => (
             <button
@@ -80,7 +80,7 @@ export default function SectionTabs({ content: { intro, sections } }: { content:
                 buttons.current[i]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
               }}
               onKeyDown={(e) => onKeyDown(e, i)}
-              className={`user-text shrink-0 whitespace-nowrap rounded-xl px-3.5 py-2 text-start md:whitespace-normal text-[12.5px] font-semibold leading-snug ring-1 transition sm:text-[13.5px] md:py-2.5 ${
+              className={`user-text shrink-0 whitespace-nowrap rounded-xl px-3.5 py-2 text-start md:whitespace-normal type-body-sm font-semibold leading-snug ring-1 transition md:py-2.5 ${
                 i === current
                   ? 'bg-magenta-500 text-white shadow-soft ring-magenta-500'
                   : 'bg-white text-plum-800 ring-inset ring-plum-100 hover:bg-magenta-50 hover:text-magenta-600 hover:ring-magenta-200'

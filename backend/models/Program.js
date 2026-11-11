@@ -5,6 +5,7 @@ const {
   bulletSchema,
   attachmentSchema,
   mediaItemSchema,
+  isHttpUrl,
   autoSlug,
 } = require('./common');
 
@@ -37,6 +38,8 @@ const programSchema = new mongoose.Schema(
     logoUrl: { type: String, trim: true, default: '' },
     // Wide artwork used in the home page programme strip
     bannerImage: { type: String, trim: true, default: '' },
+    // Programme poster shown, uncropped, beside the description on the programme's own page
+    posterImage: { type: String, trim: true, default: '' },
     gallery: { type: [mediaItemSchema], default: [] },
     videos: { type: [videoRefSchema], default: [] },
     downloads: { type: [attachmentSchema], default: [] },
@@ -44,7 +47,18 @@ const programSchema = new mongoose.Schema(
     // Major programmes get a dedicated card on the Programs landing page
     isMajor: { type: Boolean, default: true },
     // WES has its own standalone site — link out instead of rendering locally
-    externalUrl: { type: String, trim: true, default: '' },
+    // Optional, set per programme in the admin. Only http(s) links are accepted so a
+    // stored value can never be a javascript: or data: URL.
+    externalUrl: {
+      type: String,
+      trim: true,
+      default: '',
+      maxlength: [2000, 'The website link is too long.'],
+      validate: {
+        validator: isHttpUrl,
+        message: 'The website link must be a full address starting with http:// or https://.',
+      },
+    },
     externalLabel: localized({ maxlength: 120 }),
 
     order: { type: Number, default: 0 },
@@ -54,6 +68,21 @@ const programSchema = new mongoose.Schema(
 );
 
 autoSlug(programSchema);
+
+// One gallery entry per file: a repeated submit or a photo picked twice cannot list the
+// same image twice. The first occurrence (and its caption) is kept, order unchanged.
+programSchema.pre('validate', function dedupeGallery() {
+  if (!this.isModified('gallery') || !Array.isArray(this.gallery)) return;
+  const seen = new Set();
+  const unique = this.gallery.filter((item) => {
+    const url = (item?.url ?? '').trim();
+    if (!url || seen.has(url)) return !url;
+    seen.add(url);
+    return true;
+  });
+  if (unique.length !== this.gallery.length) this.gallery = unique;
+});
+
 programSchema.index({ published: 1, isMajor: -1, order: 1 });
 
 module.exports = mongoose.model('Program', programSchema);

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   AssetPicker,
   AttachmentEditor,
@@ -16,16 +16,46 @@ import type { Attachment, Bullet, Localized, MediaItem, Person } from '../shared
 
 export type Doc = Record<string, unknown>;
 
-export type FieldDef =
-  | { kind: 'localized'; path: string; label: string; required?: boolean; multiline?: boolean; rows?: number; hint?: string; onlyLang?: 'ml' | 'en' }
+/** Conditions, given the field's own record (a row inside an object-list) and the whole record */
+export type FieldConditions = {
+  /** Shown (and checked) only when this returns true */
+  when?: (doc: Doc, root: Doc) => boolean;
+  /** Required only when this returns true (in addition to a plain `required`) */
+  requiredWhen?: (doc: Doc, root: Doc) => boolean;
+};
+
+export type FieldDef = FieldConditions & (
+  | {
+      kind: 'localized';
+      path: string;
+      label: string;
+      required?: boolean;
+      /** The required language, listed first (default Malayalam); with 'en' Malayalam is optional */
+      primaryLang?: 'ml' | 'en';
+      multiline?: boolean;
+      rows?: number;
+      hint?: string;
+      onlyLang?: 'ml' | 'en';
+    }
   | { kind: 'rich'; path: string; label: string; hint?: string; sections?: false }
   | { kind: 'text'; path: string; label: string; placeholder?: string; hint?: string; required?: boolean }
   | { kind: 'link'; path: string; label: string; emptyLabel: string; hint?: string }
   | { kind: 'number'; path: string; label: string; hint?: string; required?: boolean }
   | { kind: 'date'; path: string; label: string; hint?: string; required?: boolean }
   | { kind: 'select'; path: string; label: string; options: { value: string; label: string }[]; hint?: string; required?: boolean }
+  | {
+      /** A bilingual value picked from a list, with a last option for typing one in */
+      kind: 'localized-choice';
+      path: string;
+      label: string;
+      /** Ready-made values: the list shows `label`, choosing one saves `value` in both languages */
+      options: { label: string; value: Localized }[];
+      /** Label of the last option, which shows the inputs for a value of the editor's own */
+      customLabel: string;
+      hint?: string;
+    }
   | { kind: 'toggle'; path: string; label: string; description?: string }
-  | { kind: 'asset'; path: string; label: string; folder: string; accept?: string; preview?: 'image' | 'file'; fit?: 'cover' | 'contain'; hint?: string; recommend?: string; required?: boolean }
+  | { kind: 'asset'; path: string; label: string; folder: string; accept?: string; preview?: 'image' | 'file'; fit?: 'cover' | 'contain' | 'poster'; hint?: string; recommend?: string; required?: boolean }
   | { kind: 'gallery'; path: string; label: string; folder: string; hint?: string; recommend?: string; accept?: string }
   | { kind: 'attachments'; path: string; label: string; folder: string; hint?: string; recommend?: string }
   | { kind: 'bullets'; path: string; label: string; hint?: string }
@@ -41,7 +71,13 @@ export type FieldDef =
       hint?: string;
     }
   | { kind: 'row'; fields: FieldDef[] }
-  | { kind: 'heading'; label: string; hint?: string };
+  | { kind: 'heading'; label: string; hint?: string }
+);
+
+/** Whether a field is required for this record, counting `requiredWhen`. */
+export function isRequired(def: FieldDef, doc: Doc, root: Doc): boolean {
+  return Boolean(('required' in def && def.required) || def.requiredWhen?.(doc, root));
+}
 
 /* ---------------- nested path access ---------------- */
 
@@ -67,10 +103,79 @@ function toDateInput(value: unknown): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/* ---------------- choice of bilingual values ---------------- */
+
+const CUSTOM_CHOICE = 'custom';
+
+/**
+ * Which option a stored value is: a ready-made one when each language matches it or is
+ * empty, the custom option for any other text, '' when nothing is stored.
+ */
+function choiceOf(value: Localized, options: { value: Localized }[]): string {
+  const ml = (value.ml ?? '').trim();
+  const en = (value.en ?? '').trim().toLowerCase();
+  if (!ml && !en) return '';
+  const index = options.findIndex(
+    (o) => (!ml || ml === o.value.ml) && (!en || en === (o.value.en ?? '').toLowerCase())
+  );
+  return index >= 0 ? String(index) : CUSTOM_CHOICE;
+}
+
+/**
+ * A select of ready-made bilingual values plus a custom option. A stored value that is
+ * none of the options (e.g. typed in before the list existed) opens as custom with its
+ * text in the inputs, so editing a record never changes it unless the editor does.
+ */
+function LocalizedChoice({
+  label,
+  hint,
+  options,
+  customLabel,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  options: { label: string; value: Localized }[];
+  customLabel: string;
+  value: Localized;
+  onChange: (v: Localized) => void;
+}) {
+  const [custom, setCustom] = useState(() => choiceOf(value, options) === CUSTOM_CHOICE);
+  const selected = custom ? CUSTOM_CHOICE : choiceOf(value, options);
+  return (
+    <div className="space-y-2.5">
+      <Field label={label} hint={hint}>
+        <select
+          className="input"
+          value={selected}
+          onChange={(e) => {
+            const next = e.target.value;
+            setCustom(next === CUSTOM_CHOICE);
+            // The custom inputs start empty rather than holding the option left behind
+            onChange(next === '' || next === CUSTOM_CHOICE ? emptyLocalized() : { ...options[Number(next)].value });
+          }}
+        >
+          <option value="">— Choose {label.toLowerCase()} —</option>
+          {options.map((o, i) => (
+            <option key={i} value={String(i)}>
+              {o.label}
+            </option>
+          ))}
+          <option value={CUSTOM_CHOICE}>{customLabel}</option>
+        </select>
+      </Field>
+      {custom && <BilingualInput label={`Custom ${label.toLowerCase()}`} value={value} onChange={onChange} />}
+    </div>
+  );
+}
+
 /* ---------------- renderer ---------------- */
 
 export type FieldContext = {
   doc: Doc;
+  /** The whole record when `doc` is a row inside an object-list (defaults to `doc`) */
+  root?: Doc;
   onChange: (next: Doc) => void;
   token: string;
   onError: (message: string) => void;
@@ -79,6 +184,9 @@ export type FieldContext = {
 export function renderField(def: FieldDef, ctx: FieldContext, key: string | number): ReactNode {
   const { doc, onChange, token, onError } = ctx;
   const set = (path: string, value: unknown) => onChange(setPath(doc, path, value));
+  const root = ctx.root ?? doc;
+  if (def.when && !def.when(doc, root)) return null;
+  const required = isRequired(def, doc, root);
 
   switch (def.kind) {
     case 'heading':
@@ -104,11 +212,12 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
         <BilingualInput
           key={key}
           label={def.label}
-          required={def.required}
+          required={required}
           multiline={def.multiline}
           rows={def.rows}
           hint={def.hint}
           onlyLang={def.onlyLang}
+          primaryLang={def.primaryLang}
           value={(getPath(doc, def.path) as Localized) ?? emptyLocalized()}
           onChange={(v) => set(def.path, v)}
         />
@@ -128,7 +237,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
 
     case 'text':
       return (
-        <Field key={key} label={def.label} required={def.required} hint={def.hint}>
+        <Field key={key} label={def.label} required={required} hint={def.hint}>
           <input
             className="input"
             placeholder={def.placeholder}
@@ -153,7 +262,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
 
     case 'number':
       return (
-        <Field key={key} label={def.label} required={def.required} hint={def.hint}>
+        <Field key={key} label={def.label} required={required} hint={def.hint}>
           <input
             className="input"
             type="number"
@@ -165,7 +274,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
 
     case 'date':
       return (
-        <Field key={key} label={def.label} required={def.required} hint={def.hint}>
+        <Field key={key} label={def.label} required={required} hint={def.hint}>
           <input
             className="input"
             type="date"
@@ -177,7 +286,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
 
     case 'select':
       return (
-        <Field key={key} label={def.label} required={def.required} hint={def.hint}>
+        <Field key={key} label={def.label} required={required} hint={def.hint}>
           <select
             className="input"
             value={(getPath(doc, def.path) as string) ?? ''}
@@ -190,6 +299,19 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
             ))}
           </select>
         </Field>
+      );
+
+    case 'localized-choice':
+      return (
+        <LocalizedChoice
+          key={key}
+          label={def.label}
+          hint={def.hint}
+          options={def.options}
+          customLabel={def.customLabel}
+          value={(getPath(doc, def.path) as Localized) ?? emptyLocalized()}
+          onChange={(v) => set(def.path, v)}
+        />
       );
 
     case 'toggle':
@@ -209,7 +331,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
         <AssetPicker
           key={key}
           label={def.label}
-          required={def.required}
+          required={required}
           hint={def.hint}
           recommend={def.recommend}
           folder={def.folder}
@@ -306,7 +428,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
       const replace = (next: Doc[]) => set(def.path, next);
 
       return (
-        <Field key={key} label={`${def.label} (${rows.length})`} hint={def.hint}>
+        <Field key={key} label={`${def.label} (${rows.length})`} required={required} hint={def.hint}>
           <div className="space-y-3">
             {rows.map((row, i) => (
               <div key={i} className="rounded-xl border border-black/10 bg-white/60 p-4 relative">
@@ -325,6 +447,7 @@ export function renderField(def: FieldDef, ctx: FieldContext, key: string | numb
                       {
                         ...ctx,
                         doc: row,
+                        root,
                         onChange: (nextRow) =>
                           replace(rows.map((r, idx) => (idx === i ? nextRow : r))),
                       },

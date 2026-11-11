@@ -48,7 +48,7 @@ export default function Contact() {
     { required = false, type = 'text', rows = 0 } = {}
   ) => (
     <div className={rows ? 'sm:col-span-2' : ''}>
-      <label className="mb-1 block text-[11.5px] font-medium text-ink-muted sm:mb-1.5 sm:text-[12px]">
+      <label className="mb-1 block type-caption font-medium text-ink-muted sm:mb-1.5">
         {label}
         {required ? <span className="ms-1 text-magenta-500">*</span> : (
           <span className="ms-1 text-ink-faint">(Optional)</span>
@@ -60,7 +60,7 @@ export default function Contact() {
           required={required}
           value={form[key]}
           onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-          className="w-full rounded-xl border border-plum-200 bg-white px-3 py-2 text-[13px] outline-none transition focus:border-magenta-500 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm"
+          className="w-full rounded-xl border border-plum-200 bg-white px-3 py-2 type-body-sm outline-none transition focus:border-magenta-500 sm:rounded-2xl sm:px-4 sm:py-3"
         />
       ) : (
         <input
@@ -68,7 +68,7 @@ export default function Contact() {
           required={required}
           value={form[key]}
           onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-          className="w-full rounded-lg border border-plum-200 bg-white px-3 py-2 text-[13px] outline-none transition focus:border-magenta-500 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
+          className="w-full rounded-lg border border-plum-200 bg-white px-3 py-2 type-body-sm outline-none transition focus:border-magenta-500 sm:rounded-xl sm:px-4 sm:py-2.5"
         />
       )}
     </div>
@@ -87,24 +87,24 @@ export default function Contact() {
               {details.map(({ Icon, label, value, href }) => (
                 <div
                   key={label}
-                  className="flex gap-3 rounded-2xl border border-plum-100 bg-white p-3 shadow-soft sm:gap-4 sm:rounded-3xl sm:p-5"
+                  className="flex gap-3 rounded-2xl border border-plum-100 bg-white p-3 shadow-soft sm:gap-4 sm:rounded-2xl sm:p-5"
                 >
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-magenta-50 text-magenta-600 sm:h-11 sm:w-11 sm:rounded-2xl">
                     <Icon size={16} />
                   </span>
                   <div className="min-w-0">
-                    <div className="text-[10.5px] uppercase tracking-wider text-ink-faint sm:text-[11px]">{label}</div>
+                    <div className="type-overline tracking-wider text-ink-faint">{label}</div>
                     {href ? (
                       <a
                         href={href}
                         target={href.startsWith('http') ? '_blank' : undefined}
                         rel="noreferrer"
-                        className="mt-0.5 block break-words text-[13px] font-medium text-ink transition hover:text-magenta-600 sm:mt-1 sm:text-[15px]"
+                        className="mt-0.5 block break-words type-body font-medium text-ink transition hover:text-magenta-600 sm:mt-1"
                       >
                         {value}
                       </a>
                     ) : (
-                      <p className="mt-0.5 whitespace-pre-line text-[13px] leading-relaxed text-ink/85 sm:mt-1 sm:text-[15px]">
+                      <p className="mt-0.5 whitespace-pre-line type-body leading-relaxed text-ink/85 sm:mt-1">
                         {value}
                       </p>
                     )}
@@ -114,15 +114,15 @@ export default function Contact() {
             </div>
 
             <div className="min-w-0">
-              <div className="rounded-2xl border border-plum-100 bg-white p-3.5 shadow-soft sm:rounded-3xl sm:p-6 md:p-8">
-                <h2 className="font-display text-base font-semibold sm:text-xl"><GradientText>Write to Us</GradientText></h2>
+              <div className="rounded-2xl border border-plum-100 bg-white p-3.5 shadow-soft sm:rounded-2xl sm:p-6 md:p-8">
+                <h2 className="type-subheading"><GradientText>Write to Us</GradientText></h2>
 
                 {status === 'done' ? (
                   <div className="mt-3 rounded-xl border border-magenta-200 bg-magenta-50 p-4 text-center sm:mt-6 sm:rounded-2xl sm:p-6">
-                    <p className="text-[13px] font-medium text-plum-800 sm:text-sm">{s('messageSent')}</p>
+                    <p className="type-body-sm font-medium text-plum-800">{s('messageSent')}</p>
                     <button
                       onClick={() => setStatus('idle')}
-                      className="mt-3 text-[13px] font-semibold text-magenta-600 underline underline-offset-4"
+                      className="mt-3 type-body-sm font-semibold text-magenta-600 underline underline-offset-4"
                     >
                       Write to Us
                     </button>
@@ -137,7 +137,7 @@ export default function Contact() {
                     {field('message', 'Message', { required: true, rows: 5 })}
 
                     {error && (
-                      <p className="text-[13px] text-red-600 sm:col-span-2">{error}</p>
+                      <p className="type-body-sm text-red-600 sm:col-span-2">{error}</p>
                     )}
 
                     <div className="sm:col-span-2">
@@ -150,7 +150,7 @@ export default function Contact() {
               </div>
 
               {settings?.mapEmbedUrl && (
-                <div className="mt-4 overflow-hidden rounded-2xl border border-plum-100 shadow-soft sm:mt-6 sm:rounded-3xl">
+                <div className="mt-4 overflow-hidden rounded-2xl border border-plum-100 shadow-soft sm:mt-6 sm:rounded-2xl">
                   <iframe
                     src={settings.mapEmbedUrl}
                     title="Map"

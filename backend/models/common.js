@@ -63,6 +63,17 @@ const personSchema = new mongoose.Schema(
   { _id: false }
 );
 
+/** True for an empty value or an absolute http(s) URL; rejects javascript:, data:, file: and the like. */
+function isHttpUrl(value) {
+  if (!value) return true;
+  try {
+    const url = new URL(String(value));
+    return (url.protocol === 'http:' || url.protocol === 'https:') && Boolean(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 function slugify(value) {
   return String(value || '')
     .toLowerCase()
@@ -100,6 +111,7 @@ module.exports = {
   attachmentSchema,
   mediaItemSchema,
   personSchema,
+  isHttpUrl,
   slugify,
   autoSlug,
 };

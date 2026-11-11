@@ -30,6 +30,8 @@ export type Paged<T> = {
   page: number;
   limit: number;
   pages: number;
+  /** Events only: which list the backend returned ('upcoming', 'past' or 'all') */
+  scope?: string;
 };
 
 export type PresidentMessage = {
@@ -78,6 +80,8 @@ export type SiteSettings = {
     presidentMessage: boolean;
     focusAreas: boolean;
     newsletter: boolean;
+    /** The Downloads link in the menus; missing on an older backend (treated as on) */
+    downloads?: boolean;
   };
   /** Admin-managed page titles and section headings (keys: backend/utils/siteContent.js) */
   content?: {
@@ -195,23 +199,42 @@ export type Program = {
   coverImage: string;
   logoUrl: string;
   bannerImage: string;
+  /** Poster uploaded in the admin, shown only on this programme's page; empty or missing when it has none */
+  posterImage?: string;
   gallery: MediaItem[];
   videos: VideoRef[];
   downloads: Attachment[];
   isMajor: boolean;
   externalUrl: string;
   externalLabel: Localized;
-  /** Videos whose titles name this programme (programme detail only) */
-  relatedVideos?: VideoItem[];
+};
+
+export type LeaderCategory = 'state' | 'district' | 'party';
+
+/** One period of leadership, oldest first in `Leader.terms` */
+export type LeaderTerm = {
+  /** As entered in the admin, e.g. "2024–2026" */
+  period: string;
+  /** District served in during this period (district leaders); empty otherwise */
+  district: string;
+  /** Years read from `period`; missing when it has none */
+  from?: number;
+  to?: number;
 };
 
 export type Leader = {
   _id: string;
+  /** Leaders saved before categories existed are reported as 'state' by the API */
+  category: LeaderCategory;
   name: Localized;
   designation: Localized;
   bio: Localized;
   photo: string;
-  posterImage: string;
+  /** Group poster of a past committee; the card shows it when there is no photo */
+  posterImage?: string;
+  /** Every period this person led in; records saved before periods existed report their old term here */
+  terms?: LeaderTerm[];
+  /** The most recent period, kept for older API responses that have no `terms` */
   termLabel: string;
   termFrom?: number;
   termTo?: number;
@@ -232,6 +255,8 @@ export type OrgEvent = {
   district: string;
   coverImage: string;
   posterImage: string;
+  /** Optional poster link: when set, the poster opens this address in a new tab */
+  externalUrl?: string;
   speakers: Person[];
   gallery: MediaItem[];
   downloads: Attachment[];
@@ -345,6 +370,8 @@ export type HomePayload = {
   campaigns: Campaign[];
   updates: MediaPost[];
   upcomingEvents: OrgEvent[];
+  /** Posters for the home Events section (Event Poster in the admin), upcoming first */
+  eventPosters?: OrgEvent[];
   featuredArticles: MediaPost[];
   featuredVideos: VideoItem[];
   publications: Publication[];

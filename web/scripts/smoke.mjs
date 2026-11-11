@@ -87,14 +87,14 @@ async function render(path, expect) {
 }
 
 const ROUTES = [
-  ['/ml', ['ജമാഅത്തെ ഇസ്‌ലാമി ഹിന്ദ്', 'അധ്യക്ഷയുടെ സന്ദേശം', 'വിദ്യാഭ്യാസം']],
-  ['/en', ['Jamaat e Islami Hind', "President's Message", 'Education', 'Latest News']],
+  ['/', ["President's Message", 'വിദ്യാഭ്യാസം']],
+  ['/en', ['Jamaat e Islami Hind', "President's Message", 'Education', 'View All News']],
   ['/en/who-we-are', ['Who We Are', 'Ideology', 'Our Values']],
   ['/en/who-we-are/ideology', ['Ideology', 'Our Foundation']],
   ['/en/who-we-are/constitution', ['Constitution', 'Downloads']],
   ['/en/departments', ['Departments', "Thamheedul Mar'a", 'WINGS']],
   ['/en/departments/thamheedul-mara', ["Thamheedul Mar'a", 'Objectives', 'Activities', 'Leadership']],
-  ['/en/programs', ['Programmes', 'Women Entrepreneurs Summit', 'Proficia']],
+  ['/en/programs', ['Programmes', 'Women Entrepreneurs Summit', 'Profisia']],
   ['/en/programs/wes', ['Women Entrepreneurs Summit', 'Overview', 'Schedule']],
   ['/en/leaders', ['Leaders', 'Current Leadership', 'Sajida P.T.P', 'Past Leadership']],
   ['/en/events', ['Events', "State Women's Conference 2026"]],

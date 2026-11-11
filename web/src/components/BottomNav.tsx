@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router';
 import { ChevronRight, LayoutGrid, X } from 'lucide-react';
 import { useSite } from '../lib/site';
 import { str, t } from '../lib/i18n';
-import { buildBottomTabs, buildNavItems, type NavLeaf } from '../lib/nav';
+import { buildBottomTabs, buildNavItems, showDownloadsLink, type NavLeaf } from '../lib/nav';
 
 /**
  * Phone navigation (below md): an app-style bar fixed to the bottom of the screen
@@ -18,18 +18,19 @@ export default function BottomNav() {
   const [moreOpen, setMoreOpen] = useState(false);
 
   const tabs = useMemo(() => buildBottomTabs(path, 'en'), [path]);
+  const showDownloads = showDownloadsLink(data?.settings);
 
   /* "More": everything in the main navigation that is not already a tab, grouped
      like the header menu (standalone links first, then each dropdown) */
   const groups = useMemo(() => {
     const tabPaths = new Set(tabs.map((tab) => tab.to));
-    const items = buildNavItems(path, 'en');
+    const items = buildNavItems(path, 'en', showDownloads);
     const keep = (links: NavLeaf[]) => links.filter((l) => !tabPaths.has(l.to));
     return [
       { label: str('menuMain', 'en'), links: keep(items.filter((i) => i.to).map((i) => ({ label: i.label, to: i.to!, icon: i.icon }))) },
       ...items.filter((i) => i.children?.length).map((i) => ({ label: i.label, links: keep(i.children!) })),
     ].filter((g) => g.links.length);
-  }, [path, tabs]);
+  }, [path, tabs, showDownloads]);
 
   const activeTab = tabs.findIndex((tab) => tab.match(pathname));
   const moreActive = activeTab === -1 && groups.some((g) => g.links.some((l) => pathname === l.to || pathname.startsWith(`${l.to}/`)));
@@ -50,7 +51,7 @@ export default function BottomNav() {
     };
   }, [moreOpen]);
 
-  const cell = 'relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-0 pt-1 pb-0.5 text-[10px] font-medium leading-none transition-colors';
+  const cell = 'relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-0 pt-1 pb-0.5 type-micro font-medium leading-none transition-colors';
 
   return (
     <>
@@ -124,7 +125,7 @@ export default function BottomNav() {
               </div>
               {groups.map((group) => (
                 <section key={group.label} className="mb-3 last:mb-0">
-                  <h3 className="mb-1.5 px-1 font-sans text-[11px] font-semibold uppercase tracking-[0.14em]">
+                  <h3 className="mb-1.5 px-1 font-sans type-overline font-semibold tracking-[0.14em]">
                     <span className="text-brand-gradient">{group.label}</span>
                   </h3>
                   <ul className="grid grid-cols-2 gap-1.5">
@@ -136,7 +137,7 @@ export default function BottomNav() {
                             to={to}
                             onClick={() => setMoreOpen(false)}
                             aria-current={active ? 'page' : undefined}
-                            className={`flex min-h-[44px] items-center gap-2 rounded-xl border px-2.5 py-1.5 text-[12.5px] font-medium transition active:scale-[0.98] ${
+                            className={`flex min-h-[44px] items-center gap-2 rounded-xl border px-2.5 py-1.5 type-body-sm font-medium transition active:scale-[0.98] ${
                               active ? 'border-magenta-200 bg-magenta-50/70 text-magenta-600' : 'border-plum-100 bg-white text-plum-800'
                             }`}
                           >

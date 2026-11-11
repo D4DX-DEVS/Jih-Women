@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import {
   ArrowRight,
@@ -11,28 +11,28 @@ import {
 } from 'lucide-react';
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
-import { str, t } from '../lib/i18n';
+import { t } from '../lib/i18n';
 import { formatDate, youtubeThumb } from '../lib/format';
 import {
-  Button,
   Container,
   ErrorState,
   GradientText,
-  ManagedLink,
   ManagedSectionHeading,
-  Rule,
   Section,
+  SECTION_Y,
   SectionLogo,
 } from '../components/Primitives';
 import { HomeSkeleton } from '../components/PageSkeletons';
 import {
   CampaignCard,
-  EventCard,
   Lightbox,
+  PosterLightbox,
   PostCard,
   PublicationCard,
   VideoPlayerModal,
 } from '../components/Cards';
+import PresidentMessageModal from '../components/PresidentMessageModal';
+import FocusStrip from '../components/FocusStrip';
 import Reveal from '../components/Reveal';
 import { useViewMode } from '../lib/view';
 import type {
@@ -42,7 +42,6 @@ import type {
   OrgEvent,
   ProgramBanner,
   PresidentMessage,
-  SiteSettings,
   Slide,
   VideoItem,
 } from '../lib/types';
@@ -65,34 +64,47 @@ export default function Home() {
 
   const { sections, presidentMessage } = data.settings;
   const banners = (data.programBanners ?? []).filter((b) => Boolean(b.logoUrl || b.bannerImage));
-  const showBanners = sections.programBanners !== false && banners.length > 0;
+  // The strip is logos only: a programme's poster is shown on its own page, never here
+  const showPrograms = sections.programBanners !== false && banners.length > 0;
+  // Event posters managed under Event Poster in the admin. An older backend only sends
+  // `upcomingEvents`, so fall back to it rather than showing an empty Events section.
+  const eventPosters = (data.eventPosters ?? data.upcomingEvents ?? []).filter((e) =>
+    Boolean(e.posterImage || e.coverImage)
+  );
   const showPresident =
     sections.presidentMessage !== false && presidentMessage?.enabled !== false && presidentMessage;
+  // Focus: shown only while the admin's Focus switch (sections.focusAreas) is on
+  const showFocus = sections.focusAreas !== false && (data.focusAreas?.length ?? 0) > 0;
 
   return (
     <>
       {sections.slider && data.sliders.length > 0 && <Hero slides={data.sliders} />}
 
-      {showBanners && <ProgramBanners banners={banners} />}
+      {showPrograms && <ProgramBanners banners={banners} />}
 
-      <section className="bg-mist py-4 sm:py-7 md:py-9">
+      <section className={`bg-mist ${SECTION_Y}`}>
         <Container className="space-y-5">
           <Reveal>
-            <MainInfo settings={data.settings} message={showPresident ? presidentMessage : null} />
+            <PresidentAndEvents message={showPresident ? presidentMessage : null} events={eventPosters} />
           </Reveal>
+          {showFocus && (
+            <Reveal>
+              <FocusStrip areas={data.focusAreas} />
+            </Reveal>
+          )}
         </Container>
       </section>
 
-      <section className="bg-white py-4 sm:py-7 md:py-9">
+      <section className={`bg-white ${SECTION_Y}`}>
         <Container>
           <Reveal>
-            <NewsAndEvents updates={data.updates} events={data.upcomingEvents} />
+            <NewsBand posts={data.updates} />
           </Reveal>
         </Container>
       </section>
 
       {data.featuredVideos.length > 0 && (
-        <section className="border-t border-plum-100/70 bg-white pb-5 pt-4 sm:pb-8 sm:pt-7 md:pb-10 md:pt-9">
+        <section className={`border-t border-plum-100/70 bg-white ${SECTION_Y}`}>
           <Container>
             <Reveal>
               <VideoRow videos={data.featuredVideos} onPlay={setPlaying} />
@@ -102,7 +114,7 @@ export default function Home() {
       )}
 
       {(data.galleryPhotos?.length ?? 0) > 0 && (
-        <section className="border-t border-plum-100/70 bg-white pb-5 pt-4 sm:pb-8 sm:pt-7 md:pb-10 md:pt-9">
+        <section className={`border-t border-plum-100/70 bg-white ${SECTION_Y}`}>
           <Container>
             <PhotoGallery photos={data.galleryPhotos!} />
           </Container>
@@ -113,7 +125,7 @@ export default function Home() {
         <Section tone="white">
           <Container>
             <ManagedSectionHeading sectionKey="homeCampaigns" eyebrow={h('mediaCentre')} title={h('campaigns')} />
-            <div className="grid gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-5 lg:grid-cols-3">
               {data.campaigns.map((c, i) => (
                 <Reveal key={c._id} delay={Math.min(i, 6) * 60}>
                   <CampaignCard campaign={c} />
@@ -128,7 +140,7 @@ export default function Home() {
         <Section tone="deep">
           <Container>
             <ManagedSectionHeading sectionKey="homeFeaturedArticles" eyebrow={h('media')} title={h('featuredArticles')} />
-            <div className={`grid gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-3'}`}>
+            <div className={`grid gap-2.5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 ${view === 'list' ? 'grid-cols-1' : 'grid-cols-2'}`}>
               {data.featuredArticles.map((post, i) => (
                 <Reveal key={post._id} delay={Math.min(i, 6) * 60}>
                   <PostCard post={post} view={view} />
@@ -143,7 +155,7 @@ export default function Home() {
         <Section tone="white">
           <Container>
             <ManagedSectionHeading sectionKey="homePublications" eyebrow={h('publications')} title={h('publications')} />
-            <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3">
               {data.publications.map((p, i) => (
                 <Reveal key={p._id} delay={Math.min(i, 6) * 60}>
                   <PublicationCard publication={p} />
@@ -272,7 +284,7 @@ function Hero({ slides }: { slides: Slide[] }) {
 /* ─────────────────────── programme banner strip ─────────────────────── */
 
 /* Fewest logos one marquee copy may hold. Sparse lists are repeated up to this so a
-   single copy is wider than the widest strip (1280px container ÷ ~212px per logo),
+   single copy is wider than the widest strip (1200px container ÷ ~212px per logo),
    otherwise an empty gap would trail the list before the loop restarts. */
 const MARQUEE_MIN_TILES = 8;
 /* Drift speed of the programme strip, in px per second. */
@@ -444,10 +456,15 @@ function useDriftStrip<V extends HTMLElement, T extends HTMLElement>(speedPxPerS
   return { viewportRef, trackRef, nudge, viewportProps };
 }
 
+/* The strip heading as first shipped and stored in the admin-managed content. The home
+   page shows "Highlights" in its place; any other wording an editor sets is shown as written. */
+const SHIPPED_STRIP_HEADINGS = new Set(['Programs', 'പദ്ധതികൾ']);
+
 function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
   const { path, section, h } = useSite();
-  const heading = section('homePrograms', { heading: h('programs') });
-  const repeat = Math.ceil(MARQUEE_MIN_TILES / banners.length);
+  const heading = section('homePrograms', { heading: h('highlights') });
+  const title = SHIPPED_STRIP_HEADINGS.has(heading.heading) ? h('highlights') : heading.heading;
+  const repeat = Math.ceil(MARQUEE_MIN_TILES / Math.max(1, banners.length));
   const loop = Array.from({ length: repeat }, () => banners).flat();
 
   const { viewportRef, trackRef, nudge, viewportProps } = useDriftStrip<HTMLDivElement, HTMLUListElement>(
@@ -457,9 +474,10 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
 
   /** One programme logo; `hidden` marks a repeated copy (not focusable or announced). */
   const renderTile = (banner: ProgramBanner, hidden = false) => {
-    // A bare logo, no tile: fixed box, image contained so nothing is cropped or stretched
+    // A bare logo, no tile: fixed box, image contained so nothing is cropped or stretched.
+    // Phones show two across the strip (half its width each, less the padding).
     const cls =
-      'group flex h-9 w-[22vw] max-w-[88px] items-center justify-center rounded-lg sm:h-16 sm:w-[160px] sm:max-w-none lg:h-[72px] lg:w-[180px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-magenta-400';
+      'group flex h-12 w-[calc(50cqw-1rem)] items-center justify-center rounded-lg sm:h-16 sm:w-[160px] lg:h-[72px] lg:w-[180px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-magenta-400';
     const inner = (
       <img
         src={banner.logoUrl || banner.bannerImage}
@@ -472,11 +490,8 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
       />
     );
     const tabIndex = hidden ? -1 : undefined;
-    return banner.externalUrl ? (
-      <a href={banner.externalUrl} target="_blank" rel="noreferrer" className={cls} tabIndex={tabIndex} draggable={false}>
-        {inner}
-      </a>
-    ) : (
+    // Always the programme page: its website (if any) is linked below the content there
+    return (
       <Link to={path(`/programs/${banner.slug}`)} className={cls} tabIndex={tabIndex} draggable={false}>
         {inner}
       </Link>
@@ -489,7 +504,7 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
         <div className="mb-1.5 flex items-center justify-center gap-2 eyebrow sm:mb-4 sm:gap-3">
           {heading.logo && <SectionLogo src={heading.logo} />}
           <span className="brand-rule-start w-6 sm:w-10" />
-          <span className="text-brand-gradient">{heading.heading}</span>
+          <span className="text-brand-gradient">{title}</span>
           <span className="brand-rule-end w-6 sm:w-10" />
         </div>
         {/* The row drifts slowly right to left; it can be dragged (mouse) or swiped
@@ -501,8 +516,9 @@ function ProgramBanners({ banners }: { banners: ProgramBanner[] }) {
           <MarqueeArrow dir={-1} onClick={() => nudge(-1)} />
           <div
             ref={viewportRef}
-            // Edges fade out so logos glide in and out instead of being sliced off
-            className="min-w-0 flex-1 cursor-grab touch-pan-y select-none overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_8%,#000_92%,transparent)]"
+            // Edges fade out so logos glide in and out instead of being sliced off. A size
+            // container, so phone tiles can each take half of its width.
+            className="min-w-0 flex-1 cursor-grab touch-pan-y select-none overflow-hidden [container-type:inline-size] [mask-image:linear-gradient(to_right,transparent,#000_8%,#000_92%,transparent)]"
             {...viewportProps}
           >
             <ul ref={trackRef} className="flex w-max will-change-transform">
@@ -541,102 +557,289 @@ function Eyebrow({ children, logo }: { children: React.ReactNode; logo?: string 
   );
 }
 
-/* About (organisation intro) beside the president's message, as one card */
-function MainInfo({ settings, message }: { settings: SiteSettings; message: PresidentMessage | null }) {
-  const { lang, link, section, h } = useSite();
-  const about = section('homeAbout', {
-    label: h('aboutUs'),
-    heading: settings.siteName?.en?.trim() || t(settings.siteName, lang),
-    description: t(settings.footerNote, lang) || str('footerBlurb', lang),
-  });
-  const aboutTitle = about.heading;
-  const aboutBody = about.description;
-  const president = section('homePresident', { label: h('presidentMessage') });
+/* President's message (left) beside the event poster (right), as one card; stacked on
+   narrower screens. Either part is left out when it has nothing to show. Read More (or a
+   click anywhere on the message, photo included) opens the whole message in a popup.
+   Side by side, the message column takes the height of the events column (heading and
+   poster) and its preview fills whatever that leaves, so Read More lines up with the
+   bottom of the poster. */
+function PresidentAndEvents({ message, events }: { message: PresidentMessage | null; events: OrgEvent[] }) {
+  const { lang, section, h } = useSite();
+  const [open, setOpen] = useState(false);
+  const president =section('homePresident', { label: h('presidentMessage') });
   const label = president.label;
   const heading = message ? t(message.heading, 'en') || label : '';
   const body = message ? t(message.message, lang) : '';
   const name = message ? t(message.name, lang) : '';
   const designation = message ? t(message.designation, lang) : '';
 
+  if (!message && events.length === 0) return null;
+  const fill = events.length > 0;
+
   return (
     <div className="relative overflow-hidden rounded-2xl border border-magenta-100/80 bg-gradient-to-br from-white via-magenta-50/50 to-plum-50 shadow-card sm:rounded-3xl">
       <span className="pointer-events-none absolute -end-20 -top-24 h-64 w-64 rounded-full bg-magenta-100/60 blur-3xl" />
-      <div className={`relative grid ${message ? 'lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]' : ''}`}>
-        <div className="flex min-w-0 flex-col p-3.5 sm:p-6 md:p-8">
-          <Eyebrow logo={about.logo}>{about.label}</Eyebrow>
-          {aboutTitle && (
-            <h2 className="responsive-copy mt-1.5 font-display text-[1.05rem] font-semibold leading-snug text-plum-800 sm:mt-2.5 sm:text-[1.45rem] md:text-[1.6rem]">
-              <GradientText>{aboutTitle}</GradientText>
-            </h2>
-          )}
-          <Rule className="mt-2 sm:mt-3" />
-          <p className="mt-2.5 text-[12.5px] leading-relaxed text-ink/75 sm:mt-4 sm:text-[14.5px]">{aboutBody}</p>
-          <div className="mt-3 sm:mt-5">
-            <Button {...link(about.linkUrl || '/who-we-are')} size="sm">
-              {h('readMore')}
-              <ArrowRight size={14} />
-            </Button>
-          </div>
-        </div>
-
+      {/* Desktop: the message takes the larger part of the card (about 70% on wide screens) */}
+      <div className={`relative grid ${message && events.length > 0 ? 'lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]' : ''}`}>
         {message && (
-          <div className="relative min-w-0 border-t border-magenta-100/80 p-3.5 sm:p-6 md:p-8 lg:border-s lg:border-t-0">
+          // Same top and bottom padding as the events column, so the two headings and the
+          // bottoms of Read More and the poster line up
+          <div className="relative flex min-w-0 flex-col p-3.5 sm:p-6 md:p-8 xl:px-10">
             <Eyebrow logo={president.logo}>{label}</Eyebrow>
-            <div className="mt-2 grid gap-3 sm:mt-3 sm:gap-5 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-start">
+            {/* The negative margin and matching padding give the hover tint some room
+                without moving anything. A link inside the message still works as a link.
+                Keyboard and screen-reader users open the popup with Read More. */}
+            <div
+              onClick={(e) => {
+                if (!(e.target as HTMLElement).closest('a')) setOpen(true);
+              }}
+              className={`relative -mx-2 -mb-2 grid cursor-pointer gap-3 rounded-2xl px-2 py-2 transition-colors hover:bg-white/60 sm:-mx-3 sm:mt-2 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-start sm:gap-6 sm:px-3 lg:mt-4 xl:grid-cols-[minmax(0,1fr)_170px] xl:gap-10 ${
+                fill ? 'lg:min-h-0 lg:flex-1 lg:grid-rows-[minmax(0,1fr)]' : ''
+              }`}
+            >
               <figure className="relative mx-auto sm:order-last sm:mx-0">
                 {message.photo ? (
                   <img
                     src={message.photo}
                     alt={name}
-                    className="h-[120px] w-[100px] rounded-t-[3.5rem] rounded-b-xl border-[3px] border-white object-cover shadow-lift sm:h-[180px] sm:w-[150px] sm:rounded-t-[4.5rem] sm:rounded-b-2xl sm:border-4"
+                    className="h-[120px] w-[100px] rounded-t-[3.5rem] rounded-b-xl border-[3px] border-white object-cover shadow-lift sm:h-[180px] sm:w-[150px] sm:rounded-t-[4.5rem] sm:rounded-b-2xl sm:border-4 xl:h-[204px] xl:w-[170px] xl:rounded-t-[5rem]"
                   />
                 ) : (
-                  <div className="grid h-[120px] w-[100px] place-items-center rounded-t-[3.5rem] rounded-b-xl border-[3px] border-white bg-plum-100 text-plum-300 shadow-lift sm:h-[180px] sm:w-[150px] sm:rounded-t-[4.5rem] sm:rounded-b-2xl sm:border-4">
+                  <div className="grid h-[120px] w-[100px] place-items-center rounded-t-[3.5rem] rounded-b-xl border-[3px] border-white bg-plum-100 text-plum-300 shadow-lift sm:h-[180px] sm:w-[150px] sm:rounded-t-[4.5rem] sm:rounded-b-2xl sm:border-4 xl:h-[204px] xl:w-[170px] xl:rounded-t-[5rem]">
                     <Users size={36} />
                   </div>
                 )}
                 {name && (
-                  <figcaption className="mt-1.5 text-center sm:mt-2.5">
-                    <span className="block font-display text-[13px] font-semibold text-plum-800 sm:text-[14px]"><GradientText>{name}</GradientText></span>
-                    {designation && <span className="block text-[11px] text-ink-muted sm:text-[11.5px]">{designation}</span>}
+                  <figcaption className="mt-1.5 text-center sm:mt-3">
+                    <span className="block type-title-lg text-plum-800"><GradientText>{name}</GradientText></span>
+                    {designation && <span className="mt-0.5 block type-caption text-ink-muted">{designation}</span>}
                   </figcaption>
                 )}
               </figure>
 
-              <div className="relative min-w-0">
-                <span className="pointer-events-none absolute -start-1 -top-2 font-display text-[2.4rem] leading-none text-magenta-200 sm:-top-3 sm:text-[3.2rem]">
+              <div className={`relative min-w-0 ${fill ? 'lg:flex lg:min-h-0 lg:flex-col lg:self-stretch' : ''}`}>
+                <span className="pointer-events-none absolute -start-1 -top-2 font-display text-[2.4rem] leading-none text-magenta-200 sm:-top-3 sm:text-[3.2rem] lg:-start-2 lg:-top-4 lg:text-[4.25rem]">
                   &ldquo;
                 </span>
                 {heading !== label && (
-                  <h2 className="responsive-copy relative ps-6 font-display text-[1rem] font-semibold leading-snug text-magenta-500 sm:ps-7 sm:text-[1.2rem] md:text-[1.35rem]">
+                  <h2 className="responsive-copy relative ps-6 type-heading-sm text-magenta-500 sm:ps-7 lg:ps-10">
                     <GradientText>{heading}</GradientText>
                   </h2>
                 )}
-                {body && (
-                  <div
-                    className={`prose-content relative mt-1.5 overflow-hidden ps-6 text-[12.5px] leading-[1.7] sm:mt-2 sm:ps-7 sm:text-[14px] sm:leading-[1.85] ${
-                      message.linkUrl
-                        ? 'max-h-[9rem] sm:max-h-[12.5rem] [mask-image:linear-gradient(to_bottom,black_75%,transparent)]'
-                        : ''
-                    }`}
-                    dangerouslySetInnerHTML={{ __html: body }}
-                  />
-                )}
-                {message.linkUrl && (
-                  <ManagedLink
-                    {...link(message.linkUrl)}
-                    className="ms-6 mt-2 inline-flex items-center gap-1.5 text-[12px] font-medium text-magenta-600 hover:text-magenta-500 sm:ms-7 sm:mt-3 sm:text-[13px]"
-                  >
-                    {h('readMore')}
-                    <ArrowRight size={14} />
-                  </ManagedLink>
-                )}
+                {body && <MessagePreview html={body} fill={fill} />}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpen(true);
+                  }}
+                  aria-haspopup="dialog"
+                  aria-label={`${h('readMore')}: ${label}`}
+                  className="relative ms-6 mt-3 inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border border-magenta-200 bg-white/70 px-4 py-1.5 type-caption font-semibold text-magenta-600 shadow-soft transition hover:border-magenta-300 hover:bg-white hover:text-magenta-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 sm:ms-7 sm:mt-4 sm:px-5 sm:py-2 lg:ms-10"
+                >
+                  {h('readMore')}
+                  <ArrowRight size={14} />
+                </button>
               </div>
             </div>
+            {open && (
+              <PresidentMessageModal
+                mode="pinned"
+                triggerHovered={false}
+                label={label}
+                heading={heading}
+                body={body}
+                name={name}
+                designation={designation}
+                photo={message.photo}
+                onPin={() => {}}
+                onClose={() => setOpen(false)}
+              />
+            )}
+          </div>
+        )}
+
+        {events.length > 0 && (
+          <div
+            className={`relative min-w-0 p-3.5 sm:p-6 md:p-8 lg:px-7 xl:px-8 ${
+              message ? 'border-t border-magenta-100/80 lg:border-s lg:border-t-0' : ''
+            }`}
+          >
+            <EventPosters events={events} />
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+/* The message as a short preview: capped in height, fading out only when it is cut off.
+   The whole message opens in a popup (see PresidentAndEvents). `fill`: from lg up the
+   preview takes the height left in its column instead of a fixed cap; it is laid over
+   that space (absolute), so the text never makes the column taller. */
+function MessagePreview({ html, fill = false }: { html: string; fill?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [cut, setCut] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setCut(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    observer?.observe(el);
+    // Web fonts change the line count once they load
+    document.fonts?.ready.then(measure);
+    return () => observer?.disconnect();
+  }, [html]);
+
+  return (
+    <div className={`relative mt-1.5 sm:mt-2 ${fill ? 'lg:min-h-[8rem] lg:flex-1' : ''}`}>
+      <div
+        ref={ref}
+        className={`prose-content type-body-lg relative max-h-[9.5rem] overflow-hidden ps-6 leading-[1.7] sm:max-h-[14rem] sm:ps-7 sm:leading-[1.85] lg:max-h-[17.5rem] lg:ps-10 ${
+          fill ? 'lg:absolute lg:inset-0 lg:max-h-none' : ''
+        } ${cut ? '[mask-image:linear-gradient(to_bottom,black_80%,transparent)]' : ''}`}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </div>
+  );
+}
+
+/* The events heading as first shipped and stored in the admin-managed content. The home
+   page shows "Events" in its place; any other wording an editor sets is shown as written. */
+const SHIPPED_EVENTS_HEADINGS = new Set(['Upcoming Events', 'വരാനിരിക്കുന്ന പരിപാടികൾ']);
+
+/* Event posters (Event Poster in the admin), one at a time: the poster is shown whole in
+   a 3:4 frame with nothing beneath it, and a click opens it full size in the lightbox
+   (never another page, even when the poster has its own link). The backend sends
+   upcoming events first (soonest first) and then the most recent past ones, so the first
+   poster is the next event; the posters advance on their own every few seconds
+   (looping), and the arrows on either side of the poster or a swipe step through them
+   too. A mouse over the column, keyboard focus inside it or an open lightbox pauses the
+   rotation, and prefers-reduced-motion turns it off. */
+const EVENT_POSTER_INTERVAL = 4500;
+
+function EventPosters({ events }: { events: OrgEvent[] }) {
+  const { lang, path, s, h, section } = useSite();
+  const heading = section('homeEvents', { heading: h('events') });
+  const title = SHIPPED_EVENTS_HEADINGS.has(heading.heading) ? h('events') : heading.heading;
+  const [index, setIndex] = useState(0);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [zoomed, setZoomed] = useState<OrgEvent | null>(null);
+  const touchXRef = useRef<number | null>(null);
+  const count = events.length;
+  // A reloaded list may be shorter than the poster last shown
+  const current = Math.min(index, count - 1);
+  const event = events[current];
+  const name = t(event.title, lang);
+
+  const step = (dir: 1 | -1) => setIndex((current + dir + count) % count);
+
+  // Auto-advance; the timer restarts on every move, so a poster stepped to by hand gets its full time
+  useEffect(() => {
+    if (count < 2 || hovered || focused || zoomed) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const id = window.setTimeout(() => setIndex((i) => (Math.min(i, count - 1) + 1) % count), EVENT_POSTER_INTERVAL);
+    return () => window.clearTimeout(id);
+  }, [current, count, hovered, focused, zoomed]);
+
+  // Fetch the next poster ahead of time so it fades in whole rather than loading in view
+  useEffect(() => {
+    if (count < 2) return;
+    const next = events[(current + 1) % count];
+    new window.Image().src = next.posterImage || next.coverImage || '';
+  }, [current, count, events]);
+
+  return (
+    <>
+      <div
+        className="flex min-w-0 flex-col"
+        onPointerEnter={(e) => e.pointerType === 'mouse' && setHovered(true)}
+        onPointerLeave={(e) => e.pointerType === 'mouse' && setHovered(false)}
+        onFocus={(e) => setFocused((e.target as HTMLElement).matches(':focus-visible'))}
+        onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setFocused(false)}
+        onTouchStart={(e) => (touchXRef.current = e.touches[0].clientX)}
+        onTouchEnd={(e) => {
+          const start = touchXRef.current;
+          touchXRef.current = null;
+          if (start === null || count < 2) return;
+          const dx = e.changedTouches[0].clientX - start;
+          if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1);
+        }}
+      >
+        {/* Wraps rather than clipping View All when a long heading meets a narrow column */}
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <Eyebrow logo={heading.logo}>{title}</Eyebrow>
+          <Link
+            to={path('/events')}
+            className="-my-2 inline-flex shrink-0 items-center gap-1 whitespace-nowrap py-2 type-meta font-medium text-ink-muted transition hover:text-magenta-600"
+          >
+            {s('viewAll')}
+            <ArrowRight size={13} />
+          </Link>
+        </div>
+
+        {/* Phones: the poster fills the column width, less the room for the arrows to sit
+            half over its edges; from sm up the column is wide (or beside the message), so
+            the poster is capped and the arrows straddle its edges from outside */}
+        <div
+          className={`relative mx-auto mt-3 w-full sm:mt-4 sm:max-w-[250px] sm:px-0 lg:mt-6 lg:max-w-[270px] ${
+            count > 1 ? 'px-[1.125rem]' : ''
+          }`}
+        >
+          {/* key: the fade replays for each poster */}
+          <button
+            key={event._id}
+            type="button"
+            onClick={() => setZoomed(event)}
+            aria-haspopup="dialog"
+            aria-label={name || title}
+            className="group block w-full rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-magenta-400 motion-safe:animate-fade-in"
+          >
+            {/* object-contain: the poster is shown whole, never cropped or stretched */}
+            <span className="relative block aspect-[3/4] w-full overflow-hidden rounded-xl border border-plum-100/80 bg-white shadow-soft">
+              <img
+                src={event.posterImage || event.coverImage}
+                alt={name}
+                loading="lazy"
+                draggable={false}
+                className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+              />
+            </span>
+          </button>
+          {count > 1 && (
+            <>
+              <span className="absolute left-0 top-1/2 z-10 -translate-y-1/2 sm:-translate-x-1/2">
+                <PosterArrow dir={-1} onClick={() => step(-1)} />
+              </span>
+              <span className="absolute right-0 top-1/2 z-10 -translate-y-1/2 sm:translate-x-1/2">
+                <PosterArrow dir={1} onClick={() => step(1)} />
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+      {/* Outside the column: the lightbox's clicks and swipes must not reach the carousel */}
+      {zoomed && <PosterLightbox event={zoomed} onClose={() => setZoomed(null)} />}
+    </>
+  );
+}
+
+/* A previous / next button on the edge of the event poster */
+function PosterArrow({ dir, onClick }: { dir: 1 | -1; onClick: () => void }) {
+  const { s } = useSite();
+  const Icon = dir === 1 ? ChevronRight : ChevronLeft;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={s(dir === 1 ? 'next' : 'previous')}
+      className="grid h-9 w-9 place-items-center rounded-full border border-plum-100 bg-white/95 text-plum-800 shadow-soft backdrop-blur-sm transition hover:border-magenta-200 hover:text-magenta-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 active:scale-95"
+    >
+      <Icon size={18} />
+    </button>
   );
 }
 
@@ -647,17 +850,21 @@ function BandHeading({
   label,
   actionLabel,
   to,
+  shipped = [],
 }: {
   sectionKey: string;
   label: string;
   actionLabel: string;
   to: string;
+  /** Headings as first shipped; when the stored heading is one of these, `label` is shown instead */
+  shipped?: string[];
 }) {
   const { section } = useSite();
-  const heading = section(sectionKey, { heading: label });
+  const stored = section(sectionKey, { heading: label });
+  const heading = { ...stored, heading: shipped.includes(stored.heading) ? label : stored.heading };
   return (
     <div className="mb-2.5 flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 sm:mb-3.5 sm:gap-y-1.5">
-      <h3 className="band-label flex shrink-0 items-center gap-2 whitespace-nowrap font-sans text-[12px] font-semibold uppercase tracking-[0.1em] text-magenta-500 sm:text-[14px] sm:tracking-[0.12em] md:text-[15px]">
+      <h3 className="band-label flex shrink-0 items-center gap-2 whitespace-nowrap font-sans type-eyebrow font-semibold uppercase tracking-[0.1em] text-magenta-500 sm:tracking-[0.12em]">
         {heading.logo && <SectionLogo src={heading.logo} />}
         <span className="brand-rule-start w-5 sm:w-7" />
         <span className="text-brand-gradient">{heading.heading}</span>
@@ -665,7 +872,7 @@ function BandHeading({
       </h3>
       <Link
         to={to}
-        className="-my-2 inline-flex shrink-0 items-center gap-1 whitespace-nowrap py-2 text-[10.5px] font-medium text-ink-muted transition hover:text-magenta-600 sm:text-[11px]"
+        className="-my-2 inline-flex shrink-0 items-center gap-1 whitespace-nowrap py-2 type-meta font-medium text-ink-muted transition hover:text-magenta-600"
       >
         {actionLabel}
         <ArrowRight size={13} />
@@ -674,448 +881,263 @@ function BandHeading({
   );
 }
 
-function RailArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => void }) {
-  const { s } = useSite();
-  const cls =
-    'grid h-7 w-7 place-items-center rounded-full border border-plum-100 bg-white text-plum-800 shadow-soft transition hover:border-magenta-200 hover:text-magenta-600';
-  return (
-    <div className="flex items-center gap-1.5">
-      <button type="button" onClick={onPrev} aria-label={s('previous')} className={cls}>
-        <ChevronLeft size={14} />
-      </button>
-      <button type="button" onClick={onNext} aria-label={s('next')} className={cls}>
-        <ChevronRight size={14} />
-      </button>
-    </div>
-  );
-}
-
-/* Home carousels (Latest News, Featured Videos): cards in view on desktop, the
-   repeated cards that make the loop seamless, and time per step in ms. */
-const CAROUSEL_PER_VIEW = 3;
-const CAROUSEL_INTERVAL = 4500;
-
-/* Stagger for cards popping up as a carousel first scrolls into view (static class
-   names so Tailwind generates them) */
-const POP_DELAYS = ['[animation-delay:0ms]', '[animation-delay:110ms]', '[animation-delay:220ms]', '[animation-delay:330ms]', '[animation-delay:440ms]'];
-
-/** What a carousel card needs: its sizing classes, and whether it is a loop copy. */
-type CarouselSlot = { className: string; clone: boolean };
+/* News shows at most this many posts, newest first. */
+const NEWS_COUNT = 4;
+/* Phones page through this many posts, two at a time. */
+const NEWS_MOBILE_COUNT = 6;
+const NEWS_PAGE_SIZE = 2;
 
 /**
- * A row of cards that loops seamlessly (the first cards are repeated after the last,
- * and the row snaps back to the start once they are in view). With `autoPlay` it also
- * slides one card along every few seconds; hover pauses that, and
- * prefers-reduced-motion turns it off. From sm it shows `tabletPerView` cards, from
- * lg three; phones keep a native swipe row, and a swipe on tablets moves the row.
+ * One news card. `compact` is the phone layout: two cards share the row, so the
+ * image is taller and the excerpt is dropped to keep the pair aligned.
  */
-function AutoCarousel<T>({
-  items,
-  getKey,
-  renderItem,
-  label,
-  phoneWidth,
-  tabletPerView = 3,
-  autoPlay = true,
-  className = '',
-}: {
-  items: T[];
-  getKey: (item: T) => string;
-  renderItem: (item: T, slot: CarouselSlot) => React.ReactNode;
-  label: string;
-  /** Card width on phones, e.g. `w-[72%]` */
-  phoneWidth: string;
-  tabletPerView?: 2 | 3;
-  /** Slide on its own; when false the row only moves with the arrows, dots or a swipe */
-  autoPlay?: boolean;
-  className?: string;
-}) {
-  const count = items.length;
-  const canSlide = count > CAROUSEL_PER_VIEW;
-  const slides = canSlide ? [...items, ...items.slice(0, CAROUSEL_PER_VIEW)] : items;
-  const [index, setIndex] = useState(0);
-  const [animate, setAnimate] = useState(true);
-  const [hovered, setHovered] = useState(false);
-  /* Set by "previous" at the first card: jump to the repeated set, then step back. */
-  const stepBackRef = useRef(false);
-  const touchXRef = useRef<number | null>(null);
-  /* Cards pop up (fade + rise + slight overshoot) one after another on first view */
-  const rootRef = useRef<HTMLDivElement>(null);
-  const [shown, setShown] = useState(false);
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setShown(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.2 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  const next = () => {
-    setAnimate(true);
-    setIndex((i) => Math.min(i + 1, count));
-  };
-  const prev = () => {
-    if (index === 0) {
-      stepBackRef.current = true;
-      setAnimate(false);
-      setIndex(count);
-    } else {
-      setAnimate(true);
-      setIndex((i) => i - 1);
-    }
-  };
-
-  // Auto-advance; the timer restarts on every move so each set gets its full time
-  useEffect(() => {
-    if (!autoPlay || !canSlide || hovered) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const id = window.setTimeout(next, CAROUSEL_INTERVAL);
-    return () => window.clearTimeout(id);
-  }, [index, hovered, canSlide, autoPlay]);
-
-  // After an instant (unanimated) jump, turn the transition back on next frame
-  useEffect(() => {
-    if (animate) return;
-    let raf = requestAnimationFrame(() => {
-      raf = requestAnimationFrame(() => {
-        setAnimate(true);
-        if (stepBackRef.current) {
-          stepBackRef.current = false;
-          setIndex(count - 1);
-        }
-      });
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [animate, count]);
-
-  // Cards per view as a CSS variable; a row that cannot slide shows all its cards,
-  // so two cards share the row half and half
-  const perView = canSlide
-    ? tabletPerView === 2
-      ? 'sm:[--per:2] lg:[--per:3]'
-      : ''
-    : count === 2
-      ? 'sm:[--per:2]'
-      : '';
-  const slotClass = `${phoneWidth} shrink-0 snap-start sm:w-[calc((100%_-_(var(--per)_-_1)_*_1rem)_/_var(--per))]`;
-
-  return (
-    <div
-      ref={rootRef}
-      className={`flex min-w-0 flex-col ${className}`}
-      onPointerEnter={(e) => e.pointerType === 'mouse' && setHovered(true)}
-      onPointerLeave={(e) => e.pointerType === 'mouse' && setHovered(false)}
-      onTouchStart={(e) => (touchXRef.current = e.touches[0].clientX)}
-      onTouchEnd={(e) => {
-        // Swipe on tablets (the sliding row); phones scroll the row natively instead
-        const start = touchXRef.current;
-        touchXRef.current = null;
-        if (start === null || !canSlide || window.innerWidth < 640) return;
-        const dx = e.changedTouches[0].clientX - start;
-        if (Math.abs(dx) > 40) (dx < 0 ? next : prev)();
-      }}
-    >
-      {/* sm+: the viewport clips the row, which is shifted by whole cards
-          (one card + gap = (row width + gap) / cards per view) */}
-      <div className="sm:-my-2 sm:overflow-hidden sm:py-2 lg:flex lg:flex-1 lg:flex-col">
-        <div
-          className={`no-scrollbar -mx-3 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-3 pb-1 [--per:3] sm:mx-0 sm:snap-none sm:gap-4 sm:overflow-visible sm:px-0 sm:[transform:translate3d(calc(var(--slide)_*_-1_*_(100%_+_1rem)_/_var(--per)),0,0)] lg:flex-1 ${perView} ${
-            animate ? 'sm:transition-transform sm:duration-700 sm:ease-[cubic-bezier(0.22,1,0.36,1)]' : ''
-          }`}
-          style={{ '--slide': index } as React.CSSProperties}
-          onTransitionEnd={(e) => {
-            if (e.target !== e.currentTarget || index < count) return;
-            // The repeated first set is in view: snap back to the real one, unanimated
-            setAnimate(false);
-            setIndex(0);
-          }}
-        >
-          {slides.map((item, i) => {
-            const clone = i >= count;
-            return (
-              <Fragment key={`${getKey(item)}-${i}`}>
-                {renderItem(item, {
-                  clone,
-                  className: `${slotClass} ${clone ? 'max-sm:hidden' : ''} ${
-                    shown ? `animate-pop-up ${POP_DELAYS[Math.min(i, POP_DELAYS.length - 1)]}` : 'opacity-0'
-                  }`,
-                })}
-              </Fragment>
-            );
-          })}
-        </div>
-      </div>
-
-      {canSlide && (
-        <div className="mt-3 hidden items-center justify-between gap-3 sm:flex">
-          <div className="flex items-center gap-1.5">
-            {items.map((item, i) => (
-              <button
-                key={getKey(item)}
-                type="button"
-                onClick={() => {
-                  setAnimate(true);
-                  setIndex(i);
-                }}
-                aria-label={`${label} ${i + 1} of ${count}`}
-                aria-current={index % count === i}
-                className="grid h-5 place-items-center"
-              >
-                <span
-                  className={`block h-1.5 rounded-full transition-all duration-500 ${
-                    index % count === i ? 'w-5 bg-magenta-500' : 'w-1.5 bg-plum-200 hover:bg-plum-300'
-                  }`}
-                />
-              </button>
-            ))}
-          </div>
-          <RailArrows onPrev={prev} onNext={next} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Latest news: three cards at a time on tablet and desktop; stays put until moved by hand. */
-function NewsCarousel({ posts }: { posts: MediaPost[] }) {
+function NewsCard({ post, compact = false }: { post: MediaPost; compact?: boolean }) {
   const { lang, path, h } = useSite();
   return (
-    <AutoCarousel
-      items={posts}
-      getKey={(post) => post._id}
-      label="News"
-      phoneWidth="w-[68%]"
-      autoPlay={false}
-      className="lg:flex-1"
-      renderItem={(post, { className, clone }) => (
-        <Link
-          to={path(`/media/${post.type}/${post.slug}`)}
-          aria-hidden={clone || undefined}
-          tabIndex={clone ? -1 : undefined}
-          className={`card-hover group flex flex-col overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft ${className}`}
+    <Link
+      to={path(`/media/${post.type}/${post.slug}`)}
+      className="card-hover group flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft"
+    >
+      <span className={`block overflow-hidden bg-magenta-50 ${compact ? 'aspect-[4/3]' : 'aspect-[16/10]'}`}>
+        {post.coverImage && (
+          <img
+            src={post.coverImage}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        )}
+      </span>
+      <span className={`flex flex-1 flex-col ${compact ? 'p-2' : 'p-3'}`}>
+        <span className="flex items-center gap-1.5 type-meta text-ink-faint">
+          <CalendarDays size={12} className="shrink-0" />
+          <span className="truncate">{formatDate(post.publishedAt, lang)}</span>
+        </span>
+        <span
+          className={`line-clamp-3 break-words type-title text-plum-800 transition group-hover:text-magenta-600 ${compact ? 'mt-1' : 'mt-1.5'}`}
         >
-          <span className="block aspect-[16/9] overflow-hidden bg-magenta-50 sm:aspect-[16/10]">
-            {post.coverImage && (
-              <img
-                src={post.coverImage}
-                alt=""
-                loading="lazy"
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            )}
+          <GradientText>{t(post.title, lang)}</GradientText>
+        </span>
+        {!compact && t(post.excerpt, lang) && (
+          <span className="mt-1 line-clamp-2 type-caption leading-relaxed text-ink-muted">
+            {t(post.excerpt, lang)}
           </span>
-          <span className="flex flex-1 flex-col p-2.5 sm:p-3">
-            <span className="flex items-center gap-1.5 text-[10.5px] text-ink-faint sm:text-[11px]">
-              <CalendarDays size={12} />
-              {formatDate(post.publishedAt, lang)}
-            </span>
-            <span className="mt-1 line-clamp-3 font-display text-[13px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:mt-1.5 sm:text-[15px]">
-              <GradientText>{t(post.title, lang)}</GradientText>
-            </span>
-            {t(post.excerpt, lang) && (
-              <span className="mt-0.5 line-clamp-2 text-[11.5px] leading-relaxed text-ink-muted sm:mt-1 sm:text-[12.5px] lg:line-clamp-3">
-                {t(post.excerpt, lang)}
-              </span>
-            )}
-            <span className="mt-auto inline-flex items-center gap-1 pt-1.5 text-[11px] font-medium text-magenta-600 sm:pt-2.5 sm:text-[12px]">
-              {h('readMore')}
-              <ArrowRight size={13} />
-            </span>
-          </span>
-        </Link>
-      )}
-    />
+        )}
+        <span
+          className={`mt-auto inline-flex items-center gap-1 type-caption font-medium text-magenta-600 ${compact ? 'pt-1.5' : 'pt-2.5'}`}
+        >
+          {h('readMore')}
+          <ArrowRight size={13} />
+        </span>
+      </span>
+    </Link>
   );
 }
 
-function NewsAndEvents({ updates, events }: { updates: MediaPost[]; events: OrgEvent[] }) {
-  const { lang, path, s, h } = useSite();
-  const posters = events.filter((e) => e.posterImage || e.coverImage);
-  const newsSlides = updates.length > CAROUSEL_PER_VIEW;
-  const railRef = useRef<HTMLDivElement>(null);
-  const slide = (dir: 1 | -1) => {
-    const rail = railRef.current;
-    if (rail) rail.scrollBy({ left: dir * rail.clientWidth * 0.8, behavior: 'smooth' });
-  };
-  const empty = <p className="py-5 text-center text-[12.5px] text-ink-faint sm:py-8 sm:text-[13px]">{s('nothingHere')}</p>;
+/**
+ * Phones only (hidden from sm): the items two at a time, side by side, with arrows
+ * and page dots below to step through the rest. It moves only when an arrow is
+ * pressed (no autoplay, no swipe row). The last page starts two from the end, so an
+ * odd count never leaves an empty slot.
+ */
+function PhonePairs<T>({
+  items,
+  itemKey,
+  render,
+}: {
+  items: T[];
+  itemKey: (item: T) => string;
+  render: (item: T) => React.ReactNode;
+}) {
+  const { s } = useSite();
+  const [page, setPage] = useState(0);
+  const pages = Math.ceil(items.length / NEWS_PAGE_SIZE);
+  // A reloaded list may be shorter than the page last shown
+  const current = Math.min(page, Math.max(0, pages - 1));
+  const start = Math.min(current * NEWS_PAGE_SIZE, Math.max(0, items.length - NEWS_PAGE_SIZE));
+  const shown = items.slice(start, start + NEWS_PAGE_SIZE);
+  const arrow =
+    'grid h-9 w-9 place-items-center rounded-full border border-plum-100 bg-white text-plum-800 shadow-soft transition hover:border-magenta-200 hover:text-magenta-600 disabled:pointer-events-none disabled:opacity-40';
 
   return (
-    <div className="grid gap-5 sm:gap-8 lg:grid-cols-12 lg:gap-6">
-      {/* Latest news — the wider part of the row: a swipe row on phones, a sliding row
-          of three cards from sm */}
-      <div className="flex min-w-0 flex-col lg:col-span-8">
-        <BandHeading sectionKey="homeNews" label={h('latestNews')} actionLabel={s('viewAllNews')} to={path('/media/news')} />
-        {updates.length === 0 ? empty : <NewsCarousel posts={updates} />}
-      </div>
-
-      {/* Events — the narrower part of the row, on the right: one poster per view, shown
-          whole and bare (no frame). From lg the poster is as tall as the news cards; its
-          arrow row mirrors the news controls row so the two heights match. */}
-      <div className="flex min-w-0 flex-col lg:col-span-4">
-        <BandHeading sectionKey="homeEvents" label={h('upcomingEvents')} actionLabel={s('viewAll')} to={path('/events')} />
-        {events.length === 0 ? (
-          empty
-        ) : posters.length > 0 ? (
-          <>
-            <div ref={railRef} className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 lg:flex-1">
-              {posters.map((event) => {
-                const src = event.posterImage || event.coverImage;
-                return (
-                  <Link
-                    key={event._id}
-                    to={path(`/events/${event.slug}`)}
-                    className="group relative block h-60 w-full shrink-0 snap-start overflow-hidden sm:aspect-[16/10] sm:h-auto lg:aspect-auto lg:min-h-[300px]"
-                  >
-                    <img
-                      src={src}
-                      alt={t(event.title, lang)}
-                      loading="lazy"
-                      /* contain: posters are shown whole, never cropped */
-                      className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
-                    />
-                  </Link>
-                );
-              })}
-            </div>
-            {(posters.length > 1 || newsSlides) && (
-              /* Same height as the news controls row, so the poster and the news cards end together */
-              <div className={`mt-3 flex h-7 justify-end ${posters.length > 1 ? '' : 'max-lg:hidden'}`}>
-                {posters.length > 1 && <RailArrows onPrev={() => slide(-1)} onNext={() => slide(1)} />}
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="space-y-3">
-            {events.slice(0, 2).map((event) => (
-              <EventCard key={event._id} event={event} />
-            ))}
+    <div className="sm:hidden">
+      {/* key replays the fade on each page */}
+      <div key={current} className="grid grid-cols-2 gap-2.5 motion-safe:animate-fade-in">
+        {shown.map((item) => (
+          <div key={itemKey(item)} className="min-w-0">
+            {render(item)}
           </div>
-        )}
+        ))}
       </div>
+      {pages > 1 && (
+        <div className="mt-3 flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setPage(current - 1)}
+            disabled={current === 0}
+            aria-label={s('previous')}
+            className={arrow}
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span className="flex items-center gap-1.5" aria-hidden="true">
+            {Array.from({ length: pages }, (_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 rounded-full transition-all ${i === current ? 'w-4 bg-magenta-500' : 'w-1.5 bg-plum-100'}`}
+              />
+            ))}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage(current + 1)}
+            disabled={current === pages - 1}
+            aria-label={s('next')}
+            className={arrow}
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoItem) => void }) {
-  const { lang, path, s, h } = useSite();
-  /** `inCard`: flush top of a card, so the card supplies the corners and shadow */
-  const thumb = (v: VideoItem, big = false, inCard = false) => (
-    <span className={`relative block aspect-video overflow-hidden bg-plum-900 ${inCard ? '' : 'rounded-xl shadow-soft'}`}>
-      {(v.thumbnailUrl || youtubeThumb(v.youtubeUrl)) && (
-        <img
-          src={v.thumbnailUrl || youtubeThumb(v.youtubeUrl)}
-          alt=""
-          loading="lazy"
-          /* A broken custom thumbnail falls back to YouTube's own, then to the plain panel */
-          onError={(e) => {
-            const img = e.currentTarget;
-            const fallback = youtubeThumb(v.youtubeUrl);
-            if (fallback && img.src !== fallback) img.src = fallback;
-            else img.style.display = 'none';
-          }}
-          className="h-full w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-105"
-        />
+/**
+ * News: the most recent posts as cards. Phones show two at a time (PhonePairs);
+ * tablets show two across, desktop one row of up to four.
+ */
+function NewsBand({ posts }: { posts: MediaPost[] }) {
+  const { path, s, h } = useSite();
+  const time = (post: MediaPost) => new Date(post.publishedAt).getTime() || 0;
+  const sorted = [...posts].sort((a, b) => time(b) - time(a));
+  const latest = sorted.slice(0, NEWS_COUNT);
+  const desktopCols = latest.length >= 4 ? 'lg:grid-cols-4' : latest.length === 3 ? 'lg:grid-cols-3' : '';
+
+  return (
+    <div>
+      <BandHeading
+        sectionKey="homeNews"
+        label={h('news')}
+        shipped={['Latest News', 'പുതിയ വാർത്തകൾ']}
+        actionLabel={s('viewAllNews')}
+        to={path('/media/news')}
+      />
+      {latest.length === 0 ? (
+        <p className="py-5 text-center type-body-sm text-ink-faint sm:py-8">{s('nothingHere')}</p>
+      ) : (
+        <>
+          <PhonePairs
+            items={sorted.slice(0, NEWS_MOBILE_COUNT)}
+            itemKey={(post) => post._id}
+            render={(post) => <NewsCard post={post} compact />}
+          />
+          <div className={`hidden gap-4 sm:grid sm:grid-cols-2 ${desktopCols}`}>
+            {latest.map((post, i) => (
+              <Reveal key={post._id} delay={Math.min(i, 4) * 80} className="min-w-0">
+                <NewsCard post={post} />
+              </Reveal>
+            ))}
+          </div>
+        </>
       )}
-      <span className="absolute inset-0 z-10 grid place-items-center">
-        <span
-          className={`grid place-items-center rounded-full bg-white/95 text-magenta-500 shadow-lift transition group-hover:scale-110 ${
-            big ? 'h-9 w-9 sm:h-12 sm:w-12' : 'h-8 w-8 sm:h-10 sm:w-10'
-          }`}
-        >
-          <Play size={big ? 19 : 16} className="ms-0.5" fill="currentColor" />
+    </div>
+  );
+}
+
+/**
+ * One video card: the thumbnail (play button, duration) over the date and title; a
+ * click plays it in the shared modal. `compact` is the phone layout, two cards to a
+ * row: smaller play button, padding and date.
+ */
+function VideoTile({ v, onPlay, compact = false }: { v: VideoItem; onPlay: (v: VideoItem) => void; compact?: boolean }) {
+  const { lang } = useSite();
+  const src = v.thumbnailUrl || youtubeThumb(v.youtubeUrl);
+  return (
+    <button
+      type="button"
+      onClick={() => onPlay(v)}
+      aria-label={t(v.title, lang)}
+      className={`card-hover group flex h-full w-full flex-col overflow-hidden border border-plum-100/70 bg-white text-start shadow-soft ${
+        compact ? 'rounded-xl' : 'rounded-2xl'
+      }`}
+    >
+      <span className="relative block aspect-video overflow-hidden bg-plum-900">
+        {src && (
+          <img
+            src={src}
+            alt=""
+            loading="lazy"
+            /* A broken custom thumbnail falls back to YouTube's own, then to the plain panel */
+            onError={(e) => {
+              const img = e.currentTarget;
+              const fallback = youtubeThumb(v.youtubeUrl);
+              if (fallback && img.src !== fallback) img.src = fallback;
+              else img.style.display = 'none';
+            }}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        )}
+        <span className="absolute inset-0 z-10 grid place-items-center">
+          <span
+            className={`grid place-items-center rounded-full bg-white/95 text-magenta-500 shadow-lift transition group-hover:scale-110 ${
+              compact ? 'h-9 w-9' : 'h-12 w-12 sm:h-14 sm:w-14'
+            }`}
+          >
+            <Play size={compact ? 15 : 20} className="ms-0.5" fill="currentColor" />
+          </span>
+        </span>
+        {v.durationLabel && (
+          <span
+            className={`absolute z-10 rounded-md bg-ink/80 type-meta font-medium text-white ${
+              compact ? 'bottom-1 end-1 px-1 py-px' : 'bottom-2 end-2 px-1.5 py-0.5 sm:bottom-3 sm:end-3 sm:px-2'
+            }`}
+          >
+            {v.durationLabel}
+          </span>
+        )}
+      </span>
+      <span className={`flex flex-1 flex-col ${compact ? 'p-2' : 'p-4 sm:p-5'}`}>
+        {v.publishedAt && (
+          <span
+            className={`block type-meta font-medium uppercase text-magenta-600 ${
+              compact ? 'mb-1 truncate tracking-normal' : 'mb-1.5 tracking-wider'
+            }`}
+          >
+            {formatDate(v.publishedAt, lang)}
+          </span>
+        )}
+        <span className="line-clamp-2 block break-words type-title text-plum-800 transition group-hover:text-magenta-600">
+          <GradientText>{t(v.title, lang)}</GradientText>
         </span>
       </span>
-      {v.durationLabel && (
-        <span className="absolute bottom-1.5 end-1.5 z-10 rounded-md bg-ink/80 px-1.5 py-0.5 text-[10px] font-medium text-white sm:bottom-2 sm:end-2 sm:text-[11px]">
-          {v.durationLabel}
-        </span>
-      )}
-    </span>
+    </button>
   );
+}
+
+/**
+ * Videos: the latest videos (the API sends the newest three) as cards: two at a time
+ * on phones (PhonePairs), two across on tablets, three on desktop.
+ */
+function VideoRow({ videos, onPlay }: { videos: VideoItem[]; onPlay: (v: VideoItem) => void }) {
+  const { path, s, h } = useSite();
 
   return (
     <div>
       <BandHeading
         sectionKey="homeVideos"
-        label={videos.length > 1 ? h('featuredVideos') : h('featuredVideo')}
+        label={h('videos')}
         actionLabel={s('viewMoreVideos')}
         to={path('/media/videos')}
       />
-      {videos.length > 1 ? (
-        /* The latest videos as large cards in one row (they slide along if more are
-           ever loaded); about one card at a time in a swipe row on phones. */
-        <AutoCarousel
-          items={videos}
-          getKey={(v) => v._id}
-          label="Video"
-          phoneWidth="w-[80%]"
-          tabletPerView={2}
-          renderItem={(v, { className, clone }) => (
-            <button
-              type="button"
-              onClick={() => onPlay(v)}
-              aria-hidden={clone || undefined}
-              tabIndex={clone ? -1 : undefined}
-              className={`card-hover group flex flex-col overflow-hidden rounded-xl border border-plum-100 bg-white text-start shadow-soft ${className}`}
-            >
-              {thumb(v, true, true)}
-              <span className="flex flex-1 flex-col p-3 sm:p-4">
-                <span className="line-clamp-2 block font-display text-[13px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:text-[15px] md:text-[16px]">
-                  <GradientText>{t(v.title, lang)}</GradientText>
-                </span>
-                {t(v.description, lang) && (
-                  <span className="mt-1 line-clamp-2 block text-[11.5px] leading-relaxed text-ink-muted sm:mt-1.5 sm:text-[13px]">
-                    {t(v.description, lang)}
-                  </span>
-                )}
-                <span className="mt-auto flex items-center justify-between gap-2 pt-2 sm:pt-3">
-                  <span className="inline-flex items-center gap-1 text-[11.5px] font-medium text-magenta-600 sm:text-[12.5px]">
-                    {s('watchVideo')}
-                    <ArrowRight size={13} />
-                  </span>
-                  {v.publishedAt && (
-                    <span className="flex items-center gap-1 text-[10.5px] text-ink-faint sm:text-[11.5px]">
-                      <CalendarDays size={11} />
-                      {formatDate(v.publishedAt, lang)}
-                    </span>
-                  )}
-                </span>
-              </span>
-            </button>
-          )}
-        />
-      ) : (
-        <button
-          onClick={() => onPlay(videos[0])}
-          className="group grid w-full items-center gap-3 text-start sm:grid-cols-[minmax(0,320px)_1fr] sm:gap-4 md:gap-6"
-        >
-          {thumb(videos[0], true)}
-          <span className="min-w-0">
-            <span className="block font-display text-[14px] font-semibold leading-snug text-plum-800 transition group-hover:text-magenta-600 sm:text-[16px] md:text-[18px]">
-              <GradientText>{t(videos[0].title, lang)}</GradientText>
-            </span>
-            {t(videos[0].description, lang) && (
-              <span className="mt-1 line-clamp-3 block text-[12px] leading-relaxed text-ink-muted sm:mt-1.5 sm:text-[13.5px]">
-                {t(videos[0].description, lang)}
-              </span>
-            )}
-            {videos[0].publishedAt && (
-              <span className="mt-2 flex items-center gap-1.5 text-[11.5px] text-ink-faint">
-                <CalendarDays size={12} />
-                {formatDate(videos[0].publishedAt, lang)}
-              </span>
-            )}
-          </span>
-        </button>
-      )}
+      <PhonePairs items={videos} itemKey={(v) => v._id} render={(v) => <VideoTile v={v} onPlay={onPlay} compact />} />
+      <div className="hidden gap-4 sm:grid sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
+        {videos.map((v, i) => (
+          <Reveal key={v._id} delay={Math.min(i, 4) * 80} className="min-w-0">
+            <VideoTile v={v} onPlay={onPlay} />
+          </Reveal>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1172,8 +1194,9 @@ function PhotoGallery({ photos }: { photos: MediaItem[] }) {
         </span>
         <div
           ref={viewportRef}
-          // Photos run cleanly to the strip's edges (no edge fade)
-          className="w-full cursor-grab touch-pan-y select-none overflow-hidden py-1"
+          // Photos run cleanly to the strip's edges (no edge fade). The strip is a size
+          // container so desktop tiles can each take a fifth of its width.
+          className="w-full cursor-grab touch-pan-y select-none overflow-hidden py-1 [container-type:inline-size]"
           {...viewportProps}
         >
           <ul ref={trackRef} className="flex w-max will-change-transform">
@@ -1191,8 +1214,10 @@ function PhotoGallery({ photos }: { photos: MediaItem[] }) {
                       tabIndex={hidden ? -1 : undefined}
                       draggable={false}
                       aria-label={caption || `${h('photoGallery')} ${index + 1}`}
-                      /* 3:2 like event photos; pops in (fade + slight scale) on first view */
-                      className={`group relative block aspect-[3/2] h-28 overflow-hidden rounded-lg bg-plum-50 shadow-soft transition duration-700 ease-out motion-reduce:transition-none sm:h-52 sm:rounded-xl lg:h-60 ${
+                      /* 3:2 like event photos; pops in (fade + slight scale) on first view. Phones
+                         show two tiles across the strip (half its width each, less the gap); on
+                         desktop five fill it: a fifth of its width each, less the gap. */
+                      className={`group relative block aspect-[3/2] w-[calc(50cqw-0.25rem)] overflow-hidden rounded-lg bg-plum-50 shadow-soft transition duration-700 ease-out motion-reduce:transition-none sm:h-52 sm:w-auto sm:rounded-xl lg:h-auto lg:w-[calc(20cqw-1rem)] ${
                         shown ? 'scale-100 opacity-100' : 'scale-[0.92] opacity-0'
                       }`}
                       style={{ transitionDelay: shown ? `${Math.min(order, 8) * 80}ms` : undefined }}
@@ -1209,7 +1234,7 @@ function PhotoGallery({ photos }: { photos: MediaItem[] }) {
                         <Maximize2 size={14} />
                       </span>
                       {caption && (
-                        <span className="user-text absolute inset-x-3 bottom-2.5 translate-y-2 text-start text-[12.5px] font-medium leading-snug text-white opacity-0 transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+                        <span className="user-text absolute inset-x-3 bottom-2.5 translate-y-2 text-start type-caption font-medium leading-snug text-white opacity-0 transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
                           {caption}
                         </span>
                       )}

@@ -1,26 +1,20 @@
 import { createContext, useContext, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { useLocation, useParams } from 'react-router';
+import { useLocation } from 'react-router';
 import { useApi } from './api';
-import { DEFAULT_LANG, isLang, str } from './i18n';
+import { DEFAULT_LANG, langFromPath, str, stripLang } from './i18n';
 import type { Lang, Localized, NavPayload } from './types';
 
-function resolveLang(pathname: string, paramLang: string | undefined): Lang {
-  if (isLang(paramLang)) return paramLang;
-  const prefix = pathname.split('/').filter(Boolean)[0];
-  if (isLang(prefix)) return prefix;
-  return DEFAULT_LANG;
-}
-
 function langPath(lang: Lang, to: string): string {
-  return `/${lang}${to.startsWith('/') ? to : `/${to}`}`.replace(/\/$/, '') || `/${lang}`;
+  const prefix = lang === DEFAULT_LANG ? '' : `/${lang}`;
+  return `${prefix}${to.startsWith('/') ? to : `/${to}`}`.replace(/\/$/, '') || prefix || '/';
 }
 
 type SiteContextValue = {
   lang: Lang;
   data: NavPayload | null;
   loading: boolean;
-  /** Prefixes a path with the active language, e.g. path('/events') → '/ml/events' */
+  /** Prefixes a path with the active language, e.g. path('/events') → '/events' (ML) or '/en/events' */
   path: (to: string) => string;
   /** UI string (button, label, heading, message). UI chrome is always English;
       only the admin-managed content follows the ML/EN toggle. */
@@ -49,9 +43,8 @@ function managed(value: Localized | undefined, lang: Lang): string {
 const SiteContext = createContext<SiteContextValue | null>(null);
 
 export function SiteProvider({ children }: { children: ReactNode }) {
-  const params = useParams();
   const { pathname } = useLocation();
-  const lang: Lang = resolveLang(pathname, params.lang);
+  const lang: Lang = langFromPath(pathname);
   const { data, loading } = useApi<NavPayload>('/api/site/bootstrap');
 
   useEffect(() => {
@@ -91,7 +84,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
         const target = url.trim();
         if (/^(https?:|mailto:|tel:)/i.test(target)) return { href: target };
         // A path saved with its own language prefix still follows the visitor's language
-        return { to: langPath(lang, target.replace(/^\/(ml|en)(?=\/|$)/, '')) };
+        return { to: langPath(lang, stripLang(target)) };
       },
     }),
     [lang, data, loading]

@@ -5,7 +5,6 @@ import {
   Mail,
   MapPin,
   Phone,
-  Twitter,
   Youtube,
 } from 'lucide-react';
 import { useSite } from '../lib/site';
@@ -17,7 +16,7 @@ export default function Footer() {
   const { data, path } = useSite();
   const settings = data?.settings;
   /* Footer lists only these programmes (names and links still come from the site data) */
-  const FOOTER_PROGRAMS = ['for-her', 'thamheedul-mar-a', 'proficia'];
+  const FOOTER_PROGRAMS = ['thamheedul-mar-a', 'proficia'];
   const programs = FOOTER_PROGRAMS.map((slug) => (data?.nav.programs ?? []).find((p) => p.slug === slug)).filter(
     (p): p is NonNullable<typeof p> => Boolean(p)
   );
@@ -33,17 +32,14 @@ export default function Footer() {
     { href: settings?.social?.facebook, Icon: Facebook, label: 'Facebook' },
     { href: settings?.social?.instagram, Icon: Instagram, label: 'Instagram' },
     { href: settings?.social?.youtube, Icon: Youtube, label: 'YouTube' },
-    { href: settings?.social?.twitter, Icon: Twitter, label: 'X' },
     { href: `mailto:${OFFICE_EMAIL}`, Icon: Mail, label: 'Email' },
   ].filter((x) => Boolean(x.href));
 
   /* Footer is always shown in English, independent of the site's ML/EN toggle. */
   /* Videos and Photos already sit in the Programs column, so only the other media pages are here */
   const quickLinks = [
-    { label: str('home', 'en'), to: path('/') },
     { label: str('aboutUs', 'en'), to: path('/who-we-are') },
     { label: str('news', 'en'), to: path('/media/news') },
-    { label: str('downloads', 'en'), to: path('/media/downloads') },
     { label: str('publications', 'en'), to: path('/publications') },
     { label: str('leaders', 'en'), to: path('/leaders') },
     { label: str('contact', 'en'), to: path('/contact') },
@@ -80,20 +76,16 @@ export default function Footer() {
                     className="h-12 w-auto max-w-[190px] shrink-0 rounded-lg bg-white/95 object-contain object-left px-2.5 py-2"
                   />
                   <span className="leading-[1.3]">
-                    <span className="block whitespace-normal text-[11px] font-bold uppercase tracking-[0.15em] text-magenta-300 sm:whitespace-nowrap">
+                    <span className="block whitespace-normal type-overline font-bold tracking-[0.15em] text-magenta-300 sm:whitespace-nowrap">
                       {str('footerWing', 'en')}
                     </span>
-                    <span className="block whitespace-normal text-[9.5px] font-semibold uppercase tracking-[0.15em] text-white/55 sm:whitespace-nowrap">
+                    <span className="block whitespace-normal type-micro font-semibold uppercase tracking-[0.15em] text-white/55 sm:whitespace-nowrap">
                       {str('footerKerala', 'en')}
                     </span>
                   </span>
                 </>
               ) : (
-                <img
-                  src={brandLogo}
-                  alt={siteName}
-                  className="h-auto max-h-8 w-auto max-w-[min(100%,170px)] object-contain object-left brightness-0 invert md:max-h-11 md:max-w-[min(100%,220px)]"
-                />
+                <StackedLogo src={brandLogo} />
               )}
             </Link>
 
@@ -178,7 +170,7 @@ export default function Footer() {
 
       {/* data-back-to-top-avoid: the back-to-top button lifts above this bar when it is on screen */}
       <div className="relative border-t border-white/10" data-back-to-top-avoid>
-        <Container className="flex flex-col items-center justify-between gap-1 py-2.5 text-center text-[11.5px] text-white/50 sm:flex-row sm:text-start md:gap-2 md:py-3 md:text-[12.5px]">
+        <Container className="flex flex-col items-center justify-between gap-1 py-2.5 text-center type-meta text-white/50 sm:flex-row sm:text-start md:gap-2 md:py-3">
           {/* Copyright on the left, "Powered by" on the right */}
           <span className="hidden min-w-0 md:inline">
             © {new Date().getFullYear()} {siteName}. {str('allRightsReserved', 'en')}.
@@ -204,9 +196,38 @@ export default function Footer() {
   );
 }
 
+/* logo.png (311x72) has the mark and the wordmark side by side. The footer shows them
+   stacked — mark on top, name below — by cropping both from the one file, so there is
+   no second asset to keep in sync. Boxes are in source pixels. */
+const LOGO_W = 311;
+const LOGO_H = 72;
+const LOGO_MARK = { x: 5, y: 5, w: 62, h: 60 };
+const LOGO_TEXT = { x: 71, y: 24, w: 235, h: 40 };
+
+function logoCrop(src: string, { x, y, w, h }: { x: number; y: number; w: number; h: number }) {
+  return {
+    aspectRatio: `${w} / ${h}`,
+    backgroundImage: `url(${src})`,
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: `${(LOGO_W / w) * 100}% ${(LOGO_H / h) * 100}%`,
+    backgroundPosition: `${(x / (LOGO_W - w)) * 100}% ${(y / (LOGO_H - h)) * 100}%`,
+  } as const;
+}
+
+function StackedLogo({ src }: { src: string }) {
+  /* The parent link carries the accessible name; the crops are decorative. The mark is
+     dark ink, so brightness-0 + invert turns it white on the deep footer, as before. */
+  return (
+    <span className="flex flex-col items-center gap-1.5 brightness-0 invert md:gap-2" aria-hidden="true">
+      <span className="block w-7 md:w-10" style={logoCrop(src, LOGO_MARK)} />
+      <span className="block w-32 md:w-44" style={logoCrop(src, LOGO_TEXT)} />
+    </span>
+  );
+}
+
 function FooterHeading({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">
+    <div className="mb-3 type-overline font-semibold tracking-[0.18em] text-white">
       {children}
       <span className="mt-1.5 block h-0.5 w-8 rounded-full bg-magenta-500" />
     </div>
@@ -225,7 +246,7 @@ function FooterColumn({
   return (
     <div className={`min-w-0 ${className}`}>
       <FooterHeading>{title}</FooterHeading>
-      <ul className="space-y-1.5 text-[13.5px]">{children}</ul>
+      <ul className="space-y-1.5 type-nav">{children}</ul>
     </div>
   );
 }

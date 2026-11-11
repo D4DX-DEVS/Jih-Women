@@ -44,10 +44,13 @@ export default {
           deep: '#F3ECF8',
         },
       },
+      // One typeface pair for the whole site: Poppins for Latin text, Anek Malayalam for
+      // Malayalam (Poppins has no Malayalam glyphs, so the browser picks Anek per
+      // character). `display` is kept as a name for headings but is the same stack, so
+      // headings, body, nav, buttons and forms never differ in font.
       fontFamily: {
-        sans: ['Poppins', '"Anek Malayalam"', 'system-ui', 'sans-serif'],
-        display: ['"Playfair Display"', '"Anek Malayalam"', 'Georgia', 'serif'],
-        malayalam: ['"Anek Malayalam"', '"Noto Sans Malayalam"', 'sans-serif'],
+        sans: ['Poppins', '"Anek Malayalam"', '"Noto Sans Malayalam"', 'system-ui', 'sans-serif'],
+        display: ['Poppins', '"Anek Malayalam"', '"Noto Sans Malayalam"', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         soft: '0 1px 2px rgba(36,20,54,0.04), 0 10px 30px -14px rgba(36,20,54,0.22)',
