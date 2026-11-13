@@ -1183,40 +1183,6 @@ export function DownloadRow({ item }: { item: DownloadItem }) {
   );
 }
 
-/**
- * One poster on the Poster page: shown whole (never cropped) in a 3:4 frame, with its
- * title beneath. A click opens the poster file in a new tab. A poster that is not an
- * image (a PDF without a thumbnail) shows a file icon in the frame instead.
- */
-export function PosterCard({ item }: { item: DownloadItem }) {
-  const { lang } = useSite();
-  const title = t(item.title, lang);
-  const preview = item.thumbnailUrl || (item.mimeType.startsWith('image/') ? item.fileUrl : '');
-  return (
-    <a
-      href={item.fileUrl}
-      target="_blank"
-      rel="noreferrer"
-      className="card-hover group block overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft sm:rounded-2xl"
-    >
-      <span className="grid aspect-[3/4] place-items-center bg-mist-deep">
-        {preview ? (
-          <img src={preview} alt={title} loading="lazy" className="h-full w-full object-contain" />
-        ) : (
-          <FileText size={36} className="text-magenta-500" />
-        )}
-      </span>
-      {title && (
-        <span className="block p-2.5 sm:p-4">
-          <span className="line-clamp-2 type-title text-plum-800">
-            <GradientText>{title}</GradientText>
-          </span>
-        </span>
-      )}
-    </a>
-  );
-}
-
 export function LinkCard({ link }: { link: ExternalLink }) {
   const { lang } = useSite();
   return (

@@ -773,7 +773,7 @@ function EventPosters({ events }: { events: OrgEvent[] }) {
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <Eyebrow logo={heading.logo}>{title}</Eyebrow>
           <Link
-            to={path('/events')}
+            to={path('/media/posters')}
             className="-my-2 inline-flex shrink-0 items-center gap-1 whitespace-nowrap py-2 type-meta font-medium text-ink-muted transition hover:text-magenta-600"
           >
             {s('viewAll')}

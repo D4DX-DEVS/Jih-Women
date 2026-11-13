@@ -51,7 +51,7 @@ router.get('/bootstrap', async (_req, res) => {
     const [settings, departments, programs] = await Promise.all([
       getSiteSetting(),
       Department.find(PUBLISHED).select('title slug order').sort({ order: 1 }).lean(),
-      Program.find(PUBLISHED).select('title slug logoUrl order isMajor externalUrl').sort({ order: 1 }).lean(),
+      Program.find(PUBLISHED).select('title slug logoUrl bannerImage order isMajor externalUrl').sort({ order: 1 }).lean(),
     ]);
 
     return res.json({

@@ -2,7 +2,6 @@ const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
 const sharp = require('sharp');
-const mongoose = require('mongoose');
 
 const { requireAdmin } = require('../middleware/auth');
 const { buildCrud, sendMongooseError } = require('../utils/cmsCrud');
@@ -444,37 +443,6 @@ router.use(
     filters: ['published', 'featured', 'type'],
   })
 );
-
-// Research papers are Publications of type "research-paper", managed through their
-// own endpoint: the type is fixed here, so a paper can never be saved as another
-// type, and this route can only read, change or delete research papers.
-const researchPapers = express.Router();
-researchPapers.use((req, _res, next) => {
-  if (req.method === 'GET' && req.path === '/') req.query.type = 'research-paper';
-  if (req.body && (req.method === 'POST' || req.method === 'PATCH')) req.body.type = 'research-paper';
-  next();
-});
-researchPapers.use('/:id', async (req, res, next) => {
-  try {
-    const found = mongoose.isValidObjectId(req.params.id)
-      ? await Publication.exists({ _id: req.params.id, type: 'research-paper' })
-      : null;
-    if (!found) return res.status(404).json({ error: 'That research paper no longer exists. It may have been deleted.' });
-    return next();
-  } catch (err) {
-    return sendMongooseError(res, err, 'We could not open this research paper. Please try again.');
-  }
-});
-researchPapers.use(
-  buildCrud({
-    Model: Publication,
-    name: 'Research paper',
-    searchPaths: ['title.ml', 'title.en', 'author.ml', 'author.en', 'slug'],
-    filters: ['published', 'type'],
-    writable: ['type', 'title', 'slug', 'author', 'description', 'coverImage', 'fileUrl', 'publishedAt', 'published', 'order'],
-  })
-);
-router.use('/research-papers', researchPapers);
 
 router.use(
   '/albums',

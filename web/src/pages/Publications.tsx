@@ -22,20 +22,28 @@ import { DetailSkeleton, ListSkeleton } from '../components/PageSkeletons';
 import { PublicationCard } from '../components/Cards';
 import { useViewMode } from '../lib/view';
 import NotFound from './NotFound';
-import type { Paged, Publication } from '../lib/types';
+import type { Paged, Publication, PublicationType } from '../lib/types';
 
 const TYPES = [
   { value: '', key: 'all' },
   { value: 'research-paper', key: 'researchPapers' },
+  { value: 'aramam', key: 'aramam' },
   { value: 'book', key: 'books' },
   { value: 'article', key: 'articles' },
   { value: 'booklet', key: 'booklets' },
   { value: 'pdf', key: 'pdfLibrary' },
 ];
 
-export function PublicationsIndex() {
+/**
+ * The publications listing. With `fixedType` it is a category page (Aramam, Research
+ * Papers): only that type, headed by its own name, without the type filter.
+ */
+export function PublicationsIndex({ fixedType }: { fixedType?: PublicationType } = {}) {
   const { path, s, pageTitle } = useSite();
-  const [type, setType] = useState('');
+  const [chosenType, setType] = useState('');
+  const type = fixedType ?? chosenType;
+  const fixedKey = fixedType && TYPES.find((item) => item.value === fixedType)?.key;
+  const title = fixedKey ? s(fixedKey) : pageTitle('publications');
   const [page, setPage] = useState(1);
   const { view } = useViewMode();
   const { data, loading, error, reload } = useApi<Paged<Publication>>(
@@ -45,30 +53,36 @@ export function PublicationsIndex() {
   return (
     <>
       <PageHeader
-        title={pageTitle('publications')}
-        breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('publications') }]}
+        title={title}
+        breadcrumb={[
+          { label: s('home'), to: path('/') },
+          ...(fixedKey ? [{ label: pageTitle('publications'), to: path('/publications') }] : []),
+          { label: title },
+        ]}
       />
       <Section tone="mist">
         <Container>
           <ViewToggle />
-          <div className="mb-4 flex flex-wrap gap-1.5 sm:mb-8 sm:gap-2">
-            {TYPES.map((item) => (
-              <button
-                key={item.value}
-                onClick={() => {
-                  setType(item.value);
-                  setPage(1);
-                }}
-                className={`rounded-full px-3 py-1.5 type-caption font-semibold transition sm:px-4 sm:py-2 ${
-                  type === item.value
-                    ? 'bg-magenta-500 text-white'
-                    : 'border border-plum-200 text-ink-muted hover:border-magenta-300'
-                }`}
-              >
-                {s(item.key)}
-              </button>
-            ))}
-          </div>
+          {!fixedType && (
+            <div className="mb-4 flex flex-wrap gap-1.5 sm:mb-8 sm:gap-2">
+              {TYPES.map((item) => (
+                <button
+                  key={item.value}
+                  onClick={() => {
+                    setType(item.value);
+                    setPage(1);
+                  }}
+                  className={`rounded-full px-3 py-1.5 type-caption font-semibold transition sm:px-4 sm:py-2 ${
+                    type === item.value
+                      ? 'bg-magenta-500 text-white'
+                      : 'border border-plum-200 text-ink-muted hover:border-magenta-300'
+                  }`}
+                >
+                  {s(item.key)}
+                </button>
+              ))}
+            </div>
+          )}
 
           {loading ? (
             <ListSkeleton />

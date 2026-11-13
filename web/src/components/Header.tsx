@@ -67,7 +67,11 @@ export default function Header() {
   /* Header chrome (desktop nav + mobile drawer) is always shown in English,
      independent of the site's ML/EN toggle — only page content follows it. */
   const showDownloads = showDownloadsLink(settings);
-  const items: NavItem[] = useMemo(() => buildNavItems(path, 'en', showDownloads), [path, showDownloads]);
+  const highlights = data?.nav.programs;
+  const items: NavItem[] = useMemo(
+    () => buildNavItems(path, 'en', showDownloads, highlights),
+    [path, showDownloads, highlights]
+  );
 
   /* Mobile menu categories, derived from the same items: every standalone link
      goes under "Main", and each dropdown becomes a category of its own. */

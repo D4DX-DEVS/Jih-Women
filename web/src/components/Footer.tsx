@@ -22,11 +22,20 @@ export default function Footer() {
   const programs = FOOTER_PROGRAMS.map((slug) => (data?.nav.programs ?? []).find((p) => p.slug === slug)).filter(
     (p): p is NonNullable<typeof p> => Boolean(p)
   );
-  /* Listed after the programmes, as plain links like them */
-  const mediaLinks = [
-    { label: str('videos', 'en'), to: path('/media/videos') },
-    { label: 'Photos', to: path('/media/gallery') },
-  ];
+  /* The Programs column: the programmes plus the Aramam and Research Papers publication
+     pages, all as plain links in alphabetical order */
+  const programLinks = [
+    ...(programs.length
+      ? programs.map((program) => ({
+          label: FOOTER_LABELS[program.slug] ?? tLang(program.title, 'en'),
+          to: path(`/programs/${program.slug}`),
+        }))
+      : [{ label: str('programs', 'en'), to: path('/programs') }]),
+    { label: str('aramam', 'en'), to: path('/aramam') },
+    { label: str('researchPapers', 'en'), to: path('/research-papers') },
+  ]
+    .filter((l) => l.label)
+    .sort((a, b) => a.label.localeCompare(b.label, 'en'));
   /* The footer shows the office address with "Hira Centre, P. B No: 833" on one line */
   const footerAddress = OFFICE_ADDRESS.replace(/Hira Centre,\s*\n\s*/, 'Hira Centre, ');
 
@@ -38,7 +47,6 @@ export default function Footer() {
   ].filter((x) => Boolean(x.href));
 
   /* Footer is always shown in English, independent of the site's ML/EN toggle. */
-  /* Videos and Photos already sit in the Programs column, so only the other media pages are here */
   const quickLinks = [
     { label: str('aboutUs', 'en'), to: path('/who-we-are') },
     { label: str('news', 'en'), to: path('/media/news') },
@@ -120,26 +128,7 @@ export default function Footer() {
           </FooterColumn>
 
           <FooterColumn title={str('programs', 'en')} className="hidden md:block">
-            {programs.length > 0 ? (
-              programs.map((program) => {
-                const title = FOOTER_LABELS[program.slug] ?? tLang(program.title, 'en');
-                if (!title) return null;
-                return (
-                  <li key={program._id}>
-                    <Link to={path(`/programs/${program.slug}`)} className="inline-block -my-1.5 py-1.5 transition hover:text-magenta-300">
-                      {title}
-                    </Link>
-                  </li>
-                );
-              })
-            ) : (
-              <li>
-                <Link to={path('/programs')} className="inline-block -my-1.5 py-1.5 transition hover:text-magenta-300">
-                  {str('programs', 'en')}
-                </Link>
-              </li>
-            )}
-            {mediaLinks.map((l) => (
+            {programLinks.map((l) => (
               <li key={l.to}>
                 <Link to={l.to} className="inline-block -my-1.5 py-1.5 transition hover:text-magenta-300">
                   {l.label}
