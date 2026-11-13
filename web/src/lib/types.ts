@@ -302,7 +302,7 @@ export type VideoItem = {
   featured: boolean;
 };
 
-export type PublicationType = 'book' | 'article' | 'booklet' | 'pdf' | 'research-paper';
+export type PublicationType = 'book' | 'article' | 'booklet' | 'pdf' | 'research-paper' | 'aramam';
 
 export type Publication = {
   _id: string;
@@ -360,7 +360,7 @@ export type NavPayload = {
   settings: SiteSettings;
   nav: {
     departments: { _id: string; slug: string; title: Localized }[];
-    programs: { _id: string; slug: string; title: Localized; logoUrl?: string; externalUrl: string }[];
+    programs: { _id: string; slug: string; title: Localized; logoUrl?: string; bannerImage?: string; externalUrl: string }[];
   };
 };
 

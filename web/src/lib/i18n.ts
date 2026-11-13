@@ -81,7 +81,6 @@ const STRINGS: Dict = {
 
   news: { ml: 'വാർത്തകൾ', en: 'News' },
   pressReleases: { ml: 'പത്രക്കുറിപ്പ്', en: 'Press Release' },
-  poster: { ml: 'പോസ്റ്റർ', en: 'Poster' },
   statements: { ml: 'പ്രസ്താവനകൾ', en: 'Statements' },
   interviews: { ml: 'അഭിമുഖങ്ങൾ', en: 'Interviews' },
   speeches: { ml: 'പ്രഭാഷണങ്ങൾ', en: 'Speeches' },
@@ -96,6 +95,7 @@ const STRINGS: Dict = {
   booklets: { ml: 'ലഘുലേഖകൾ', en: 'Booklets' },
   pdfLibrary: { ml: 'PDF ലൈബ്രറി', en: 'PDF Library' },
   researchPapers: { ml: 'ഗവേഷണ പ്രബന്ധങ്ങൾ', en: 'Research Papers' },
+  aramam: { ml: 'ആരാമം', en: 'Aramam' },
 
   currentLeadership: { ml: 'ഇപ്പോഴത്തെ നേതൃത്വം', en: 'Current Leadership' },
   pastLeadership: { ml: 'മുൻ നേതൃത്വം', en: 'Past Leadership' },

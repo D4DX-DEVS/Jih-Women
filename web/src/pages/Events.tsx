@@ -60,8 +60,8 @@ export function EventsIndex() {
   return (
     <>
       <PageHeader
-        title={pageTitle('events')}
-        breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('events') }]}
+        title={pageTitle('posters')}
+        breadcrumb={[{ label: s('home'), to: path('/') }, { label: pageTitle('posters') }]}
       />
       <Section tone="mist">
         <Container>
@@ -121,12 +121,12 @@ export function EventDetail() {
   return (
     <>
       <PageHeader
-        title={name || pageTitle('events')}
+        title={name || pageTitle('posters')}
         description={t(data.summary, lang)}
         image={data.coverImage}
         breadcrumb={[
           { label: s('home'), to: path('/') },
-          { label: pageTitle('events'), to: path('/events') },
+          { label: pageTitle('posters'), to: path('/media/posters') },
           ...(name ? [{ label: name }] : []),
         ]}
       />

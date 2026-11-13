@@ -15,8 +15,8 @@ import {
   Video,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { str, stripLang } from './i18n';
-import type { Lang, SiteSettings } from './types';
+import { str, stripLang, tLang } from './i18n';
+import type { Lang, Localized, SiteSettings } from './types';
 
 /**
  * Whether the menus list the Downloads link: only once the saved settings have loaded
@@ -38,9 +38,22 @@ export type NavItem = { label: string; to?: string; icon?: LucideIcon; children?
  * `showDownloads` follows the admin's Downloads switch (see `showDownloadsLink`);
  * when it is off only the menu link goes, the Downloads page stays reachable.
  */
-export function buildNavItems(path: (to: string) => string, navLang: Lang, showDownloads: boolean): NavItem[] {
+export function buildNavItems(
+  path: (to: string) => string,
+  navLang: Lang,
+  showDownloads: boolean,
+  highlights: { slug: string; title: Localized; logoUrl?: string; bannerImage?: string }[] = []
+): NavItem[] {
+  /* Highlights: the programme pages the home page's Highlights strip links to (those with a logo or banner) */
+  const highlightLinks = highlights
+    .filter((p) => p.logoUrl || p.bannerImage)
+    .map((p) => ({ label: tLang(p.title, navLang), to: path(`/programs/${p.slug}`), icon: Sparkles }))
+    .filter((l) => l.label);
   return [
     { label: str('home', navLang), to: path('/'), icon: Home },
+    highlightLinks.length
+      ? { label: str('highlights', navLang), children: highlightLinks }
+      : { label: str('highlights', navLang), to: path('/programs'), icon: Sparkles },
     {
       label: str('aboutUs', navLang),
       children: [
@@ -58,7 +71,7 @@ export function buildNavItems(path: (to: string) => string, navLang: Lang, showD
         ...(showDownloads ? [{ label: str('downloads', navLang), to: path('/media/downloads'), icon: Download }] : []),
         { label: str('publications', navLang), to: path('/publications'), icon: BookOpen },
         { label: str('pressReleases', navLang), to: path('/media/press-release'), icon: Newspaper },
-        { label: str('poster', navLang), to: path('/media/posters'), icon: ImageIcon },
+        { label: str('posters', navLang), to: path('/media/posters'), icon: ImageIcon },
       ],
     },
     { label: str('leaders', navLang), to: path('/leaders'), icon: Users },

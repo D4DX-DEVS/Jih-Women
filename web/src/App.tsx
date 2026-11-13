@@ -12,7 +12,6 @@ import {
   DownloadsPage,
   MediaDetail,
   MediaList,
-  PostersPage,
   VideosPage,
 } from './pages/Media';
 import { PublicationDetail, PublicationsIndex } from './pages/Publications';
@@ -44,7 +43,8 @@ const pages = (
 
     <Route path="leaders" element={<Leaders />} />
 
-    <Route path="events" element={<EventsIndex />} />
+    {/* The events listing is the Posters page (Media → Posters); old links redirect there */}
+    <Route path="events" element={<Navigate to="../media/posters" replace />} />
     <Route path="events/:slug" element={<EventDetail />} />
 
     <Route path="campaigns/:slug" element={<CampaignDetail />} />
@@ -56,12 +56,14 @@ const pages = (
     <Route path="media/gallery" element={<AlbumsIndex />} />
     <Route path="media/gallery/:slug" element={<AlbumDetail />} />
     <Route path="media/downloads" element={<DownloadsPage />} />
-    <Route path="media/posters" element={<PostersPage />} />
+    <Route path="media/posters" element={<EventsIndex />} />
     <Route path="media/:type" element={<MediaList />} />
     <Route path="media/:type/:slug" element={<MediaDetail />} />
 
     <Route path="publications" element={<PublicationsIndex />} />
     <Route path="publications/:slug" element={<PublicationDetail />} />
+    <Route path="aramam" element={<PublicationsIndex key="aramam" fixedType="aramam" />} />
+    <Route path="research-papers" element={<PublicationsIndex key="research-paper" fixedType="research-paper" />} />
 
     <Route path="links" element={<Links />} />
     <Route path="contact" element={<Contact />} />

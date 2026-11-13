@@ -24,13 +24,13 @@ export default function BottomNav() {
      like the header menu (standalone links first, then each dropdown) */
   const groups = useMemo(() => {
     const tabPaths = new Set(tabs.map((tab) => tab.to));
-    const items = buildNavItems(path, 'en', showDownloads);
+    const items = buildNavItems(path, 'en', showDownloads, data?.nav.programs);
     const keep = (links: NavLeaf[]) => links.filter((l) => !tabPaths.has(l.to));
     return [
       { label: str('menuMain', 'en'), links: keep(items.filter((i) => i.to).map((i) => ({ label: i.label, to: i.to!, icon: i.icon }))) },
       ...items.filter((i) => i.children?.length).map((i) => ({ label: i.label, links: keep(i.children!) })),
     ].filter((g) => g.links.length);
-  }, [path, tabs, showDownloads]);
+  }, [path, tabs, showDownloads, data?.nav.programs]);
 
   const activeTab = tabs.findIndex((tab) => tab.match(pathname));
   const moreActive = activeTab === -1 && groups.some((g) => g.links.some((l) => pathname === l.to || pathname.startsWith(`${l.to}/`)));

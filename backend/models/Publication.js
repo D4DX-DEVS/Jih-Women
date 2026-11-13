@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { RICH_BODY_MAX } = require('./common');
 const { localized, autoSlug } = require('./common');
 
-const PUBLICATION_TYPES = ['book', 'article', 'booklet', 'pdf', 'research-paper'];
+const PUBLICATION_TYPES = ['book', 'article', 'booklet', 'pdf', 'research-paper', 'aramam'];
 
 const publicationSchema = new mongoose.Schema(
   {
