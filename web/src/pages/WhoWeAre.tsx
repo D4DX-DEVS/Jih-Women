@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { ArrowRight, ChevronDown, Download, Target } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  ChevronDown,
+  Download,
+  History as HistoryIcon,
+  Lightbulb,
+  ScrollText,
+  Target,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
@@ -14,10 +24,8 @@ import {
   PageHeader,
   PanelSection,
   Section,
-  ViewToggle,
 } from '../components/Primitives';
 import { DetailSkeleton, ListSkeleton } from '../components/PageSkeletons';
-import { useViewMode } from '../lib/view';
 import ContentSections from '../components/ContentCards';
 import FocusStrip from '../components/FocusStrip';
 import NotFound from './NotFound';
@@ -26,6 +34,14 @@ import type { FocusArea, HomePayload, PageDoc } from '../lib/types';
 const FOCUS_PANEL_ID = 'about-focus';
 /* The About Us page whose attached files are never listed for download */
 const NO_DOWNLOADS_SLUG = 'constitution';
+
+/* Icon of each card's banner */
+const PAGE_ICONS: Record<string, LucideIcon> = {
+  history: HistoryIcon,
+  ideology: Lightbulb,
+  objectives: Target,
+  constitution: ScrollText,
+};
 
 /**
  * The admin-managed Focus areas for the About Us page: the same content and the same
@@ -42,16 +58,13 @@ function useFocusAreas(): FocusArea[] {
 }
 
 export function WhoWeAreIndex() {
-  const { lang, path, s, h } = useSite();
-  const { view } = useViewMode();
-  const row = view === 'list';
+  const { path, s, h } = useSite();
   const { data, loading, error, reload } = useApi<{ items: PageDoc[] }>(
     '/api/site/pages?section=who-we-are'
   );
   const focusAreas = useFocusAreas();
   const [focusOpen, setFocusOpen] = useState(false);
   const hasFocus = focusAreas.length > 0;
-  const hasItems = !loading && !error && Boolean(data?.items.length);
 
   return (
     <>
@@ -63,7 +76,7 @@ export function WhoWeAreIndex() {
         <Container>
           {hasFocus && (
             <>
-              {/* Focus button; on phones it shares a row with the Cards/List switch */}
+              {/* Focus button */}
               <div className="mb-2.5 flex items-start justify-between gap-2 sm:mb-5">
                 <button
                   type="button"
@@ -80,7 +93,6 @@ export function WhoWeAreIndex() {
                   {h('focus')}
                   <ChevronDown size={14} className={`transition-transform ${focusOpen ? 'rotate-180' : ''}`} />
                 </button>
-                <div className="ml-auto [&>div]:mb-0">{hasItems && <ViewToggle />}</div>
               </div>
               {focusOpen && (
                 <div className="mb-3 sm:mb-6">
@@ -96,49 +108,36 @@ export function WhoWeAreIndex() {
           ) : !data?.items.length ? (
             <EmptyState />
           ) : (
-            <>
-              {!hasFocus && <ViewToggle />}
-              <div className={`grid gap-2.5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 ${row ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                {data.items.map((page) => (
+            /* Four equal cards a row on desktop, two on tablets, one on phones. Every card is an
+               icon on the brand gradient, the section name centred, and Read More at the bottom left. */
+            <div className="grid grid-cols-1 gap-4 sm:auto-rows-fr sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
+              {data.items.map((page) => {
+                const Icon = PAGE_ICONS[page.slug] ?? BookOpen;
+                return (
                   <Link
                     key={page._id}
                     to={path(`/who-we-are/${page.slug}`)}
-                    className={`card-hover group flex overflow-hidden border border-plum-100 bg-white shadow-soft sm:flex-col sm:rounded-2xl ${
-                      row ? 'rounded-xl' : 'flex-col rounded-lg'
-                    }`}
+                    className="card-hover group flex h-full flex-col overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft sm:rounded-2xl"
                   >
-                    {page.heroImage && (
-                      <div
-                        className={`relative overflow-hidden sm:aspect-[16/9] ${
-                          row ? 'w-[7.5rem] shrink-0 self-stretch sm:w-auto sm:self-auto' : 'aspect-[4/3]'
-                        }`}
-                      >
-                        <img
-                          src={page.heroImage}
-                          alt=""
-                          loading="lazy"
-                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </div>
-                    )}
-                    <div className={`min-w-0 flex-1 sm:p-5 ${row ? 'self-center p-2.5' : 'p-2'}`}>
-                      <h2 className={`type-title-lg transition group-hover:text-magenta-600 ${row ? '' : 'max-sm:type-tile'}`}>
+                    {/* Every card has the same icon banner */}
+                    <div className="grid aspect-[2/1] place-items-center bg-gradient-to-br from-plum-700 to-magenta-500 text-white/90">
+                      <Icon size={40} strokeWidth={1.5} />
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
+                      <h2 className="text-center type-title-lg transition group-hover:text-magenta-600">
                         <GradientText>{t(page.title, 'en')}</GradientText>
                       </h2>
-                      {t(page.summary, lang) && (
-                        <p className={`type-body-sm leading-relaxed text-ink-muted max-sm:type-caption sm:mt-2 sm:line-clamp-3 sm:block ${row ? 'mt-0.5 line-clamp-2' : 'hidden'}`}>
-                          {t(page.summary, lang)}
-                        </p>
-                      )}
-                      <span className={`type-caption items-center font-semibold text-magenta-600 sm:mt-4 sm:inline-flex sm:gap-1.5 ${row ? 'mt-1.5 inline-flex gap-1' : 'hidden'}`}>
-                        {h('readMore')}
-                        <ArrowRight size={15} />
-                      </span>
+                      <div className="mt-auto pt-8">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-magenta-500 px-4 py-1.5 type-caption font-semibold text-white shadow-pink transition group-hover:bg-magenta-600">
+                          {h('readMore')}
+                          <ArrowRight size={14} />
+                        </span>
+                      </div>
                     </div>
                   </Link>
-                ))}
-              </div>
-            </>
+                );
+              })}
+            </div>
           )}
         </Container>
       </Section>
