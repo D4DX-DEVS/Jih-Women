@@ -255,6 +255,7 @@ export function ManagedLink({
 export function Button({
   to,
   href,
+  download,
   onClick,
   children,
   variant = 'primary',
@@ -265,6 +266,8 @@ export function Button({
 }: {
   to?: string;
   href?: string;
+  /** With `href`: ask the browser to save the file instead of showing it */
+  download?: boolean;
   onClick?: () => void;
   children: ReactNode;
   variant?: 'primary' | 'outline' | 'ghost' | 'light' | 'plum';
@@ -298,7 +301,7 @@ export function Button({
   }
   if (href) {
     return (
-      <a href={href} target="_blank" rel="noreferrer" className={cls}>
+      <a href={href} target="_blank" rel="noreferrer" download={download || undefined} className={cls}>
         {children}
       </a>
     );

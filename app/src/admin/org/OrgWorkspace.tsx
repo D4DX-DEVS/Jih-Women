@@ -8,6 +8,7 @@ import {
   Download,
   ExternalLink,
   FileText,
+  GraduationCap,
   Images,
   LayoutDashboard,
   Link2,
@@ -45,6 +46,7 @@ import {
   PAGES,
   PROGRAMS,
   PUBLICATIONS,
+  RESEARCH_PAPERS,
   SLIDERS,
   VIDEOS,
 } from './collections';
@@ -121,6 +123,7 @@ const NAV_ALL: NavGroup[] = [
     title: 'Library & links',
     entries: [
       { key: PUBLICATIONS.key, label: PUBLICATIONS.label, kind: 'collection', config: PUBLICATIONS, badge: 'publications', Icon: BookMarked },
+      { key: RESEARCH_PAPERS.key, label: RESEARCH_PAPERS.label, kind: 'collection', config: RESEARCH_PAPERS, Icon: GraduationCap },
       { key: EXTERNAL_LINKS.key, label: EXTERNAL_LINKS.label, kind: 'collection', config: EXTERNAL_LINKS, badge: 'links', Icon: Link2 },
     ],
   },

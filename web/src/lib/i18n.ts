@@ -95,6 +95,7 @@ const STRINGS: Dict = {
   articles: { ml: 'ലേഖനങ്ങൾ', en: 'Articles' },
   booklets: { ml: 'ലഘുലേഖകൾ', en: 'Booklets' },
   pdfLibrary: { ml: 'PDF ലൈബ്രറി', en: 'PDF Library' },
+  researchPapers: { ml: 'ഗവേഷണ പ്രബന്ധങ്ങൾ', en: 'Research Papers' },
 
   currentLeadership: { ml: 'ഇപ്പോഴത്തെ നേതൃത്വം', en: 'Current Leadership' },
   pastLeadership: { ml: 'മുൻ നേതൃത്വം', en: 'Past Leadership' },
@@ -119,6 +120,7 @@ const STRINGS: Dict = {
   viewAll: { ml: 'എല്ലാം കാണുക', en: 'View All' },
   viewDetails: { ml: 'വിശദാംശങ്ങൾ', en: 'View details' },
   download: { ml: 'ഡൗൺലോഡ്', en: 'Download' },
+  viewPaper: { ml: 'കാണുക', en: 'View' },
   visitWebsite: { ml: 'വെബ്സൈറ്റ് സന്ദർശിക്കുക', en: 'Visit website' },
   register: { ml: 'രജിസ്റ്റർ ചെയ്യുക', en: 'Register' },
   registerNow: { ml: 'ഇപ്പോൾ രജിസ്റ്റർ ചെയ്യുക', en: 'Register now' },

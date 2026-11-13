@@ -1126,7 +1126,7 @@ export function PublicationCard({ publication, view = 'card' }: { publication: P
       )}
       <div className={`min-w-0 flex-1 sm:py-1 ${row ? 'py-1' : ''}`}>
         <span className={`type-overline font-medium tracking-wider text-magenta-500 sm:inline ${row ? '' : 'hidden'}`}>
-          {publication.type}
+          {publication.type.replace('-', ' ')}
         </span>
         <h3
           className={`type-title line-clamp-2 text-plum-800 transition group-hover:text-magenta-600 sm:mt-1 ${
@@ -1138,6 +1138,11 @@ export function PublicationCard({ publication, view = 'card' }: { publication: P
         {t(publication.author, lang) && (
           <p className={`type-caption text-ink-muted sm:mt-1 sm:block ${row ? 'mt-0.5' : 'hidden'}`}>
             {t(publication.author, lang)}
+          </p>
+        )}
+        {publication.type === 'research-paper' && (
+          <p className={`type-meta text-ink-faint sm:mt-1 sm:block ${row ? 'mt-0.5' : 'hidden'}`}>
+            {formatDate(publication.publishedAt, lang)}
           </p>
         )}
       </div>
