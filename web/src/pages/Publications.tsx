@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router';
-import { Download, ExternalLink as ExternalLinkIcon, ShoppingBag } from 'lucide-react';
+import { Download, ExternalLink as ExternalLinkIcon, Eye, ShoppingBag } from 'lucide-react';
 import { useApi } from '../lib/api';
 import { useSite } from '../lib/site';
 import { t } from '../lib/i18n';
@@ -26,6 +26,7 @@ import type { Paged, Publication } from '../lib/types';
 
 const TYPES = [
   { value: '', key: 'all' },
+  { value: 'research-paper', key: 'researchPapers' },
   { value: 'book', key: 'books' },
   { value: 'article', key: 'articles' },
   { value: 'booklet', key: 'booklets' },
@@ -133,8 +134,19 @@ export function PublicationDetail() {
                   <div className="mx-auto aspect-[3/4] w-full max-w-[150px] rounded-lg bg-magenta-50 sm:max-w-[240px] sm:rounded-xl lg:max-w-none" />
                 )}
                 <div className="space-y-2">
-                  {data.fileUrl && (
+                  {data.fileUrl && data.type === 'research-paper' && (
                     <Button href={data.fileUrl} className="w-full">
+                      <Eye size={15} />
+                      {s('viewPaper')}
+                    </Button>
+                  )}
+                  {data.fileUrl && (
+                    <Button
+                      href={data.fileUrl}
+                      download={data.type === 'research-paper'}
+                      variant={data.type === 'research-paper' ? 'outline' : 'primary'}
+                      className="w-full"
+                    >
                       <Download size={15} />
                       {s('download')}
                     </Button>

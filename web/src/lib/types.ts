@@ -302,7 +302,7 @@ export type VideoItem = {
   featured: boolean;
 };
 
-export type PublicationType = 'book' | 'article' | 'booklet' | 'pdf';
+export type PublicationType = 'book' | 'article' | 'booklet' | 'pdf' | 'research-paper';
 
 export type Publication = {
   _id: string;

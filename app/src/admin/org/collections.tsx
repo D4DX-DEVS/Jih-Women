@@ -421,10 +421,14 @@ const KERALA_DISTRICT_OPTIONS = [
     'Kottayam',
     'Idukki',
     'Ernakulam',
+    'Kochi City',
     'Thrissur',
     'Palakkad',
     'Malappuram',
+    'Malappuram East',
+    'Malappuram West',
     'Kozhikode',
+    'Kozhikode City',
     'Wayanad',
     'Kannur',
     'Kasaragod',
@@ -781,13 +785,14 @@ export const PUBLICATIONS: CollectionConfig = {
   endpoint: '/api/admin/cms/publications',
   label: 'Publications',
   singular: 'Publication',
-  description: 'Books, articles, booklets and the PDF library.',
+  description: 'Books, articles, booklets, research papers and the PDF library.',
   reorderable: true,
   filters: [{ param: 'type', label: 'Type', options: [
     { value: 'book', label: 'Book' },
     { value: 'article', label: 'Article' },
     { value: 'booklet', label: 'Booklet' },
     { value: 'pdf', label: 'PDF' },
+    { value: 'research-paper', label: 'Research Paper' },
   ] }],
   columns: [img('coverImage'), loc('title', 'Title'), str('type', 'Type'), loc('author', 'Author'), date('publishedAt', 'Published')],
   blank: () => ({
@@ -815,6 +820,7 @@ export const PUBLICATIONS: CollectionConfig = {
         { value: 'article', label: 'Article' },
         { value: 'booklet', label: 'Booklet' },
         { value: 'pdf', label: 'PDF' },
+        { value: 'research-paper', label: 'Research Paper' },
       ] },
       { kind: 'date', path: 'publishedAt', label: 'Publish date' },
     ] },
@@ -847,6 +853,45 @@ export const PUBLICATIONS: CollectionConfig = {
     { kind: 'row', fields: [
       { kind: 'toggle', path: 'featured', label: 'Featured' },
       publishedField,
+    ] },
+  ],
+};
+
+/**
+ * Research papers: the Publications collection narrowed to type "research-paper", with
+ * only the fields a paper needs. The backend route fixes the type, and requires the
+ * author, abstract, date and a PDF. Papers appear on Media → Publications → Research Papers.
+ */
+export const RESEARCH_PAPERS: CollectionConfig = {
+  key: 'research-papers',
+  endpoint: '/api/admin/cms/research-papers',
+  label: 'Research Papers',
+  singular: 'Research Paper',
+  addLabel: 'Add Research Paper',
+  description: 'Papers published under Media → Publications → Research Papers. Each needs its author, an abstract and a PDF.',
+  columns: [img('coverImage'), loc('title', 'Title'), loc('author', 'Author'), date('publishedAt', 'Published')],
+  blank: () => ({
+    type: 'research-paper',
+    title: emptyLocalized(),
+    author: emptyLocalized(),
+    description: emptyLocalized(),
+    slug: '',
+    coverImage: '',
+    fileUrl: '',
+    publishedAt: new Date().toISOString(),
+    order: 0,
+    published: true,
+  }),
+  fields: [
+    { kind: 'localized', path: 'title', label: 'Research paper title', required: true },
+    { kind: 'localized', path: 'author', label: 'Author name', required: true },
+    { kind: 'localized', path: 'description', label: 'Short description / abstract', required: true, multiline: true, rows: 4 },
+    { kind: 'date', path: 'publishedAt', label: 'Publication date', required: true },
+    { kind: 'asset', path: 'fileUrl', label: 'Research paper PDF', folder: 'publications', accept: '.pdf', preview: 'file', required: true, recommend: 'PDF only. Export scans at about 150 DPI and run a “reduce file size” pass before uploading.' },
+    { kind: 'asset', path: 'coverImage', label: 'Cover image (optional)', folder: 'publications', recommend: '1200×1600px (3:4 portrait).' },
+    { kind: 'row', fields: [
+      { kind: 'toggle', path: 'published', label: 'Published', description: 'Shown on the website. Switch off to keep it as a draft.' },
+      orderField,
     ] },
   ],
 };
@@ -1023,6 +1068,7 @@ export const ORG_COLLECTIONS: CollectionConfig[] = [
   MEDIA_POSTS,
   VIDEOS,
   PUBLICATIONS,
+  RESEARCH_PAPERS,
   ALBUMS,
   DOWNLOADS,
   EXTERNAL_LINKS,

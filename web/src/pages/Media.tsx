@@ -26,6 +26,7 @@ import {
   DownloadRow,
   GalleryGrid,
   PostCard,
+  PosterCard,
   VideoCard,
   VideoPlayerModal,
 } from '../components/Cards';
@@ -339,6 +340,39 @@ export function AlbumDetail() {
               {validMedia(data.items).length ? <GalleryGrid items={data.items} /> : <EmptyState />}
             </PanelSection>
           </ContentPanel>
+        </Container>
+      </Section>
+    </>
+  );
+}
+
+/* ---------------- posters ---------------- */
+
+/** Posters are Downloads filed under the "poster" category in the admin. */
+export function PostersPage() {
+  const { pageTitle } = useSite();
+  const { data, loading, error, reload } = useApi<{ items: DownloadItem[] }>(
+    '/api/site/downloads?category=poster'
+  );
+
+  return (
+    <>
+      <Section tone="mist">
+        <Container>
+          <MediaHeading title={pageTitle('poster')} />
+          {loading ? (
+            <ListSkeleton variant="posters" />
+          ) : error ? (
+            <ErrorState message={error} onRetry={reload} />
+          ) : !data?.items.length ? (
+            <EmptyState />
+          ) : (
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
+              {data.items.map((item) => (
+                <PosterCard key={item._id} item={item} />
+              ))}
+            </div>
+          )}
         </Container>
       </Section>
     </>

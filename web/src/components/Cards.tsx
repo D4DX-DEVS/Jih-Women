@@ -1126,7 +1126,7 @@ export function PublicationCard({ publication, view = 'card' }: { publication: P
       )}
       <div className={`min-w-0 flex-1 sm:py-1 ${row ? 'py-1' : ''}`}>
         <span className={`type-overline font-medium tracking-wider text-magenta-500 sm:inline ${row ? '' : 'hidden'}`}>
-          {publication.type}
+          {publication.type.replace('-', ' ')}
         </span>
         <h3
           className={`type-title line-clamp-2 text-plum-800 transition group-hover:text-magenta-600 sm:mt-1 ${
@@ -1138,6 +1138,11 @@ export function PublicationCard({ publication, view = 'card' }: { publication: P
         {t(publication.author, lang) && (
           <p className={`type-caption text-ink-muted sm:mt-1 sm:block ${row ? 'mt-0.5' : 'hidden'}`}>
             {t(publication.author, lang)}
+          </p>
+        )}
+        {publication.type === 'research-paper' && (
+          <p className={`type-meta text-ink-faint sm:mt-1 sm:block ${row ? 'mt-0.5' : 'hidden'}`}>
+            {formatDate(publication.publishedAt, lang)}
           </p>
         )}
       </div>
@@ -1174,6 +1179,40 @@ export function DownloadRow({ item }: { item: DownloadItem }) {
         <Download size={14} />
         <span className="hidden sm:inline">{s('download')}</span>
       </span>
+    </a>
+  );
+}
+
+/**
+ * One poster on the Poster page: shown whole (never cropped) in a 3:4 frame, with its
+ * title beneath. A click opens the poster file in a new tab. A poster that is not an
+ * image (a PDF without a thumbnail) shows a file icon in the frame instead.
+ */
+export function PosterCard({ item }: { item: DownloadItem }) {
+  const { lang } = useSite();
+  const title = t(item.title, lang);
+  const preview = item.thumbnailUrl || (item.mimeType.startsWith('image/') ? item.fileUrl : '');
+  return (
+    <a
+      href={item.fileUrl}
+      target="_blank"
+      rel="noreferrer"
+      className="card-hover group block overflow-hidden rounded-xl border border-plum-100 bg-white shadow-soft sm:rounded-2xl"
+    >
+      <span className="grid aspect-[3/4] place-items-center bg-mist-deep">
+        {preview ? (
+          <img src={preview} alt={title} loading="lazy" className="h-full w-full object-contain" />
+        ) : (
+          <FileText size={36} className="text-magenta-500" />
+        )}
+      </span>
+      {title && (
+        <span className="block p-2.5 sm:p-4">
+          <span className="line-clamp-2 type-title text-plum-800">
+            <GradientText>{title}</GradientText>
+          </span>
+        </span>
+      )}
     </a>
   );
 }
