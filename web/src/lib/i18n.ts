@@ -80,7 +80,8 @@ const STRINGS: Dict = {
   featuredVideos: { ml: 'തിരഞ്ഞെടുത്ത വീഡിയോകൾ', en: 'Featured Videos' },
 
   news: { ml: 'വാർത്തകൾ', en: 'News' },
-  pressReleases: { ml: 'പത്രക്കുറിപ്പുകൾ', en: 'Press Releases' },
+  pressReleases: { ml: 'പത്രക്കുറിപ്പ്', en: 'Press Release' },
+  poster: { ml: 'പോസ്റ്റർ', en: 'Poster' },
   statements: { ml: 'പ്രസ്താവനകൾ', en: 'Statements' },
   interviews: { ml: 'അഭിമുഖങ്ങൾ', en: 'Interviews' },
   speeches: { ml: 'പ്രഭാഷണങ്ങൾ', en: 'Speeches' },
