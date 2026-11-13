@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { RICH_BODY_MAX } = require('./common');
 const { localized, autoSlug } = require('./common');
 
-const PUBLICATION_TYPES = ['book', 'article', 'booklet', 'pdf'];
+const PUBLICATION_TYPES = ['book', 'article', 'booklet', 'pdf', 'research-paper'];
 
 const publicationSchema = new mongoose.Schema(
   {
@@ -34,6 +34,23 @@ const publicationSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// A research paper is only useful with its author, abstract and PDF, so those are
+// required for that type. The file check runs here, not just in the admin form,
+// because the upload endpoint accepts many file types.
+const hasText = (value) => Boolean(value && (String(value.en || '').trim() || String(value.ml || '').trim()));
+publicationSchema.pre('validate', function (next) {
+  if (this.type !== 'research-paper') return next();
+  if (!hasText(this.author)) this.invalidate('author', 'Author name is required for a research paper.');
+  if (!hasText(this.description)) this.invalidate('description', 'A short description (abstract) is required for a research paper.');
+  if (!this.publishedAt) this.invalidate('publishedAt', 'Publication date is required for a research paper.');
+  if (!this.fileUrl || !this.fileUrl.trim()) {
+    this.invalidate('fileUrl', 'Please upload the research paper as a PDF file.');
+  } else if (!/\.pdf(\?.*)?$/i.test(this.fileUrl.trim())) {
+    this.invalidate('fileUrl', 'The research paper file must be a PDF.');
+  }
+  return next();
+});
 
 autoSlug(publicationSchema);
 publicationSchema.index({ type: 1, published: 1, order: 1, publishedAt: -1 });

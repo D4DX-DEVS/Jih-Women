@@ -25,6 +25,8 @@ export type CollectionConfig = {
   endpoint: string;
   label: string;
   singular: string;
+  /** Text of the "new record" buttons (default: "+ New {singular}") */
+  addLabel?: string;
   description?: string;
   columns: ColumnDef[];
   fields: FieldDef[];
@@ -330,7 +332,7 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
             </a>
           )}
           <button className="pill pill-primary" onClick={openNew}>
-            + New {config.singular.toLowerCase()}
+            {config.addLabel ?? `+ New ${config.singular.toLowerCase()}`}
           </button>
         </div>
       </div>
@@ -428,7 +430,7 @@ export default function CollectionManager({ config, token, onToast, onLogout }: 
                       action={
                         hasFilters ? undefined : (
                           <button className="pill pill-primary" onClick={openNew}>
-                            + New {config.singular.toLowerCase()}
+                            {config.addLabel ?? `+ New ${config.singular.toLowerCase()}`}
                           </button>
                         )
                       }

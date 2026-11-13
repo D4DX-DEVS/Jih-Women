@@ -16,7 +16,9 @@ export default function Footer() {
   const { data, path } = useSite();
   const settings = data?.settings;
   /* Footer lists only these programmes (names and links still come from the site data) */
-  const FOOTER_PROGRAMS = ['thamheedul-mar-a', 'proficia'];
+  const FOOTER_PROGRAMS = ['thamheedul-mar-a', 'wes', 'proficia'];
+  /* The footer uses the short name for programmes whose full title is long */
+  const FOOTER_LABELS: Record<string, string> = { wes: 'WES' };
   const programs = FOOTER_PROGRAMS.map((slug) => (data?.nav.programs ?? []).find((p) => p.slug === slug)).filter(
     (p): p is NonNullable<typeof p> => Boolean(p)
   );
@@ -120,7 +122,7 @@ export default function Footer() {
           <FooterColumn title={str('programs', 'en')} className="hidden md:block">
             {programs.length > 0 ? (
               programs.map((program) => {
-                const title = tLang(program.title, 'en');
+                const title = FOOTER_LABELS[program.slug] ?? tLang(program.title, 'en');
                 if (!title) return null;
                 return (
                   <li key={program._id}>

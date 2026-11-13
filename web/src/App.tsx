@@ -12,6 +12,7 @@ import {
   DownloadsPage,
   MediaDetail,
   MediaList,
+  PostersPage,
   VideosPage,
 } from './pages/Media';
 import { PublicationDetail, PublicationsIndex } from './pages/Publications';
@@ -55,6 +56,7 @@ const pages = (
     <Route path="media/gallery" element={<AlbumsIndex />} />
     <Route path="media/gallery/:slug" element={<AlbumDetail />} />
     <Route path="media/downloads" element={<DownloadsPage />} />
+    <Route path="media/posters" element={<PostersPage />} />
     <Route path="media/:type" element={<MediaList />} />
     <Route path="media/:type/:slug" element={<MediaDetail />} />
 
